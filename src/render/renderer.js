@@ -9,7 +9,7 @@ import{drawSpriteProjectile}from'./sprites.js';
 export class Renderer{
  constructor(canvas){this.cv=canvas;this.g=canvas.getContext('2d');this.stages=THEMES.map(t=>new Stage(W,H,GROUND,WORLD,t));this.stage=this.stages[0];this.hud=new Hud(W,H);this.sel=new SelectScreen(this.hud);this.post=new PostFX();this.selT=0;this.scale=canvas.width/W}
  // Startmenü (Charakterwahl): Stage 1 als Hintergrund, Kamera neutral
- drawSelect(game){const g=this.g,s=this.scale,A=game.arcade;this.selT++;g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);
+ drawSelect(game){const g=this.g,s=this.scale,A=game.arcade;{const n=performance.now(),d=this._selLast?Math.min(3,(n-this._selLast)/16.667):1;this._selLast=n;this.selT+=d}g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);
   const st=this.stages[0],T=this.selT/60;st.draw(g,T);g.fillStyle='#05020ccc';g.fillRect(0,0,W,H);this.post.beams(g,W,H,T,'#7a5cff');this.post.dust(g,W,H,T,'#c9b8ff',60,.8);st.overlay(g);this.sel.draw(g,A,this.selT,W,H);
   this.post.bloom(g,this.cv,.5);this.post.grain(g,this.cv,.06)}
  draw(game){if(game.arcade&&game.arcade.state==='select')return this.drawSelect(game);

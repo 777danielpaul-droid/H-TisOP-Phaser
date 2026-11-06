@@ -37,7 +37,7 @@ CENTER = {('down', 1), ('down', 2), ('down', 3)}
 # Spiel-Animation -> Frames (Sheet, [Zell-Indizes ab 0]) + Optionen (loop/fps/lean/bob/squash, wie in sprites.js)
 ANIMS = {
     'idle':    dict(parts=[('idle_1', [0, 1, 2, 3, 4, 5]), ('idle_2', [1, 2, 3, 4, 5])], loop=1, fps=12),
-    'walk':    dict(parts=[('walk_1', [1, 2, 3, 4, 5]), ('walk_2', [1, 2, 3, 4, 5])], loop=1, fps=16),
+    'walk':    dict(parts=[('walk_1', [1, 2, 3, 4, 5]), ('walk_2', [1, 2, 3, 4, 5])], loop=1, fps=9),
     'dash':    dict(parts=[('dash', [2, 3])], loop=1, fps=12, lean=.04),
     'airdash': dict(parts=[('dash', [4, 5])], loop=1, fps=12, lean=.1),
     'air':     dict(parts=[('jump', [1, 2, 3, 4, 5])]),
@@ -69,7 +69,7 @@ ANIMS = {
 IDLE_FPS = 6.5
 ANIMS_NEU = {
     'idle':    dict(parts=[('neu_schlag', [0]), ('neu_posen', [0]), ('neu_bewegung', [0]), ('neu_tritt', [0]), ('neu_bewegung', [0]), ('neu_posen', [0])], loop=1, fps=IDLE_FPS),
-    'walk':    dict(parts=[('neu_schlag', [0]), ('neu_bewegung', [0]), ('neu_tritt', [0]), ('neu_posen', [0]), ('neu_tritt', [0]), ('neu_bewegung', [0])], loop=1, fps=14, bob=4, lean=.08),
+    'walk':    dict(parts=[('neu_schlag', [0]), ('neu_bewegung', [0]), ('neu_tritt', [0]), ('neu_posen', [0]), ('neu_tritt', [0]), ('neu_bewegung', [0])], loop=1, fps=9, bob=2, lean=.04),
     'dash':    dict(parts=[('neu_posen', [3])], lean=.1),
     'airdash': dict(parts=[('neu_tritt', [3])], lean=.2),
     'air':     dict(parts=[('neu_tritt', [3])], lean=.04),

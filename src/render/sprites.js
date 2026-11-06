@@ -69,7 +69,7 @@ const MINO_ANIMS={
 // 'upper' = Rising-Claw (Aufwärts-Klaue mit Leuchten), Treffer = hit_heavy, Fallen = fall_*, 'a'-Frames = Luft-Variante (Körpermitte fest)
 const TIGER_ANIMS={
  idle:{frames:R('idle_0',0,5),loop:1,fps:7},   // Rückfall ohne Sheets; mit den neuen Posen-Bögen kommt das Idle aus meta.anims (IDLE_FPS in tools/import-tiger-sheets.py)
- walk:{frames:R('idle_0',0,5),loop:1,fps:20,bob:4,lean:.08},
+ walk:{frames:R('idle_0',0,5),loop:1,fps:10,bob:2,lean:.04},
  crouch:{frames:['get_up_02']},
  air:{frames:['kick_02'],lean:.05},
  dash:{frames:['attack_heavy_00'],lean:.12},airdash:{frames:['kick_02'],lean:.22},

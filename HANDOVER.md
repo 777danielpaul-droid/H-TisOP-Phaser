@@ -117,3 +117,7 @@
 ### Update v19c: Konfetti raus, nur dumpfe Schlag-Sounds
 - Keine Splitter/Konfetti-Plättchen mehr (Treffer, K.O., Sieg). `ParticleSystem.shard/confetti` bleiben als ungenutzter Code.
 - Sounds: Töne/Glocken (`combo_step_*`, `parry_clang`, `hitstop_freeze`, `hit_critical`, `heavy_hit_sweetener`, `heavy_hit_full`) werden nicht mehr abgespielt (Dateien bleiben in `sfx/`). Ersatz: `heavy_hit_impact`, `punch_heavy`, `ground_slam`, `block_guard`. Schwung-/Dash-Sounds und Projektil-Whoosh tiefer gepitcht (kein „Biu“), Master-Tiefpass 6,5 kHz in `render/audio.js`.
+
+### Update v19d: ruhigere Animationen
+- Startmenü: Idle-Tempo aller Karten gleich (`t/2`), kein 3×-Sprung mehr für die gewählte/gehoverte Karte. Menü-Zeit `selT` jetzt framerate-unabhängig (vorher lief sie auf 120/144-Hz-Monitoren zu schnell).
+- Tiger-Laufen: 14 → 9 fps, Wippen 4 → 2, Neigung .08 → .04 (`assets/tiger/meta.json`, Quelle `tools/import-tiger-sheets.py`, Fallback in `sprites.js`). Angriffe unverändert.

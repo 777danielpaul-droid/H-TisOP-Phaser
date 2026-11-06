@@ -28,7 +28,7 @@ export class SelectScreen{
    g.strokeStyle=col;g.lineWidth=sel?4:2;g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,12);g.stroke();
    // Figur (animiert) im Kartenausschnitt
    g.save();g.beginPath();g.roundRect(r.x+2,r.y+2,r.w-4,r.h-4,10);g.clip();
-   const f=this.fake(id,sel?t:Math.floor(t/3)),by=r.y+r.h-92,s=.82;f.x=cx;f.y=by;g.translate(cx,by);g.scale(s,s);g.translate(-cx,-by);
+   const f=this.fake(id,t/2),by=r.y+r.h-92,s=.82;f.x=cx;f.y=by;g.translate(cx,by);g.scale(s,s);g.translate(-cx,-by);
    g.fillStyle='#0008';g.beginPath();g.ellipse(cx,by+4,52,9,0,0,7);g.fill();drawFighter(g,f,t/60,1,by);g.restore();
    hud.fancy(g,ch.name,cx,r.y+r.h-52,N>4?19:21,['#ffffff',col],'center',col,t,true);
    const parts=ch.desc.split(' · ');hud.txt(g,parts[0],cx,r.y+r.h-32,12,'#d6c8ff','center');if(parts[1])hud.txt(g,parts[1],cx,r.y+r.h-17,11,'#9d8fd0','center');
