@@ -1,0 +1,8 @@
+Gefundene Sheets: neu_bewegung, neu_posen, neu_schlag, neu_tritt
+- neu_bewegung: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+- neu_posen: 1536x1024 px, Hintergrund: Hintergrundfarbe der Ecken, 4 Posen als einzelne Figuren erkannt
+- neu_schlag: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+- neu_tritt: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+Neue Animationen aktiv: idle, walk, dash, airdash, air, crouch, cblock, block, punch, heavy, kick, cpunch, ckick, jpunch, jkick, jheavy, upper, special
+Noch alte Behelfs-Animationen: hit, airhit, kd, wakeup, win
+Atlas 4096x1423, 1632 KB, 53 Frames

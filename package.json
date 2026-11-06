@@ -1,0 +1,1 @@
+{"name":"hitisop","version":"1.0.0","type":"module","scripts":{"build":"node tools/build.mjs","test":"node tests/sim.test.js && node tests/camera.test.js && node tests/ai.test.js && node tests/arcade.test.js && node tests/moves.test.js && node tests/arena.test.js && node tests/custom.test.js && node tests/sfx.test.js"}}
