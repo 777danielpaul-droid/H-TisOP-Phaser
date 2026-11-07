@@ -1,0 +1,5 @@
+# dist/ ist generiert (node tools/build.mjs): bei Merges nie Textmarkierungen in die Dateien schreiben
+dist/* -diff -merge
+*.webp binary
+*.ogg binary
+*.woff2 binary
