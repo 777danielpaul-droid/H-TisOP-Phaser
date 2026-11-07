@@ -1,0 +1,45 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>H!TisOP</title><link rel="stylesheet" href="styles/main.css"></head><body>
+<canvas id="screen" width="1920" height="1080" tabindex="0"></canvas>
+<div id="hint">M = Menü (Steuerung &amp; Move-Liste) · F = Vollbild</div>
+<div id="menu" class="hidden"><div class="panel">
+ <h1>H!TIS<span>OP</span></h1>
+ <nav class="tabs"><button data-tab="controls" class="on">Steuerung</button><button data-tab="moves">Move-Liste</button><button data-tab="options">Optionen</button></nav>
+ <section id="tab-controls"><table>
+  <tr><td>Bewegen</td><td class="key"><kbd>A</kbd> <kbd>D</kbd> &nbsp;/&nbsp; Pfeile</td></tr>
+  <tr><td>Springen (2× = Doppelsprung)</td><td class="key"><kbd>W</kbd> / <kbd>Space</kbd> / <kbd>↑</kbd></td></tr>
+  <tr><td>Ducken</td><td class="key"><kbd>S</kbd></td></tr>
+  <tr><td>Block</td><td class="key">zurück halten (ducken = Low-Block)</td></tr>
+  <tr><td>Light / Medium / Heavy</td><td class="key"><kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd></td></tr>
+  <tr><td>Special (Richtung wählt den Move)</td><td class="key"><kbd>U</kbd></td></tr>
+  <tr><td>Hyper (1 Balken)</td><td class="key"><kbd>I</kbd></td></tr>
+  <tr><td>Dash / Air-Dash</td><td class="key"><kbd>O</kbd> &nbsp;oder Doppeltipp ←/→</td></tr>
+  <tr><td>Menü / Pause</td><td class="key"><kbd>M</kbd></td></tr>
+  <tr><td>Vollbild</td><td class="key"><kbd>F</kbd> &nbsp;oder Doppelklick</td></tr>
+  <tr><td>Hitboxen anzeigen</td><td class="key"><kbd>F2</kbd></td></tr>
+  <tr><td>Alternative Tasten</td><td class="key"><kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> <kbd>B</kbd> <kbd>N</kbd> = J K L U I O</td></tr>
+  <tr><td colspan="2" class="mv">2-Spieler-Modus (Startmenü: <kbd>TAB</kbd> oder oben links anklicken)</td></tr>
+  <tr><td>Spieler 1 – Bewegen / Springen / Ducken</td><td class="key"><kbd>A</kbd> <kbd>D</kbd> &nbsp;<kbd>W</kbd> <kbd>S</kbd></td></tr>
+  <tr><td>Spieler 1 – Light / Medium / Heavy</td><td class="key"><kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd></td></tr>
+  <tr><td>Spieler 1 – Special / Hyper / Dash</td><td class="key"><kbd>T</kbd> <kbd>Y</kbd> <kbd>B</kbd></td></tr>
+  <tr><td>Spieler 2 – Bewegen / Springen / Ducken</td><td class="key"><kbd>←</kbd> <kbd>→</kbd> &nbsp;<kbd>↑</kbd> <kbd>↓</kbd></td></tr>
+  <tr><td>Spieler 2 – Light / Medium / Heavy</td><td class="key"><kbd>K</kbd> <kbd>L</kbd> <kbd>;</kbd> &nbsp;oder Ziffernblock <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td></tr>
+  <tr><td>Spieler 2 – Special / Hyper / Dash</td><td class="key"><kbd>I</kbd> <kbd>O</kbd> <kbd>P</kbd> &nbsp;oder Ziffernblock <kbd>4</kbd> <kbd>5</kbd> <kbd>0</kbd></td></tr>
+  <tr><td>Gamepad (1 Pad = Spieler 2, 2 Pads = je Spieler eins)</td><td class="key">Stick/Steuerkreuz · A=L · X=M · Y=H · B=Special · RB=Hyper · LB=Dash</td></tr>
+ </table></section>
+ <section id="tab-moves" class="hidden"><table><tbody id="movelist"></tbody></table></section>
+ <section id="tab-options" class="hidden">
+  <div class="row"><span>Schwierigkeit (Gegner-KI)</span><select id="difficulty"><option value="0" selected>Leicht</option><option value="1">Normal</option><option value="2">Hart</option></select></div>
+  <div class="row"><span>Grafik (Effekte &amp; Auflösung, Niedrig für schwache Hardware)</span><select id="gfx"><option value="auto" selected>Auto</option><option value="2">Hoch</option><option value="1">Mittel</option><option value="0">Niedrig</option></select></div>
+  <div class="row"><span>Spieltempo: <b id="speedval">1.5×</b></span><input id="speed" type="range" min="1" max="2.2" step="0.1" value="1.5"></div>
+  <div class="row"><span>Sound</span><button id="btn-mute">An</button></div>
+  <div class="row"><span>Lautstärke</span><input id="volume" type="range" min="0" max="1" step="0.05" value="0.7"></div>
+  <div class="row"><span>Hitboxen anzeigen</span><button id="btn-debug">Aus</button></div>
+  <div class="row"><span>Hyper-Meter füllen (Training)</span><button id="btn-meter">Füllen</button></div>
+  <div class="row"><span>Stage neu starten</span><button id="btn-restart">Neustart</button></div>
+  <div class="row"><span>Zurück zur Charakterwahl (Arcade neu)</span><button id="btn-select">Charakterwahl</button></div>
+  <div class="row"><span>Eigene Figur erstellen / bearbeiten (Sprite-Sheets hochladen)</span><button id="btn-studio">Editor öffnen</button></div>
+ </section>
+ <div class="foot"><button id="btn-resume">Weiter (M)</button><span>← / → Reiter wechseln · M oder Esc schließt das Menü</span></div>
+</div></div>
+<!--SCRIPT--><script src="dist/game.js"></script></body></html>
