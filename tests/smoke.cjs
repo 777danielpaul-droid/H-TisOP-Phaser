@@ -3,7 +3,7 @@ const fs=require('fs');const L={};
 const P=()=>new Proxy(function(){},{get:(t,k)=>k==='classList'?{toggle(){},add(){},remove(){}}:k==='clientWidth'?1920:k in t?t[k]:()=>{},set:(t,k,v)=>{t[k]=v;return true},apply:()=>{}});
 const mkctx=()=>new Proxy({},{get:(t,k)=>k in t?t[k]:(k==='createLinearGradient'||k==='createRadialGradient'?()=>({addColorStop(){}}):k==='createPattern'?()=>({}):()=>{}),set:(t,k,v)=>{t[k]=v;return true}});
 const cvs=()=>({width:1920,height:1080,clientWidth:1920,getContext:mkctx,focus(){},addEventListener(){}});
-global.document={getElementById:id=>id==='screen'?cvs():P(),createElement:()=>cvs(),querySelectorAll:()=>[],documentElement:{}};
+global.document={getElementById:id=>id==='screen'?cvs():P(),createElement:()=>cvs(),querySelectorAll:()=>[],documentElement:{},hidden:false,addEventListener(){}};
 global.Image=class{set src(v){this.complete=false}};global.window=global;global.addEventListener=(e,f)=>{(L[e]=L[e]||[]).push(f)};global.performance={now:()=>T};
 let T=0,cb=null;global.requestAnimationFrame=f=>{cb=f};
 eval(fs.readFileSync('dist/game.js','utf8'));

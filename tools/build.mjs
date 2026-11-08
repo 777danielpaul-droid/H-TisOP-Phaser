@@ -12,9 +12,11 @@ for(const id of fs.existsSync(ad)?fs.readdirSync(ad):[]){const d=path.join(ad,id
   sp.push(`${id}:{meta:${fs.readFileSync(path.join(d,'meta.json'),'utf8')},atlas:"data:image/webp;base64,${fs.readFileSync(path.join(d,'atlas.webp')).toString('base64')}"}`)}
 const sd=path.join(root,'sfx'),sx=[];   // Sounds (sfx/<name>.ogg) als Data-URI einbetten
 for(const f of fs.existsSync(sd)?fs.readdirSync(sd).sort():[])if(f.endsWith('.ogg'))sx.push(`${JSON.stringify(f.slice(0,-4))}:"data:audio/ogg;base64,${fs.readFileSync(path.join(sd,f)).toString('base64')}"`);
+const md=path.join(root,'music'),mu=[];   // Musik (music/<name>.ogg) als Data-URI einbetten
+for(const f of fs.existsSync(md)?fs.readdirSync(md).sort():[])if(f.endsWith('.ogg'))mu.push(`${JSON.stringify(f.slice(0,-4))}:"data:audio/ogg;base64,${fs.readFileSync(path.join(md,f)).toString('base64')}"`);
 const fd=path.join(root,'assets/fonts'),fo=[];   // Schriften (assets/fonts/<name>.woff2) als Data-URI einbetten (Canvas + Menü, offline)
 for(const f of fs.existsSync(fd)?fs.readdirSync(fd).sort():[])if(f.endsWith('.woff2'))fo.push(`${JSON.stringify(f.slice(0,-6))}:"data:font/woff2;base64,${fs.readFileSync(path.join(fd,f)).toString('base64')}"`);
-const pre=(fo.length?`window.__FONTS__={${fo.join(',')}};\n`:'')+(sp.length?`window.__SPRITES__={${sp.join(',')}};\n`:'')+(sx.length?`window.__SFX__={${sx.join(',')}};\n`:'');
+const pre=(fo.length?`window.__FONTS__={${fo.join(',')}};\n`:'')+(sp.length?`window.__SPRITES__={${sp.join(',')}};\n`:'')+(sx.length?`window.__SFX__={${sx.join(',')}};\n`:'')+(mu.length?`window.__MUSIC__={${mu.join(',')}};\n`:'');
 const js=`${pre}(()=>{'use strict';${out}\n})();`;
 fs.mkdirSync(path.join(root,'dist'),{recursive:true});fs.writeFileSync(path.join(root,'dist/game.js'),js);
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');const css=fs.readFileSync(path.join(root,'styles/main.css'),'utf8');

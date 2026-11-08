@@ -1,4 +1,4 @@
-import{ROUND,EFFECT}from'./config.js';
+import{ROUND,EFFECT,CAMERA,W}from'./config.js';
 import{Arena}from'./barrier.js';
 import{ParticleSystem}from'./particles.js';
 import{Effects}from'./effects.js';
@@ -6,6 +6,7 @@ import{Projectile}from'./projectile.js';
 import{resolveCombat}from'./combat.js';
 import{Camera}from'./camera.js';
 import{hitSounds,comboStep}from'./sfx.js';
+const SUPER_FRAMES=42;   // Länge des Super-Freeze (muss zu hud.flash passen)
 // Spielzustand + fester 60-Hz-Schritt. Keine DOM-Abhängigkeit -> headless testbar.
 // Phasen: intro -> fight -> ko -> result -> (intro | match)
 export class Game{
@@ -15,7 +16,7 @@ export class Game{
  // Sound: game.audio (render/audio.js) ist im Test/headless null -> kein Ton. sfx() für einzelne Sounds, sfxList() für Listen aus core/sfx.js
  sfx(n,o){if(this.audio)this.audio.play(n,o)}
  sfxList(l){if(this.audio)for(const[n,o]of l)this.audio.play(n,o)}
- startRound(){this.arena.reset();this.pops=[];this.kickX=this.kickY=0;this.aberr=0;this.impact=null;this.celeb=null;this.slow=0;this.timeScale=1;this.sfx('ui_round_start',{vol:.8});this.projectiles=[];this.phase='intro';this.pf=0;this.timeFrames=ROUND.time*60;this.hitstop=0;this.superFlash=0;this.superOwner=null;this.shake=0;this.flash=0;this.winner=null;this.timedOut=false;
+ startRound(){this.cineW=0;this.cineT=0;this.arena.reset();this.pops=[];this.kickX=this.kickY=0;this.aberr=0;this.impact=null;this.celeb=null;this.slow=0;this.timeScale=1;this.sfx('ui_round_start',{vol:.8});this.projectiles=[];this.phase='intro';this.pf=0;this.timeFrames=ROUND.time*60;this.hitstop=0;this.superFlash=0;this.superOwner=null;this.shake=0;this.flash=0;this.winner=null;this.timedOut=false;
   for(const f of this.fighters){f.reset();f.input.clear()}this.camera.snap(this.fighters)}
  rematch(){this.round=1;for(const f of this.fighters){f.wins=0;f.meter=0}this.startRound()}
  spawnProjectile(f,mv,d=mv.proj){this.sfx('whoosh_heavy',{vol:.6,rate:.85});if(d.uniq)for(const p of this.projectiles)if(p.owner===f&&p.def.uniq===d.uniq)p.dead=true;this.projectiles.push(new Projectile(f,mv,d))}
@@ -27,9 +28,17 @@ export class Game{
   this.aberr=Math.max(this.aberr,big?.9:power>=2?.45:.18);
   if(big){this.impact={t:7,t0:7,x,y,col,p:1,seed:Math.random()*99};this.flash=Math.max(this.flash,3);this.flashColor='#ffffff'}
 }
- startSuper(f){this.aberr=1;this.camera.kick(.05);this.sfx('heavy_hit_impact');this.superFlash=42;this.superOwner=f;this.shake=EFFECT.superShake;this.flash=EFFECT.screenFlash;this.flashColor=f.char.glow||'#fff';this.fx.ps.ring(f.x,f.y-80,'#ffffff',160)}
+ startSuper(f){this.aberr=1;this.camera.kick(.05);this.superName=(f.move&&f.move.label)||'';this.sfx('heavy_hit_impact');this.superFlash=SUPER_FRAMES;this.superOwner=f;this.shake=EFFECT.superShake;this.flash=EFFECT.screenFlash;this.flashColor=f.char.glow||'#fff';this.fx.ps.ring(f.x,f.y-80,'#ffffff',160)}
  knockout(victim,attacker){this.sfx('ko_hit');this.slow=this.slowMax=EFFECT.koSlow;this.aberr=1;this.camera.kick(.07);this.kickX+=attacker.facing*14;this.impact={t:10,t0:10,x:victim.x,y:victim.y-80,col:victim.char.glow||'#fff',p:1.2,seed:Math.random()*99};victim.state='ko';victim.sf=0;victim.vy=-9;victim.vx=attacker.facing*6;victim.noGrav=false;victim.move=null;
   this.phase='ko';this.pf=0;this.winner=attacker;this.hitstop=26;this.shake=EFFECT.koShake;this.flash=EFFECT.screenFlash;this.flashColor=victim.char.glow||'#fff';this.fx.ko(victim.x,victim.y-80,victim.char.glow||'#fff')}
+ // Hyper-Kamerafahrt: weich auf den Angreifer zoomen und im Zoom bleiben, solange sein Hyper-Move aktiv ist (inkl. Freeze); `lead` Frames vor Ende der aktiven Phase sanft zurück
+ cineCamera(){const f=this.superOwner,K=CAMERA.cine;
+  const m=f&&f.move,on=!!f&&(this.superFlash>0||(m&&m.super&&f.mf<m.su+m.ac-K.lead))&&this.cineT<K.maxF;   // Rauszoomen beginnt schon vor dem letzten Treffer
+  if(on){this.cineT++;this.cineW=Math.min(1,this.cineW+1/K.inF)}else{this.cineW=Math.max(0,this.cineW-1/K.outF);if(this.cineW<=0)this.cineT=0}
+  if(!f||this.cineW<=0){this.camera.focus(null);return}
+  const o=f===this.p1?this.p2:this.p1,sz=(f.char&&f.char.size)||1,w=this.cineW*this.cineW*(3-2*this.cineW);
+  const fit=W/(Math.abs(o.x-f.x)+K.margin*2);   // nie so dicht, dass der Gegner aus dem Bild fällt
+  this.camera.focus(f.x+(o.x-f.x)*K.bias,f.y-K.lift*sz,Math.max(1,Math.min(K.zoom/Math.sqrt(sz),fit)),w)}
  step(){
   this.frame++;
   for(const f of this.fighters)f.input.tick(f,f===this.p1?this.p2:this.p1,this);
@@ -38,6 +47,7 @@ export class Game{
   this.kickX*=.78;this.kickY*=.78;this.aberr*=.86;if(this.aberr<.01)this.aberr=0;if(this.impact&&--this.impact.t<=0)this.impact=null;
   for(const p of this.pops)p.age++;this.pops=this.pops.filter(p=>p.age<p.life);
   if(this.slow>0){this.slow--;const u=1-this.slow/this.slowMax;this.timeScale=EFFECT.koSlowMin+(1-EFFECT.koSlowMin)*u*u}else this.timeScale=1;  // Zeitlupe beim K.O. (Hauptschleife teilt die Schrittlänge dadurch)
+  this.cineCamera();
   this.camera.update(this.fighters); // läuft auch im Hitstop/Super-Flash weiter
   if(this.shake>0)this.shake=Math.max(0,this.shake-.4);
   if(this.flash>0)this.flash--;

@@ -41,6 +41,7 @@ export class Renderer{
   this.celeb(g,game);
   for(const f of game.fighters)drawTrail(g,f,t);
   for(const f of[...game.fighters].sort((a,b)=>(a.state==='ko'||a.state==='knockdown'?-1:0)-(b.state==='ko'||b.state==='knockdown'?-1:0)||a.y-b.y))drawFighter(g,f,t,1,GROUND);
+  this.celeb(g,game,true);                                // Aura-Vordergrund: Figur steht IN der Aura
   for(const p of game.projectiles)this.projectile(g,p,p.owner);
   game.particles.draw(g,true);
   if(game.debug)this.debugBoxes(g,game);                 // Kollisionsboxen skalieren mit der Welt
@@ -51,12 +52,59 @@ export class Renderer{
   if(game.phase==='intro'&&game.pf<26){ui.save();ui.globalAlpha=1-game.pf/26;ui.fillStyle='#000';ui.fillRect(0,0,W,H);ui.restore()}   // Einblenden aus Schwarz
   this.stage.overlay(ui);this.hud.draw(ui,game);this.hud.flash(ui,game);this.areaBanner(ui,game,t);   // HUD/UI: unskaliert und scharf
   if(game.debug)this.debugText(ui,game)}
- // Sieger-Finale: Lichtsäule + rotierende Strahlen hinter dem Gewinner (additiv, Welt-Raum)
- celeb(g,game){const c=game.celeb;if(!c)return;const f=c.f,col=f.char.glow||'#fff',k=Math.min(1,c.t/26),T=c.t/60,cx=f.x,cy=f.y-100;
+ // Sieger-Finale: Kampfaura (Anime-Power-up) hinter dem Gewinner, additiv, Welt-Raum. Standard = Flammen-Aura in der Figurenfarbe;
+ // H!T (tiger) = Blitzaura, Minotaurus (mino) = Feueraura. Aufsteigende Energie-Streifen, Boden-Glühen + Druckringe, pulsierende Flammenzungen.
+ // Zwei Durchgänge: front=false hinter der Figur (große Flammen, Glühen), front=true davor (halbtransparente Innenflammen mit Kontur, Streifen, Blitze, vordere Ringhälfte) -> die Figur steht IN der Aura.
+ celeb(g,game,front){const c=game.celeb;if(!c)return;const SK=.72;   // Gesamtgröße der Flammenaura (1 = alt): Flammenschichten und Zungen-Ansatzpunkte rücken enger zusammen, die einzelnen Zacken/Zungen behalten ihre Originalgröße
+  const f=c.f,id=f.char.id,kind=id==='tiger'?'bolt':id==='mino'?'fire':'aura',k=Math.min(1,c.t/30),T=c.t/60,sz=f.char.size||1,cx=f.x,gy=f.y,bh=210*sz,bw=62*sz,fx=Math.max(.35,GFX.rays);
+  const gl=f.char.glow||'#ffffff',P=kind==='fire'?{o:'#d81800',m:'#ff6a00',i:'#ffc12e',c:'#fff4c8',s:['#ff6a00','#ffc12e','#fff4c8']}
+   :kind==='bolt'?{o:'#2a8cff',m:'#5fd0ff',i:'#d8fbff',c:'#ffffff',s:['#3fe0ff','#ffffff','#7df9ff']}
+   :{o:gl,m:gl,i:'#ffe9a8',c:'#ffffff',s:[gl,'#ffd23f','#ffffff']};
+  const H=n=>{const v=Math.sin(n*12.9898)*43758.5453;return v-Math.floor(v)};
+  // Flackern: Aura pulsiert unregelmäßig und fällt ab und zu fast aus (nicht dauernd voll sichtbar)
+  const fl=Math.max(.12,.6+.4*Math.sin(T*21)*Math.sin(T*6.1+1))*(H(Math.floor(T*14)*1.7)<.16?.25:1);
+  // Einzelne Flammenzungen: wachsen aus der Körperkontur, züngeln nach oben, verlöschen und tauchen an anderer Stelle neu auf
+  const tongue=(x,y,tx,ty,w,seed,c0,c1,al,st)=>{const mx=(x+tx)/2+Math.sin(T*9+seed)*w*.9,my=(y+ty)/2;g.beginPath();g.moveTo(x-w,y);g.quadraticCurveTo(mx-w*.9,my,tx,ty);g.quadraticCurveTo(mx+w*.9,my+w*.3,x+w,y);g.closePath();
+   const gr=g.createLinearGradient(x,y,tx,ty);gr.addColorStop(0,c0);gr.addColorStop(.5,c1);gr.addColorStop(1,c1+'00');g.globalAlpha=Math.min(1,al);g.fillStyle=gr;g.fill();if(st){g.globalAlpha=Math.min(1,al*st);g.strokeStyle=P.i;g.lineWidth=1.8*sz;g.lineJoin='round';g.stroke()}};
+  const licks=(N,sd,sc,al,st,cA,cB)=>{for(let q=0;q<N;q++){const per=.45+H(q*3+sd)*.6,u=T/per+H(q*5+sd),cyc=Math.floor(u),ph=u-cyc,a=Math.sin(ph*Math.PI),th=H(q*7+cyc*3.3+sd)*6.283,ex=Math.cos(th),ey=Math.sin(th);
+    const x=cx+ex*bw*1.05*SK,y=gy-bh*.5+ey*bh*.48*SK,tp=Math.max(.3,1-.62*Math.max(0,(gy-y)/bh)),   // tp: Zungen werden nach oben hin kleiner (unten 1, am Kopf ≈ .45)
+     hh=(55+H(q*11+cyc+sd)*95)*sz*sc*tp*(.35+.65*a);tongue(x,y,x+ex*.55*hh*.7+Math.sin(T*6+q)*8*sz*tp,y-hh,(11+H(q*13+sd)*9)*sz*sc*(.45+.55*tp),q+cyc,cA,cB,al*k*fl*a,st)}};
+  // Flammen-/Aura-Silhouette: gezackte Kontur um den Körper, Spitzen flackern, Spitze schwankt
+  const flame=(x,by,w0,h0,seed,n,c0,c1,al,st,k=SK)=>{const w=w0*k,h=h0*k,L=[],R=[];for(let q=0;q<=n;q++){const u=q/n,base=w*Math.pow(1-u,1.1)*(.74+.5*Math.sin(Math.min(1,u*2.2)*1.5708)),sp=(q%2?.62:-.1)/k,fl=.65+.35*Math.sin(T*11+q*2.3+seed),y=by-u*h*(1+.05*Math.sin(T*7+seed));
+    L.push([x-base*(1+sp*fl),y]);R.push([x+base*(1+sp*(.65+.35*Math.sin(T*12+q*1.9+seed*2))),y])}
+   const tip=[x+Math.sin(T*5+seed)*w*.28,by-h*1.07];g.beginPath();g.moveTo(L[0][0],L[0][1]);for(const q of L)g.lineTo(q[0],q[1]);g.lineTo(tip[0],tip[1]);for(let q=R.length-1;q>=0;q--)g.lineTo(R[q][0],R[q][1]);g.closePath();
+   const gr=g.createLinearGradient(0,by,0,by-h);gr.addColorStop(0,c0+'99');gr.addColorStop(.2,c0);gr.addColorStop(.6,c1);gr.addColorStop(1,c1+'00');g.globalAlpha=al*k*fl;g.fillStyle=gr;g.fill();if(st){g.globalAlpha=st*k*fl;g.strokeStyle=P.i;g.lineWidth=2.2*sz;g.lineJoin='round';g.stroke()}};
+  // Blitz: zackiger Pfad mit Glühen (breit, blau) + heller Kern
+  const bolt=(x0,y0,ang,len,seed,wd,al=1,br=1)=>{const n=9;let px=x0,py=y0,a=ang,mx=x0,my=y0,ma=ang;g.beginPath();g.moveTo(x0,y0);for(let q=0;q<n;q++){a+=(H(seed+q*3.7)-.5)*2.2;px+=Math.cos(a)*len/n;py+=Math.sin(a)*len/n;g.lineTo(px,py);if(q===3){mx=px;my=py;ma=a}}
+   g.lineJoin='round';g.lineCap='round';g.strokeStyle=P.m;g.globalAlpha=.45*k*al;g.lineWidth=wd*4.5;g.stroke();g.strokeStyle=P.c;g.globalAlpha=Math.min(1,k*al);g.lineWidth=wd;g.stroke();
+   if(br)bolt(mx,my,ma+(H(seed+50)<.5?-1:1)*(.7+H(seed+51)*.6),len*.5,seed+9,wd*.7,al,0)};   // Abzweig
   g.save();g.globalCompositeOperation='lighter';
-  for(let i=0,N=Math.max(4,Math.round(18*GFX.rays));i<N;i++){const a=T*.35+i*(Math.PI*2/N),w=.05+.02*Math.sin(T*3+i);g.globalAlpha=k*(i%2?.2:.12);g.fillStyle=i%3?col:'#ffd23f';g.beginPath();g.moveTo(cx,cy);g.arc(cx,cy,1300,a-w,a+w);g.fill()}
-  const pw=90+Math.sin(T*5)*10,gr=g.createLinearGradient(cx-pw,0,cx+pw,0);gr.addColorStop(0,col+'00');gr.addColorStop(.35,col+'55');gr.addColorStop(.5,'#ffffffbb');gr.addColorStop(.65,col+'55');gr.addColorStop(1,col+'00');g.globalAlpha=k*.75;g.fillStyle=gr;g.fillRect(cx-pw,cy-1000,pw*2,GROUND-cy+1000);
-  const rg=g.createRadialGradient(cx,cy,10,cx,cy,260);rg.addColorStop(0,'#ffffffcc');rg.addColorStop(.3,col+'66');rg.addColorStop(1,col+'00');g.globalAlpha=k*(.8+.2*Math.sin(T*6));g.fillStyle=rg;g.fillRect(cx-260,cy-260,520,520);g.restore()}
+  // Boden: pulsierendes Glühen + auslaufende Druckringe (flache Ellipsen)
+  g.save();g.translate(cx,gy+4);g.scale(1,.26);{const R0=(170+Math.sin(T*6)*14)*sz,rg=g.createRadialGradient(0,0,6,0,0,R0);rg.addColorStop(0,P.c+'cc');rg.addColorStop(.35,P.m+'77');rg.addColorStop(1,P.o+'00');if(!front){g.globalAlpha=k*.9;g.fillStyle=rg;g.beginPath();g.arc(0,0,R0,0,6.283);g.fill()}
+   for(let q=0;q<3;q++){const ph=(T*.9+q/3)%1;g.globalAlpha=k*(1-ph)*.7;g.strokeStyle=q%2?P.i:P.m;g.lineWidth=7*(1-ph)+1;g.beginPath();if(front)g.arc(0,0,(40+ph*230)*sz,0,Math.PI);else g.arc(0,0,(40+ph*230)*sz,Math.PI,6.283);g.stroke()}}g.restore();
+  // Körper-Glühen hinter der Figur
+  if(!front){const R0=bh*1.15*(kind==='bolt'?1:.85),rg=g.createRadialGradient(cx,gy-bh*.5,10,cx,gy-bh*.5,R0);rg.addColorStop(0,P.c+'88');rg.addColorStop(.3,P.m+'55');rg.addColorStop(1,P.o+'00');g.globalAlpha=k*(.5+.5*fl)*(.8+.2*Math.sin(T*8));g.fillStyle=rg;g.fillRect(cx-R0,gy-bh*.5-R0,R0*2,R0*2)}
+  // Aura-Körper: mehrere Flammenschichten (außen breit/dunkel → innen schmal/hell)
+  const by=gy+6;
+  if(kind==='fire'){const nn=Math.max(6,Math.round(12*fx)),NL=Math.round(20*fx)+6;
+   if(!front){flame(cx,by,bw*1.7,bh*1.55,1,nn,P.o,P.m,.3);flame(cx,by,bw*1.35,bh*1.35,5,nn,P.m,P.i,.32);flame(cx,by,bw*1.0,bh*1.1,9,nn,P.i,P.c,.22);
+    licks(NL,0,1.3,.75,0,P.m,P.i);licks(Math.round(NL*.6),60,1,.7,0,P.i,P.c)}
+   else{flame(cx,by,bw*1.25,bh*1.2,21,nn,P.m,P.i,.16,.3);licks(Math.round(NL*.7),30,1.1,.5,.45,P.m,P.i);
+    for(let q=0,N=Math.round(7*fx);q<N;q++){const o=(q/(N-1||1)-.5)*bw*5.2*SK;flame(cx+o,by,(16+H(q)*12)*sz,(46+H(q*3)*50)*sz,q*4+2,6,P.m,P.i,.5,0,1)}}}   // Bodenfeuer vor den Füßen
+  else{const nn=Math.max(8,Math.round(15*fx)),NL=Math.round(16*fx)+5,cA=P.m,cB=P.i;
+   if(kind!=='bolt'){   // H!T (Blitzaura): keine Flammen/Flammenzungen, nur Blitze (siehe unten) + Glühen + Energie-Streifen
+   if(!front){flame(cx,by,bw*1.6,bh*1.4,1,nn,P.o,P.m,.28);flame(cx,by,bw*1.2,bh*1.18,5,nn,P.m,P.i,.26);
+    licks(NL,0,1.15,.75,0,cA,cB);licks(Math.round(NL*.6),60,.9,.7,0,P.i,P.c)}
+   else{flame(cx,by,bw*.95,bh*1.0,13,nn,P.m,P.i,.16,.3);licks(Math.round(NL*.7),30,1,.5,.45,cB,P.c)}}}
+  // Aufsteigende Energie-Streifen (Anime-Speedlines)
+  for(let q=0,N=Math.round(22*fx)+4;q<N;q++){if((q%2===1)!==!!front)continue;const ph=(T*(.8+H(q)*.9)+H(q*3.1))%1,x=cx+(H(q*5.1)-.5)*bw*2.9*(kind==='bolt'?1:SK),y=gy-ph*bh*1.8,len=(34+H(q*2)*70)*sz;g.globalAlpha=k*Math.sin(ph*Math.PI)*.85;g.strokeStyle=P.s[q%3];g.lineWidth=(1.2+H(q*7)*2.4)*sz;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.sin(T*3+q)*4,y+len);g.stroke()}
+  // Blitzaura (H!T): zuckende Blitze um den Körper + zwei lange Blitze Fuß→Kopf, alle 3–4 Frames neu gewürfelt
+  if(kind==='bolt'&&front){const fi=Math.floor(c.t/2),str=H(fi*.77+3);   // alle 2 Frames neu gewürfelt = Zucken; je Blitz an/aus = Blinken
+   for(let q=0,N=Math.round(13*(.5+fx*.5));q<N;q++){const sd=fi*17+q*5.3;if(H(sd+7)<.4)continue;const a0=H(sd)*6.283,rr=(.6+H(sd+1)*.9)*bw,yy=gy-bh*(.05+H(sd+2)*.95);bolt(cx+Math.cos(a0)*rr,yy,a0+(H(sd+3)-.5)*1.2,(40+H(sd+4)*90)*sz,sd,1.2+H(sd+5)*1.6,.65+H(sd+6)*.35)}
+   for(let sdn=0;sdn<3;sdn++){const sd=Math.floor(c.t/3)*31+sdn*100;if(H(sd+9)<.3)continue;const sx=cx+(sdn-1)*bw*(.9+H(sd)*.35);bolt(sx,gy,-Math.PI/2+(H(sd+2)-.5)*.5,bh*(.9+H(sd+4)*.4),sd,1.8+H(sd+5)*1.2,.8+H(sd+6)*.2)}   // lange Blitze Fuß→Kopf
+   if(str>.84){g.globalAlpha=k*(.16+(str-.84)*1.4);g.fillStyle=P.c;g.fillRect(cx-bh*1.3,gy-bh*1.6,bh*2.6,bh*1.8)}                       // unregelmäßiges Aufblitzen
+   if(c.t%11<2){const R0=bh*.85,rg=g.createRadialGradient(cx,gy-bh*.5,6,cx,gy-bh*.5,R0);rg.addColorStop(0,P.c+'aa');rg.addColorStop(.5,P.m+'44');rg.addColorStop(1,P.m+'00');g.globalAlpha=k*.55;g.fillStyle=rg;g.fillRect(cx-R0,gy-bh*.5-R0,R0*2,R0*2)}}   // Kern-Blinken
+  g.restore()}
  // ---- Gasse zwischen zwei Hochhäusern: links Spielhalle, rechts Lobby. Fassaden reichen bis über den Bildrand, Erdgeschoss-Wand brechbar ----
  // Statische Ebenen (obere Fassade, Erdgeschoss-Fassade, Innenraum) werden je Level-Theme und Seite einmal in Offscreen-Canvas gezeichnet.
  houseLayers(T,side){const k=T.name+side;this._hl=this._hl||{};if(this._hl[k])return this._hl[k];
@@ -198,6 +246,10 @@ export class Renderer{
    g.globalAlpha=.35;g.fillStyle=col;g.beginPath();g.ellipse(0,0,p.w/2,R*.8,0,0,7);g.fill()}
   else if(L==='claw'){const d=Math.sign(p.vx);g.strokeStyle='#fff';g.shadowColor=col;g.shadowBlur=14;g.lineWidth=4;
    for(const o of[-12,0,12]){g.beginPath();g.moveTo(-d*34,o*1.3);g.quadraticCurveTo(0,o-8,d*30,o*.8+6);g.stroke()}g.strokeStyle=col;g.lineWidth=2;g.stroke()}
+  else if(L==='fire'){const d=Math.sign(p.vx),R=p.h/2,fl=1+.12*Math.sin(t*.7);   // Feuerwelle: flackernde Glutballen mit Schweif nach hinten
+   for(let i=5;i>=0;i--){const cx=-d*i*R*.62,r=R*(1-i*.11)*fl,cy=Math.sin(t*.5+i*1.7)*R*.18*i/3;g.globalAlpha=Math.max(0,1-i*.15);
+    const gr=g.createRadialGradient(cx,cy,r*.1,cx,cy,r);gr.addColorStop(0,'#fffbd0');gr.addColorStop(.35,'#ffc531');gr.addColorStop(.7,'#ff5a14cc');gr.addColorStop(1,'#c0180000');
+    g.fillStyle=gr;g.beginPath();g.arc(cx,cy,r,0,7);g.fill()}}
   else if(L==='shock'){const d=Math.sign(p.vx);const gr=g.createLinearGradient(-d*60,0,d*30,0);gr.addColorStop(0,'#0000');gr.addColorStop(1,col);g.fillStyle=gr;
    g.beginPath();g.ellipse(0,0,p.w/2,p.h/2,0,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=3;g.beginPath();g.ellipse(d*10,0,p.w/3,p.h/2.3,0,-1.2,1.2);g.stroke()}
   g.restore()}

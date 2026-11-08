@@ -1656,7 +1656,7 @@ export class Hud {
     g.scale(0.7 + 0.3 * e, 0.7 + 0.3 * e);
     this.big(
       g,
-      "HYPER " + f.char.name + " BEAM",
+      game.superName ? game.superName.toUpperCase() : "HYPER " + f.char.name + " BEAM",
       0,
       0,
       42,

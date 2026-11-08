@@ -85,4 +85,19 @@ const mino={...norm({su:2,rc:2,dmg:1.15,reach:20}),
  '6H':{label:'Todesgriff',info:'GRIFF: unblockbar, sehr hoher Schaden',anim:'upper',su:10,ac:3,rc:30,dmg:135,unb:true,hard:true,box:[0,-120,84,100],lunge:0,hstop:12,shake:8,spc:false,hs:30},
  super:{label:'Erdbeben-Strahl',info:'Breiter, langer Strahl',dmg:32,box:[20,-130,460,120]}};
 
-export const MODS={hero,palm,witch,tiger,mino};
+// ---------- ST3-G0: Panzer-Echse – zäh, Reichweite, Schwanz-Konter ----------
+// Stärke: viel HP, Rüstungs-Sprint, Schwanzfeger trifft auch hinter ihm, solide Normals mit etwas mehr Reichweite, Dornen-Wellen.
+// Schwäche: mittleres Tempo (kein Mix-up-Teleport, kein Reversal wie beim Tiger), Welle nur mittelschnell, Sprint ist nach Block bestrafbar.
+const st3g0={...norm({su:1,rc:0,dmg:1.03,reach:6}),
+ fireball:{label:'Feuer-Atem',info:'Spuckt eine Feuerwelle: J = schnell, L = stark',su:10,rc:18,proj:P({frame:10,y:-150,vx:9,w:110,h:70,dmg:54,hs:18,bs:10,life:80,look:'fire'}),
+  v:{L:{su:8,rc:14,proj:P({frame:8,y:-150,vx:10,w:90,h:56,dmg:40,hs:14,bs:8,life:60,look:'fire'})},
+     H:{su:13,rc:24,proj:P({frame:13,y:-150,vx:8,w:140,h:86,dmg:78,hs:22,bs:14,life:110,look:'fire'})}}},
+ rising:{label:'Schwanz-Wirbel',info:'Unverwundbarer Anti-Air-Schlag, Launcher',su:5,ac:8,rc:24,dmg:90,inv:[1,10],launch:{vx:2,vy:-17}},
+ rush:{label:'Panzer-Sprint',info:'RÜSTUNG: Schulter-Rammen, Knockdown',anim:'heavy',su:9,ac:12,rc:24,dmg:95,lunge:10,armor:[3,12],hard:true,pb:6,box:[10,-130,130,100],hstop:8,shake:5,glow:1},
+ back:{label:'Schwanzfeger',info:'Trifft auch hinter ihm (Anti-Cross-up)',anim:'kick',crouch:false,lv:'mid',su:8,ac:5,rc:20,dmg:70,hs:22,bs:14,pb:5,box:[-170,-100,320,100],hard:false,hstop:7,shake:4,glow:1},
+ airsp:{label:'Rammsturz',info:'Steiler Sturzangriff, Knockdown',su:8,dmg:90,box:[-10,-70,110,100],dive:{vx:3,vy:17},hard:true,land:16,hstop:9,shake:6},
+ '6M':{label:'Dornen-Haken',info:'Schneller Vorstoß-Haken',anim:'punch',su:8,ac:3,rc:14,dmg:60,lv:'mid',box:[10,-130,110,50],lunge:6,hs:22,bs:12},
+ '6H':{label:'Stachelkopf',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:14,ac:4,rc:20,dmg:88,lv:'high',lunge:6,box:[10,-170,118,70],hs:26,bs:16,glow:1},
+ super:{label:'Platten-Strahl',info:'Sehr langer Strahl, hoher Schaden',dmg:34,box:[20,-140,640,100]}};
+
+export const MODS={hero,palm,witch,tiger,mino,st3g0};

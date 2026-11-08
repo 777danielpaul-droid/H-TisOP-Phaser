@@ -17,9 +17,9 @@ const run=(t,n)=>t(0,0,[],n);
 
 // 1) Jede Figur hat Labels für alle Moves; Figuren unterscheiden sich wirklich
 {const sig={};for(const id of[...ROSTER,BOSS]){const L=charMoves(CHARACTERS[id]);assert.ok(L.length>=13,id);for(const m of L)assert.ok(m[0],id+' ohne Label');sig[id]=L.map(m=>m[0]).join('|')}
- const uniq=new Set(Object.values(sig));assert.equal(uniq.size,5,'alle 5 Movesets verschieden');
+ const uniq=new Set(Object.values(sig));assert.equal(uniq.size,ROSTER.length+1,'alle Movesets verschieden');
  const spec=id=>['fireball','rising','rush','back','airsp','6M','6H'].map(k=>CHARACTERS[id].mods[k]&&CHARACTERS[id].mods[k].label).join();
- for(const a of[...ROSTER,BOSS])for(const b of[...ROSTER,BOSS])if(a<b)assert.notEqual(spec(a),spec(b));ok('5 verschiedene Movesets')}
+ for(const a of[...ROSTER,BOSS])for(const b of[...ROSTER,BOSS])if(a<b)assert.notEqual(spec(a),spec(b));ok((ROSTER.length+1)+' verschiedene Movesets')}
 
 // 2) Griff (Palm 6M): unblockbar, trifft Blockenden; Fehlschlag auf Distanz
 {const{p2,t}=setup('palm','tiger',60);t(1,0,['M']);run(t,20);t(1,0,['M'],1,-1,0);for(let k=0;k<25;k++)t(0,0,[],1,-1,0);

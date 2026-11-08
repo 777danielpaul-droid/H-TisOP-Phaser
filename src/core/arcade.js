@@ -12,7 +12,8 @@ export class Arcade{
  static ladderFor(playerId){return[...LADDER.filter(x=>x!==playerId),BOSS]}
  start(playerId){this.player=playerId;this.opponents=Arcade.ladderFor(playerId);this.stage=0;this.p1.setChar(CHARACTERS[playerId]);this.beginStage()}
  beginStage(){const g=this.game;this.p2.setChar(CHARACTERS[this.opponents[this.stage]]);this.applyDifficulty();
-  g.stageIndex=this.stage;g.rematch();this.state='fight';this.t=0}
+  g.stageIndex=this.isBoss?this.stageCount-1:this.stage%(this.stageCount-1);   // Boss immer in der letzten Arena (Labyrinth); bei mehr Gegnern als Arenen wiederholen sich die ersten
+  g.rematch();this.state='fight';this.t=0}
  // Endgegner ist eine Stufe härter als die gewählte Schwierigkeit (max. HART)
  applyDifficulty(){this.ai.setLevel(Math.min(2,this.difficulty+(this.isBoss?1:0)))}
  setDifficulty(d){this.difficulty=Math.max(0,Math.min(2,d|0));if(this.state!=='select')this.applyDifficulty()}

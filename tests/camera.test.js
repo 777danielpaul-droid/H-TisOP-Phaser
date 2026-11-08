@@ -19,4 +19,11 @@ const visible=(cam,x,y)=>{const[sx,sy]=cam.toScreen(x,y);return sx>=0&&sx<=W&&sy
 {const c=new Camera(),hi=[F(340,0),F(620,GROUND)],lo=[F(340,GROUND),F(620,GROUND)];c.update(hi);assert.ok(c.zoom>.9,'Lerp: nicht sofort am Ziel');settle(c,hi);const zo=c.zoom;settle(c,lo);assert.ok(c.zoom>zo&&Math.abs(c.zoom-1)<.02,'zoomt wieder hinein');console.log('  ✓ Lerp / Rückkehr zu 1.0')}
 // 6) Welt<->Bildschirm Umrechnung ist invertierbar
 {const c=new Camera();c.x=500;c.y=200;c.zoom=.7;const[sx,sy]=c.toScreen(123,45),[wx,wy]=c.toWorld(sx,sy);assert.ok(Math.abs(wx-123)<1e-9&&Math.abs(wy-45)<1e-9);console.log('  ✓ toScreen/toWorld')}
+// 7) Hyper-Kamerafahrt: zoomt auf den Fokuspunkt, bleibt in den Weltgrenzen, fährt nach focus(null) zurück
+{const c=new Camera(),fs=[F(340,GROUND),F(620,GROUND)];settle(c,fs);const base=c.zoom;
+ c.focus(340,GROUND-95,CAMERA.cine.zoom,1);settle(c,fs,40);assert.ok(c.zoom>1.2,'hineingezoomt '+c.zoom);assert.ok(visible(c,340,GROUND-95),'Fokus im Bild');
+ {const hw=W/2/c.zoom,hh=H/2/c.zoom;assert.ok(c.x-hw>=WORLD.x0-1&&c.x+hw<=WORLD.x1+1&&c.y-hh>=WORLD.y0-1&&c.y+hh<=WORLD.y1+1,'Fahrt innerhalb der Welt')}
+ c.focus(null);settle(c,fs);assert.ok(Math.abs(c.zoom-base)<.01,'zurück im Kampfzoom '+c.zoom);
+ const d=new Camera();d.focus(900,GROUND,1.7,0);settle(d,fs,200);assert.ok(Math.abs(d.zoom-base)<.01,'Gewicht 0 = keine Wirkung');
+ console.log('  ✓ Hyper-Kamerafahrt: rein auf',CAMERA.cine.zoom,', Weltgrenzen, zurück auf',base.toFixed(2))}
 console.log('Kamera-Tests bestanden');

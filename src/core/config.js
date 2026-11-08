@@ -17,7 +17,11 @@ export const BARRIER={steps:{L:1,R:1},width:1000,hp:[300],hitMul:.9,heavyMul:1.5
 // (Sprunghöhe begrenzt); vom Hof aus kommt man nur unterhalb der Decke durch die Bresche. Größeres ceil = mehr Luft zum Springen (top und ceil gemeinsam verschieben).
 export const HOUSE={top:150,ceil:168};
 // Kamera: zoom/lerp-Werte. minZoom 0.65 = maximal herausgezoomt (zeigt ~1.5x so viel Welt).
-export const CAMERA={minZoom:.65,maxZoom:1,marginX:150,headroom:80,lerpPos:.1,lerpZoom:.07};
+export const CAMERA={minZoom:.65,maxZoom:1,marginX:150,headroom:80,lerpPos:.1,lerpZoom:.07,
+  // Hyper-Kamerafahrt: Die Kamera zoomt auf den Angreifer und bleibt im Zoom, solange der Hyper-Move läuft (Freeze + Strahl + Nachlauf).
+  // zoom = Ziel-Zoom (÷ Figurengröße^.5), lift = Fokus über dem Boden-Ursprung, bias = Anteil Richtung Gegner (0 = nur Angreifer),
+  // margin = Mindestrand links/rechts, damit der Gegner im Bild bleibt, inF/outF = Frames für Hin-/Rückfahrt, lead = Frames VOR Ende der aktiven Move-Phase, ab denen schon rausgezoomt wird (Gegner fliegt beim letzten Treffer weg), maxF = Sicherheitsgrenze
+  cine:{zoom:1.25,lift:90,bias:.3,margin:170,inF:12,outF:16,lead:28,maxF:240,lerpPos:.16,lerpZoom:.14}};
 // Visuelle Effekte: alle Zeiten in Frames (60 FPS).
 export const EFFECT={
   hitShake:3,          // Basis-Screen-Shake pro Treffer

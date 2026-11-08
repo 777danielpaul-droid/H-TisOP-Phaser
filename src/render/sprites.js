@@ -87,12 +87,32 @@ const TIGER_ANIMS={
  block:{frames:['block_00']},cblock:{frames:['block_01'],squash:.9},
  kd:{frames:['fall_02','ko_00']},wakeup:{frames:R('get_up_0',0,3)},
  win:{frames:['special_rising_claw_03'],loop:1,fps:1,bob:3}};
+// ST3-G0 (Panzer-Echse): Frames p_<Bogen>_<Zelle> aus assets/st3g0 (12 Posen-Bögen, tools/import-st3g0-sheets.py).
+//  Bogen 1-4: Grundposen, Laufen, Sturz   | 5: Knie-/Seitkick, langer Schlag, Block (verschränkte Arme)   | 6: Ausfall, Flugkick, Frontkick, Klauen
+//  7: Idle/Brüllen   | 8: Aufwärtshaken   | 9: Schlagfolge   | 10-11: Posen ohne Aura (frei)   | 12: Siegespose mit Flügel-Aura
+// Noch Behelfe (docs/ST3G0_PROMPTS.md, Bogen 6 'Ducken' / 12 'Knockdown' fehlen): Ducken-Angriffe, Luft-Schlag, Knockdown/Aufstehen.
+const ST3G0_ANIMS={
+ idle:{frames:['p_7_0','p_7_3'],loop:1,fps:3},
+ walk:{frames:['p_4_2','p_4_3','p_4_2','p_7_0'],loop:1,fps:7,bob:3},
+ crouch:{frames:['p_4_1']},cblock:{frames:['p_4_1']},
+ air:{frames:['p_2_1']},
+ dash:{frames:['p_4_0'],lean:.03},airdash:{frames:['p_6_1'],lean:.05},
+ punch:{frames:['p_9_1','p_9_2','p_9_2','p_9_1']},cpunch:{frames:['p_4_1']},jpunch:{frames:['p_2_1']},
+ kick:{frames:['p_5_1','p_5_2','p_5_2','p_5_1']},ckick:{frames:['p_4_1']},jkick:{frames:['p_2_1','p_6_1','p_6_1']},
+ heavy:{frames:['p_6_0','p_5_3','p_9_3','p_9_3','p_1_3']},jheavy:{frames:['p_2_1','p_6_1','p_6_1']},
+ upper:{frames:['p_8_0','p_8_1','p_8_2','p_8_2','p_8_3']},
+ special:{frames:['p_7_0','p_7_1','p_7_2','p_7_2','p_7_2','p_7_3']},   // Feuer-Atem: Luft holen -> Brüllen (Feuer fliegt los) -> zurück
+ hit:{frames:['p_1_3'],lean:-.18,shiftX:-14},airhit:{frames:['p_3_0']},
+ block:{frames:['p_5_4']},
+ kd:{frames:['p_3_1','p_3_1','p_3_3']},wakeup:{frames:['p_3_3','p_4_1','p_7_0']},
+ win:{frames:['p_12_0','p_12_2','p_12_3','p_12_1'],loop:1,fps:2},defeat:{frames:['p_3_2']}};
 // fist = Position der Faust/Hand für Leuchten + Hyper-Beam, height = Figurenhöhe in Spiel-Einheiten
 // proj = Frames für das Projektil-Sprite (statt des Standard-Leuchtballs), projScale = Weltgröße je Quellpixel
 export const SPRITE_CHARS={hero:{anims:HERO_ANIMS,fist:[104,-136],height:190},palm:{anims:PALM_ANIMS,fist:[96,-134],height:190},
  witch:{anims:WITCH_ANIMS,fist:[92,-126],height:192,proj:R('fx_',14,20),projScale:.8},
  mino:{anims:MINO_ANIMS,fist:[130,-108],height:236},
- tiger:{anims:TIGER_ANIMS,fist:[108,-122],height:190,fightScale:.85,fullAnims:['win','defeat'],profileAnim:'win'}};   // fightScale: Kampfposen kleiner als die Sieg-/Niederlagen-Pose (fullAnims bleiben in voller Größe)
+ tiger:{anims:TIGER_ANIMS,fist:[108,-122],height:190,fightScale:.85,fullAnims:['win','defeat'],profileAnim:'win'},
+ st3g0:{anims:ST3G0_ANIMS,fist:[135,-150],height:190}};   // fightScale: Kampfposen kleiner als die Sieg-/Niederlagen-Pose (fullAnims bleiben in voller Größe)
 // Eigene Figur (Upload im Startmenü): Sprite-Definition zur Laufzeit eintragen; Atlas liefert window.__SPRITES__[id]={meta,img}
 export function registerSpriteChar(id,def){SPRITE_CHARS[id]=def}
 function sheet(id){const S=typeof window!=='undefined'&&window.__SPRITES__&&window.__SPRITES__[id];if(!S||typeof Image==='undefined')return null;

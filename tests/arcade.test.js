@@ -16,14 +16,15 @@ const winMatch=(g,p1)=>{p1.wins=ROUND.wins;g.phase='match';g.pf=70};
 for(const id of ROSTER){const l=Arcade.ladderFor(id);assert.equal(l.length,ROSTER.length,'3 Gegner + Boss');assert.equal(l[l.length-1],BOSS,'Boss zuletzt');assert.ok(!l.includes(id),'nicht gegen sich selbst');
  assert.deepEqual([...l.slice(0,-1)].sort(),ROSTER.filter(x=>x!==id).sort(),'jeder andere Kämpfer genau einmal')}
 assert.ok(!ROSTER.includes(BOSS),'Minotaurus nicht spielbar');assert.ok(CHARACTERS[BOSS].boss);ok('Leiter: '+ROSTER.length+' spielbare Figuren, Boss zuletzt, nie die eigene Figur');
-// 2) Ganzer Durchlauf: 4 Stages, Gegnerwechsel, Stage-Index, Boss-Härte
+// 2) Ganzer Durchlauf: alle Gegner + Boss, Gegnerwechsel, Stage-Index, Boss-Härte
 {const{g,a,p1,p2,ai}=setup();assert.equal(a.state,'select');a.difficulty=1;a.start('hero');
- const seq=[];for(let s=0;s<4;s++){assert.equal(a.state,'fight');assert.equal(a.stage,s);assert.equal(g.stageIndex,s);seq.push(p2.char.id);
+ const N=a.total,seq=[];for(let s=0;s<N;s++){assert.equal(a.state,'fight');assert.equal(a.stage,s);seq.push(p2.char.id);const boss=s===N-1;
+  assert.equal(g.stageIndex,boss?a.stageCount-1:s%(a.stageCount-1),'Arena: Boss immer in der letzten, sonst der Reihe nach');
   assert.equal(p2.hp,p2.maxHp,'volle HP je Stage');assert.equal(g.round,1);assert.equal(p1.wins,0);
-  assert.equal(ai.level,Math.min(2,1+(s===3?1:0)),'Boss eine Stufe härter');
+  assert.equal(ai.level,Math.min(2,1+(boss?1:0)),'Boss eine Stufe härter');
   winMatch(g,p1);a.update();
-  if(s<3){assert.equal(a.state,'clear');a.confirm()}else assert.equal(a.state,'victory')}
- assert.deepEqual(seq,['tiger','witch','palm','mino']);a.confirm();assert.equal(a.state,'select');ok('Durchlauf '+seq.join(' → ')+' → Sieg → Charakterwahl')}
+  if(!boss){assert.equal(a.state,'clear');a.confirm()}else assert.equal(a.state,'victory')}
+ assert.deepEqual(seq,[...Arcade.ladderFor('hero')]);assert.equal(seq[N-1],'mino');a.confirm();assert.equal(a.state,'select');ok('Durchlauf '+seq.join(' → ')+' → Sieg → Charakterwahl')}
 // 3) Automatisches Weiter nach STAGE CLEAR
 {const{g,a,p1}=setup();a.start('witch');winMatch(g,p1);a.update();assert.equal(a.state,'clear');for(let i=0;i<260;i++)a.update();assert.equal(a.stage,1);assert.equal(a.state,'fight');ok('STAGE CLEAR geht automatisch weiter')}
 // 4) Game Over: Enter = nochmal gegen denselben Gegner, Esc-Pfad = Auswahl

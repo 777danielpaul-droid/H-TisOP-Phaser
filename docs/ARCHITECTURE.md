@@ -51,6 +51,7 @@ Chain L→M→H (Rang steigt), Special-Cancel, Hyper-Cancel (Special→Super), J
 - Position: x = Mitte beider Kämpfer; y so, dass die Bildunterkante am Boden bleibt – bei Sprüngen neigt sich die Kamera nach oben. Alles wird in die Weltgrenzen (`WORLD`) geklemmt (kein leerer Rand).
 - `update()`: Lerp (`lerpPos`, `lerpZoom`), läuft auch im Hitstop. `snap()` bei Rundenstart.
 - Render-Pipeline (render/renderer.js): `save → Shake → save → camera.apply() → Stage, Fighter, Projektile, Partikel, Hitboxen → restore → restore → Scanlines/HUD/Super-Overlay` (HUD unskaliert). Der Stage-Hintergrund deckt die ganze Welt ab (`WORLD`), nicht nur den Bildschirm.
+- Hyper-Kamerafahrt: `Game.cineCamera()` ruft `camera.focus(x,y,zoom,w)` auf den Angreifer auf und hält den Zoom (ca. 1.25, Gegner bleibt im Bild) solange der Hyper-Move aktiv ist (Freeze + Strahl); `w` blendet über `CAMERA.cine.inF` ein und ab `lead` Frames vor Ende der aktiven Phase über `outF` Frames sanft aus, danach übernimmt wieder die Kampfkamera. Banner zeigt den Move-Namen (`game.superName`). Tests: `node tests/hyper.test.js`.
 - Werte justieren: `CAMERA` in config.js (minZoom 0.65, marginX, headroom, Lerp). Tests: `node tests/camera.test.js`.
 
 ## Movesets / Move-Felder (v8)

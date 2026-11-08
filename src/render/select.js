@@ -22,10 +22,10 @@ export function hitStage(lx,ly,n=5){for(let i=0;i<n;i++){const r=stageRect(i,n);
 const P1C='#00f3ff',P2C='#ff2bd6';
 // 2-Spieler-Kämpferwahl: eigene Karten (4 Kämpfer + Platz für die eigene Figur), unabhängig von der Kämpferliste des Arcade-Menüs
 const VSCARD={w:196,h:268,gap:18,y:104};
-export const vsCardRect=(i,n=4)=>{const w=n>4?170:VSCARD.w,gap=n>4?14:VSCARD.gap,tot=n*w+(n-1)*gap,x0=(960-tot)/2;return{x:x0+i*(w+gap),y:VSCARD.y,w,h:VSCARD.h}};
+export const vsCardRect=(i,n=4)=>{const w=n>5?140:n>4?170:VSCARD.w,gap=n>5?10:n>4?14:VSCARD.gap,tot=n*w+(n-1)*gap,x0=(960-tot)/2;return{x:x0+i*(w+gap),y:VSCARD.y,w,h:VSCARD.h}};
 export function hitVsCard(lx,ly,n=4){for(let i=0;i<n;i++){const r=vsCardRect(i,n);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
 const DIFF=['LEICHT','NORMAL','HART'],DCOL=['#7dffc8','#ffe23f','#ff4a4a'];
-const FIG={tiger:.9,mino:.7};   // Größenausgleich je Figur in der Liste
+const FIG={tiger:.9,mino:.7,st3g0:.88};   // Größenausgleich je Figur in der Liste
 const PX=508,PW=422;   // Profilbereich rechts (x, Breite)
 const DIM='#9d8fd0',TXT='#d6c8ff';
 export class SelectScreen{
@@ -102,10 +102,10 @@ export class SelectScreen{
   // Arcade-Gegner
   if(!ch.boss){const lad=Arcade.ladderFor(ch.id);y=Math.max(y+8,440);
    hud.lab(g,'ARCADE – DEINE GEGNER',bx,y,11,DIM,'left',2,null,'700');
-   const cw=(PW-16-6*(lad.length-1))/lad.length;
-   lad.forEach((gid,k)=>{const gc=CHARACTERS[gid],boss=gid===BOSS,x=bx+k*(cw+6);
-    hud.lab(g,`${k+1}`,x,y+22,11,boss?'#ff7a8a':DIM,'left',0,null,'800');
-    hud.fam(F_DISP,()=>hud.fancy(g,gc.name,x+14,y+23,15,boss?['#ffb0b8','#ff3a55']:['#ffffff','#bfb0ff'],'left',null,t,false,true,400,.5))})}
+   const dense=lad.length>4,fs=dense?12:15,off=dense?10:14,gap=dense?0:6,cw=(PW-16-gap*(lad.length-1))/lad.length;   // ab 5 Gegnern kompaktere Namen, damit sie sich nicht überlappen
+   lad.forEach((gid,k)=>{const gc=CHARACTERS[gid],boss=gid===BOSS,x=bx+k*(cw+gap);
+    hud.lab(g,`${k+1}`,x,y+22,dense?10:11,boss?'#ff7a8a':DIM,'left',0,null,'800');
+    hud.fam(F_DISP,()=>hud.fancy(g,gc.name,x+off,y+23,fs,boss?['#ffb0b8','#ff3a55']:['#ffffff','#bfb0ff'],'left',null,t,false,true,400,dense?.2:.5))})}
   g.restore()}
 
  foot(g,arcade,t,W,label,hasCustom){const hud=this.hud,d=arcade.difficulty;

@@ -25,6 +25,8 @@ let menuOpen=false,speed=SPEED;
 // ---- Sound: Lautstärke/Stumm gemerkt; Audio startet erst nach der ersten Tasten-/Klick-Geste (Browser-Regel) ----
 const sound=new Sound();game.audio=sound;sound.setVolume(+load('tf_volume',.7));sound.setMuted(load('tf_mute','0')==='1');
 for(const ev of['keydown','pointerdown'])addEventListener(ev,()=>sound.unlock());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)sound.suspend();else sound.resume()});   // Tab im Hintergrund: Ton aus
+const musicFor=()=>arcade.state==='select'?'menu':'fight';   // Auswahlmenüs (Charakter/Stage/Editor) = Menü-Track, alles andere (Kampf, Zwischenscreens) = Kampf-Track
 // ---- Grafik: 'auto' | 0 Niedrig | 1 Mittel | 2 Hoch (gemerkt in localStorage tf_gfx). Auto startet auf Hoch und schaltet bei dauerhaft niedriger Bildrate herunter. ----
 let gfxMode=load('tf_gfx','auto');if(gfxMode!=='auto'&&!(+gfxMode>=0&&+gfxMode<=2))gfxMode='auto';
 const applyGfx=()=>{setGfx(gfxMode==='auto'?GFX.level:+gfxMode);renderer.applyGfx();resize()};
@@ -54,6 +56,12 @@ const vol=$('volume'),mute=$('btn-mute');
 if(vol){vol.value=String(sound.vol);vol.oninput=()=>{sound.setVolume(+vol.value);save('tf_volume',String(sound.vol))}}
 const showMute=()=>{if(mute){mute.textContent=sound.muted?'Stumm':'An';mute.classList.toggle('on',!sound.muted)}};showMute();
 if(mute)mute.onclick=()=>{sound.setMuted(!sound.muted);save('tf_mute',sound.muted?'1':'0');showMute()};
+// Musik getrennt von den Effekten: Schalter (tf_music_mute) + Regler (tf_music_vol), gemerkt in localStorage
+sound.setMusicVolume(+load('tf_music_vol',1));sound.setMusicMuted(load('tf_music_mute','0')==='1');
+const mvol=$('musicvol'),mmute=$('btn-music');
+if(mvol){mvol.value=String(sound.mvol);mvol.oninput=()=>{sound.setMusicVolume(+mvol.value);save('tf_music_vol',String(sound.mvol))}}
+const showMusic=()=>{if(mmute){mmute.textContent=sound.mmuted?'Aus':'An';mmute.classList.toggle('on',!sound.mmuted)}};showMusic();
+if(mmute)mmute.onclick=()=>{sound.setMusicMuted(!sound.mmuted);save('tf_music_mute',sound.mmuted?'1':'0');showMusic()};
 const gsel=$('gfx');if(gsel){gsel.value=String(gfxMode);gsel.onchange=()=>{gfxMode=gsel.value;save('tf_gfx',gfxMode);if(gfxMode==='auto')setGfx(2);autoT=0;applyGfx()}}
 const sp=$('speed');if(sp)sp.oninput=()=>{speed=+sp.value;$('speedval').textContent=speed.toFixed(1)+'×'};
 if(sp){sp.value=speed;$('speedval').textContent=speed.toFixed(1)+'×'}
@@ -109,7 +117,7 @@ addEventListener('blur',()=>{if(!menuOpen&&!studioIsOpen())setMenu(true)}); // F
 let last=performance.now(),acc=0,slowAcc=0,autoT=0;
 function assignPads(){const l=navigator.getGamepads?[...navigator.getGamepads()]:[],pads=l.map((g,i)=>g&&g.connected?i:-1).filter(i=>i>=0);
  kb.padIndex=pads.length?pads[0]:-1;kbV1.padIndex=pads.length>1?pads[0]:-1;kbV2.padIndex=pads.length>1?pads[1]:(pads.length?pads[0]:-1)}   // 1 Pad = Spieler 2 (Spieler 1 nutzt Tastatur), 2 Pads = je Spieler eins
-function loop(now){assignPads();const dt=now-last;
+function loop(now){assignPads();const dt=now-last;sound.music(musicFor());
  if(gfxMode==='auto'&&!menuOpen&&!document.hidden&&dt<500){autoT+=dt;slowAcc=Math.max(0,slowAcc+(dt>26?dt-16:-4));   // dauerhaft unter ~38 FPS => eine Stufe runter (nach 1,5 s Eingewöhnung)
   if(autoT>1500&&slowAcc>350&&GFX.level>0){setGfx(GFX.level-1);renderer.applyGfx();resize();slowAcc=0;autoT=0}}
  acc+=Math.min(100,dt);last=now;const STEP=1000/(60*speed*(game.timeScale||1));
