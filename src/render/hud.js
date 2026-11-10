@@ -1,42 +1,28 @@
-import { ROUND, METER, COMBO_SCALE, EFFECT } from "../core/config.js";
+import { ROUND, METER, COMBO_SCALE, EFFECT, SPAM } from "../core/config.js";
 import { drawPortrait } from "./sprites.js";
 import { F_DISP, F_TECH, F_UI } from "./fonts.js";
 import { THEMES } from "./stage.js";
-// Flashy HUD (Canvas 2D, 960x540 logisch) – moderner Neon-Fighting-Look:
-//  - Neon-Farben (Cyan, Magenta, Grün, Orange) statt altbackenem Gold
-//  - Starker Glow + Chroma-Split für Banner und Combo-Zahlen
-//  - Lebensbalken mit Gradient, Glow und Pulsing bei Treffern
-//  - Timer als pulsender Ring, Combo-Zähler mit Glitch-Effekt
+// Kristall-HUD (Canvas 2D, 960x540 logisch): Eis-Blau, Violett und Lavendel, weiche Glanzkanten, Facetten statt Gold/Rot.
+//  - Keine Textumrandungen und keine Rahmen/Ringe um die Ausrufe (ROUND, FIGHT, K.O. ...), dafür dezenter Glow
+//  - Lebensbalken und Hyper-Meter mit Kristall-Facetten und wanderndem Glanzlicht
+//  - Timer als feiner Ring, Combo-Zähler klein und klar
 const SERIF = F_DISP,
   PI2 = Math.PI * 2;
-const NEON_CYAN = "#00f3ff",
-  NEON_MAG = "#ff00ff",
-  NEON_GRN = "#00ff88",
-  NEON_ORG = "#ffaa00",
-  NEON_RED = "#ff3366",
-  NEON_PUR = "#bb00ff";
-const GOLD = "#ffd700",
-  GOLD_HI = "#ffffff",
-  GOLD_DIM = "#8a6d1a",
-  VERM = "#ff3366";
+const NEON_CYAN = "#7fe8ff",
+  NEON_MAG = "#b98bff",
+  NEON_GRN = "#9fe8ff",
+  NEON_ORG = "#c9b8ff",
+  NEON_RED = "#b98bff",
+  NEON_PUR = "#a06bff";
+// Kristall-Farben: ICE = Kante/Haarlinie, ICE_HI = Lichtpunkt, ICE_DIM = abgedunkelte Linien, CRYS = Edelstein-Violett
+const ICE = "#b9c4ff",
+  ICE_HI = "#eaf6ff",
+  ICE_DIM = "#4a4c9a",
+  CRYS = "#7b6bff";
 // a = Kante/Glow, b = tiefer Verlauf, hi = Lichtpunkt, d = dunkle Tönung
 const HPAL = [
-  {
-    a: "#00f3ff",
-    b: "#0088cc",
-    hi: "#ffffff",
-    d: "#001a33",
-    glow: "#00f3ff",
-    kan: "武",
-  },
-  {
-    a: "#ff3366",
-    b: "#cc0044",
-    hi: "#ffffff",
-    d: "#330011",
-    glow: "#ff3366",
-    kan: "闘",
-  },
+  { a: "#6fe3ff", b: "#2f6bff", hi: "#ffffff", d: "#0a1233", glow: "#6fe3ff", kan: "" },
+  { a: "#c28bff", b: "#6a3bff", hi: "#ffffff", d: "#1a0c3a", glow: "#b46bff", kan: "" },
 ];
 const RANKS = [
   [20, "UNREAL!!!"],
@@ -49,13 +35,13 @@ const RANKS = [
 ];
 const comboCol = (h) =>
   h >= 16
-    ? ["#ff3366", "#ff00ff"]
+    ? ["#e6d4ff", "#a06bff"]
     : h >= 10
-      ? ["#ffaa00", "#ffd700"]
+      ? ["#d4e4ff", "#7fa0ff"]
       : h >= 5
-        ? ["#00f3ff", "#00ff88"]
-        : ["#ffffff", "#00f3ff"];
-const KAN = ["", "壱", "弐", "参"];
+        ? ["#cdf6ff", "#7fe8ff"]
+        : ["#ffffff", "#9fe8ff"];
+const KAN = ["", "I", "II", "III"];
 const easeOutBack = (u) => {
   const c = 1.70158;
   return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2);
@@ -124,23 +110,14 @@ export class Hud {
     const f = g.createLinearGradient(0, y - size * 0.85, 0, y + size * 0.1);
     f.addColorStop(0, grad[0]);
     f.addColorStop(1, grad[1]);
-    if (!bare) {
-      g.lineWidth = Math.max(2.5, size / 12);
-      g.strokeStyle = "#020104";
-      g.strokeText(s, x, y);
-      // zweiter, dickerer Schatten-Outline für mehr Tiefe
-      g.lineWidth = Math.max(4, size / 6);
-      g.strokeStyle = "#000000";
-      g.strokeText(s, x, y);
-    }
+    // Kristall: keine Umrandung um die Schrift, nur weicher Glow
     if (glow) {
       g.shadowColor = glow;
-      g.shadowBlur = size * 0.7;
-      // doppelter Glow-Layer
+      g.shadowBlur = size * 0.45;
       g.fillStyle = f;
       g.fillText(s, x, y);
-      g.shadowBlur = size * 1.1;
-      g.globalAlpha = 0.5;
+      g.shadowBlur = size * 0.8;
+      g.globalAlpha = 0.35;
       g.fillText(s, x, y);
     } else {
       g.fillStyle = f;
@@ -164,10 +141,11 @@ export class Hud {
     weight = 600,
     sp = 0,
   ) {
+    chroma *= 0.4; // Kristall: nur ein Hauch Lichtbrechung
     if (chroma) {
       g.save();
       g.globalCompositeOperation = "lighter";
-      g.globalAlpha = 0.6;
+      g.globalAlpha = 0.35;
       // drei Chroma-Layer für stärkeren Glitch-Effekt
       this.fancy(
         g,
@@ -175,7 +153,7 @@ export class Hud {
         x - chroma * 1.5,
         y,
         size,
-        ["#ff00ff", "#ff00ff"],
+        ["#b98bff", "#b98bff"],
         align,
         null,
         t,
@@ -190,7 +168,7 @@ export class Hud {
         x + chroma * 1.5,
         y,
         size,
-        ["#00f3ff", "#00f3ff"],
+        ["#7fe8ff", "#7fe8ff"],
         align,
         null,
         t,
@@ -205,7 +183,7 @@ export class Hud {
         x,
         y - chroma * 0.7,
         size,
-        ["#ffff00", "#ffff00"],
+        ["#9b7bff", "#9b7bff"],
         align,
         null,
         t,
@@ -253,21 +231,18 @@ export class Hud {
     let cx = x0;
     chars.forEach((c, i) => {
       const yy = y + Math.sin(t * 0.12 + i * 0.7) * size * 0.035,
-        off = 1 + 1.8 * (0.5 + 0.5 * Math.sin(t * 0.22 + i * 0.9));
+        off = 0.5 + 1 * (0.5 + 0.5 * Math.sin(t * 0.22 + i * 0.9));
       g.shadowBlur = 0;
-      g.lineWidth = Math.max(3, size / 7);
-      g.strokeStyle = "#020104";
-      g.strokeText(c, cx, yy);
       g.save();
       g.globalCompositeOperation = "lighter";
-      g.globalAlpha = 0.55;
-      g.fillStyle = "#ff00ff";
+      g.globalAlpha = 0.3;
+      g.fillStyle = "#b98bff";
       g.fillText(c, cx - off, yy);
-      g.fillStyle = "#00f3ff";
+      g.fillStyle = "#7fe8ff";
       g.fillText(c, cx + off, yy);
       g.restore();
       g.shadowColor = pal[1];
-      g.shadowBlur = size * (0.5 + 0.25 * Math.sin(t * 0.2 + i));
+      g.shadowBlur = size * (0.3 + 0.15 * Math.sin(t * 0.2 + i));
       g.fillStyle = grad;
       g.fillText(c, cx, yy);
       const rel = (cx + ws[i] / 2 - x0) / Math.max(1, total),
@@ -365,51 +340,125 @@ export class Hud {
     return m ? m.width : s.length * size * 0.55;
   }
   // ---------- Dekor ----------
-  // Seigaiha-Wellen als feines Muster
+  // Kristallgitter als feines Muster (Rauten-Facetten)
   pattern(g) {
     if (this.wave) return this.wave;
     const c = document.createElement("canvas");
-    c.width = 24;
-    c.height = 12;
+    c.width = 28;
+    c.height = 16;
     const x = c.getContext("2d");
-    x.strokeStyle = "#d8b8671c";
+    x.strokeStyle = "#b9c4ff1c";
     x.lineWidth = 0.8;
-    for (const [cx, cy] of [
-      [12, 12],
-      [0, 0],
-      [24, 0],
-    ])
-      for (const r of [11, 8, 5, 2]) {
-        x.beginPath();
-        x.arc(cx, cy, r, 0, PI2);
-        x.stroke();
-      }
+    x.beginPath();
+    x.moveTo(0, 0);
+    x.lineTo(28, 16);
+    x.moveTo(28, 0);
+    x.lineTo(0, 16);
+    x.stroke();
+    x.fillStyle = "#ffffff08";
+    x.beginPath();
+    x.moveTo(14, 0);
+    x.lineTo(28, 8);
+    x.lineTo(14, 16);
+    x.closePath();
+    x.fill();
     return (this.wave = g.createPattern(c, "repeat"));
   }
-  // Hanko-Siegel: Zinnober-Quadrat mit Kanji
+  // Edelstein (ersetzt das Siegel): facettierte Raute in Eis-/Violett-Verlauf
   seal(g, x, y, s, ch, al = 1, rot = 0) {
+    const r = s * 0.62;
     g.save();
     g.globalAlpha = al;
     g.translate(x, y);
     g.rotate(rot);
-    g.shadowColor = "#ff3a2a";
-    g.shadowBlur = s * 0.5;
-    g.fillStyle = VERM;
-    g.beginPath();
-    g.roundRect
-      ? g.roundRect(-s / 2, -s / 2, s, s, s * 0.14)
-      : g.rect(-s / 2, -s / 2, s, s);
+    g.shadowColor = ICE;
+    g.shadowBlur = s * 0.55;
+    const gr = g.createLinearGradient(-r, -r, r, r);
+    gr.addColorStop(0, "#ffffff");
+    gr.addColorStop(0.35, "#8fe9ff");
+    gr.addColorStop(0.7, CRYS);
+    gr.addColorStop(1, "#3a2f9a");
+    g.fillStyle = gr;
+    hpath(g, [[0, -r], [r * 0.78, -r * 0.2], [0, r], [-r * 0.78, -r * 0.2]]);
     g.fill();
     g.shadowBlur = 0;
-    g.strokeStyle = "#ffd8c8";
-    g.globalAlpha = al * 0.7;
-    g.lineWidth = Math.max(0.7, s * 0.05);
-    g.strokeRect(-s / 2 + s * 0.1, -s / 2 + s * 0.1, s * 0.8, s * 0.8);
-    g.globalAlpha = al;
-    g.font = `700 ${s * 0.62}px ${SERIF}`;
-    g.textAlign = "center";
-    g.fillStyle = "#fff0e6";
-    g.fillText(ch, 0, s * 0.22);
+    // Facetten
+    g.fillStyle = "#ffffff55";
+    hpath(g, [[0, -r], [r * 0.78, -r * 0.2], [0, -r * 0.2]]);
+    g.fill();
+    g.fillStyle = "#1a126048";
+    hpath(g, [[0, -r * 0.2], [r * 0.78, -r * 0.2], [0, r]]);
+    g.fill();
+    g.strokeStyle = "#ffffffb0";
+    g.lineWidth = Math.max(0.6, s * 0.05);
+    hpath(g, [[0, -r], [r * 0.78, -r * 0.2], [0, r], [-r * 0.78, -r * 0.2]]);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(-r * 0.78, -r * 0.2);
+    g.lineTo(r * 0.78, -r * 0.2);
+    g.moveTo(0, -r);
+    g.lineTo(0, r);
+    g.globalAlpha = al * 0.45;
+    g.stroke();
+    g.restore();
+  }
+  // Totenkopf (Rundensieg): on = Kristall-Verlauf mit Glow, sonst nur dunkler Umriss
+  skull(g, x, y, s, on, P, rot = 0) {
+    g.save();
+    g.translate(x, y);
+    g.rotate(rot);
+    const shape = () => {
+      g.beginPath();
+      g.moveTo(-s * 0.24, s * 0.5);
+      g.lineTo(-s * 0.24, s * 0.3);
+      g.bezierCurveTo(-s * 0.54, s * 0.14, -s * 0.5, -s * 0.54, 0, -s * 0.54);
+      g.bezierCurveTo(s * 0.5, -s * 0.54, s * 0.54, s * 0.14, s * 0.24, s * 0.3);
+      g.lineTo(s * 0.24, s * 0.5);
+      g.closePath();
+    };
+    const eyes = (fill) => {
+      for (const e of [-1, 1]) {
+        g.beginPath();
+        g.ellipse(e * s * 0.2, -s * 0.07, s * 0.13, s * 0.15, 0, 0, PI2);
+        fill ? g.fill() : g.stroke();
+      }
+      g.beginPath();
+      g.moveTo(0, s * 0.08);
+      g.lineTo(-s * 0.06, s * 0.21);
+      g.lineTo(s * 0.06, s * 0.21);
+      g.closePath();
+      fill ? g.fill() : g.stroke();
+    };
+    if (on) {
+      g.shadowColor = P.glow;
+      g.shadowBlur = s * 0.55;
+      const gr = g.createLinearGradient(0, -s * 0.54, 0, s * 0.5);
+      gr.addColorStop(0, "#ffffff");
+      gr.addColorStop(0.55, P.a);
+      gr.addColorStop(1, P.b);
+      g.fillStyle = gr;
+      shape();
+      g.fill();
+      g.shadowBlur = 0;
+      g.fillStyle = "#04051a";
+      eyes(true);
+      // Zähne
+      g.strokeStyle = "#04051a";
+      g.lineWidth = Math.max(0.7, s * 0.05);
+      g.beginPath();
+      for (const tx of [-0.08, 0.08]) {
+        g.moveTo(tx * s, s * 0.33);
+        g.lineTo(tx * s, s * 0.5);
+      }
+      g.stroke();
+    } else {
+      g.globalAlpha = 0.6;
+      g.strokeStyle = ICE_DIM;
+      g.lineWidth = 1;
+      shape();
+      g.stroke();
+      eyes(false);
+    }
     g.restore();
   }
   // Ensō: offener Pinselkreis, u = Fortschritt 0..1
@@ -482,9 +531,9 @@ export class Hud {
       [x0, y1],
     ]);
     const gr = g.createLinearGradient(x0, 0, x1, 0);
-    gr.addColorStop(0, "#0a0709f0");
-    gr.addColorStop(0.6, "#0a0709c0");
-    gr.addColorStop(1, "#0a070900");
+    gr.addColorStop(0, "#080a1cf0");
+    gr.addColorStop(0.6, "#080a1cc0");
+    gr.addColorStop(1, "#080a1c00");
     g.fillStyle = gr;
     g.fill();
     g.clip();
@@ -498,7 +547,7 @@ export class Hud {
       const gx = x0 + u * (x1 - x0),
         gl = g.createLinearGradient(gx - 40, 0, gx + 40, 0);
       gl.addColorStop(0, "#fff0");
-      gl.addColorStop(0.5, "#f6e7b41c");
+      gl.addColorStop(0.5, "#c9d4ff1c");
       gl.addColorStop(1, "#fff0");
       g.fillStyle = gl;
       g.fillRect(gx - 40, y0, 80, y1 - y0);
@@ -507,9 +556,9 @@ export class Hud {
     const hl = g.createLinearGradient(x0, 0, x1, 0);
     hl.addColorStop(
       0,
-      alarm > 0 ? `rgba(255,90,70,${0.5 + 0.5 * alarm})` : GOLD,
+      alarm > 0 ? `rgba(190,170,255,${0.5 + 0.5 * alarm})` : ICE,
     );
-    hl.addColorStop(1, "#d8b86700");
+    hl.addColorStop(1, "#b9c4ff00");
     g.fillStyle = hl;
     g.fillRect(x0, y0, x1 - x0, 1);
     g.fillRect(x0, y1, x1 - x0 - sk, 1);
@@ -522,22 +571,22 @@ export class Hud {
     // Doppelrahmen (Klinge)
     g.save();
     g.lineWidth = 1;
-    g.strokeStyle = al ? `rgba(255,90,70,${0.55 + 0.45 * alarm})` : GOLD;
-    g.shadowColor = al ? "#ff5a46" : P.glow;
+    g.strokeStyle = al ? `rgba(190,170,255,${0.55 + 0.45 * alarm})` : ICE;
+    g.shadowColor = al ? "#d9b8ff" : P.glow;
     g.shadowBlur = 6 + 4 * Math.sin(t * 0.08 + i * 2);
     para(g, x - 2, y - 2, w + 4, h + 4, sk);
     g.stroke();
     g.shadowBlur = 0;
     g.globalAlpha = 0.5;
-    g.strokeStyle = GOLD_DIM;
+    g.strokeStyle = ICE_DIM;
     para(g, x - 5, y - 5, w + 10, h + 10, sk);
     g.stroke();
     g.globalAlpha = 1;
     dia(g, x - 10, y + h / 2, 2.4);
-    g.fillStyle = al ? "#ff5a46" : GOLD;
+    g.fillStyle = al ? "#d9b8ff" : ICE;
     g.fill();
     // Skala: 30 Haarstriche, jeder 3. länger
-    g.strokeStyle = GOLD_DIM;
+    g.strokeStyle = ICE_DIM;
     g.globalAlpha = 0.85;
     g.lineWidth = 0.8;
     for (let k = 0; k <= 30; k++) {
@@ -553,15 +602,15 @@ export class Hud {
     g.save();
     para(g, x, y, w, h, sk);
     const tg = g.createLinearGradient(0, y, 0, y + h);
-    tg.addColorStop(0, "#020102");
-    tg.addColorStop(1, "#150a0c");
+    tg.addColorStop(0, "#04051a");
+    tg.addColorStop(1, "#0a0c2a");
     g.fillStyle = tg;
     g.fill();
     g.clip();
     if (lag > p + 0.002) {
       const lg = g.createLinearGradient(x, 0, x + w * lag + sk, 0);
-      lg.addColorStop(0, "#7a2408");
-      lg.addColorStop(1, "#ffb340");
+      lg.addColorStop(0, "#3a2f8a");
+      lg.addColorStop(1, "#cfc4ff");
       g.globalAlpha = 0.85 + 0.15 * Math.sin(t * 1.3);
       g.fillStyle = lg;
       para(g, x, y, w * lag, h, sk);
@@ -587,6 +636,16 @@ export class Hud {
       sh.addColorStop(1, "#00000070");
       g.fillStyle = sh;
       g.fillRect(x, y, fw + sk, h);
+      for (let fx = x - h; fx < x + fw + h; fx += 11) {
+        g.fillStyle = ((fx / 11) | 0) % 2 ? "#ffffff14" : "#00000020";
+        g.beginPath();
+        g.moveTo(fx, y + h);
+        g.lineTo(fx + h, y);
+        g.lineTo(fx + h + 5.5, y);
+        g.lineTo(fx + 5.5, y + h);
+        g.closePath();
+        g.fill();
+      }
       const sc = ((t * 0.014 + i * 0.4) % 1.9) * (fw + 80) - 40,
         sg = g.createLinearGradient(sc - 18, 0, sc + 18, 0);
       sg.addColorStop(0, "#fff0");
@@ -603,13 +662,13 @@ export class Hud {
       g.fillRect(sc2 - 8, y, 16, h);
       if (p < 0.28) {
         g.globalAlpha = alarm * 0.5;
-        g.fillStyle = "#ff1030";
+        g.fillStyle = "#9b7bff";
         g.fillRect(x, y, fw + sk, h);
         g.globalAlpha = 1;
       }
       g.restore();
     }
-    g.strokeStyle = "#05030cc0";
+    g.strokeStyle = "#05061ac0";
     g.lineWidth = 1;
     for (let k = 1; k < 10; k++) {
       const f = k / 10;
@@ -659,8 +718,8 @@ export class Hud {
     g.beginPath();
     g.arc(cx, cy, r + 6, 0, PI2);
     const sb = g.createRadialGradient(cx, cy, r - 4, cx, cy, r + 8);
-    sb.addColorStop(0, "#0a0709");
-    sb.addColorStop(1, "#0a070900");
+    sb.addColorStop(0, "#080a1c");
+    sb.addColorStop(1, "#080a1c00");
     g.fillStyle = sb;
     g.fill();
     g.restore();
@@ -670,10 +729,10 @@ export class Hud {
     g.clip();
     const bg = g.createRadialGradient(cx, cy - 6, 2, cx, cy, r);
     bg.addColorStop(0, P.d);
-    bg.addColorStop(1, "#030205");
+    bg.addColorStop(1, "#04051a");
     g.fillStyle = bg;
     g.fillRect(cx - r, cy - r, r * 2, r * 2);
-    if (!drawPortrait(g, f.char, cx, cy + 4, r * 2.05, i === 1)) {
+    if (!drawPortrait(g, f.char, cx, cy + 4, r * 2.05, i === 1, f.skin | 0)) {
       g.save();
       g.font = `600 ${r * 1.3}px ${SERIF}`;
       g.textAlign = "center";
@@ -695,29 +754,29 @@ export class Hud {
     }
     if (hf > 0) {
       g.globalAlpha = hf * 0.65;
-      g.fillStyle = "#ff1a40";
+      g.fillStyle = "#c9b8ff";
       g.fillRect(cx - r, cy - r, r * 2, r * 2);
       g.globalAlpha = 1;
     }
     if (alarm > 0) {
       g.globalAlpha = alarm * 0.25;
-      g.fillStyle = "#ff1030";
+      g.fillStyle = "#9b7bff";
       g.fillRect(cx - r, cy - r, r * 2, r * 2);
       g.globalAlpha = 1;
     }
     g.restore();
     const rg = g.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
-    rg.addColorStop(0, GOLD_HI);
-    rg.addColorStop(0.5, GOLD);
-    rg.addColorStop(1, GOLD_DIM);
+    rg.addColorStop(0, ICE_HI);
+    rg.addColorStop(0.5, ICE);
+    rg.addColorStop(1, ICE_DIM);
     g.save();
-    g.strokeStyle = alarm > 0 ? `rgba(255,80,60,${0.6 + 0.4 * alarm})` : rg;
+    g.strokeStyle = alarm > 0 ? `rgba(190,170,255,${0.6 + 0.4 * alarm})` : rg;
     g.lineWidth = 1.8;
     g.beginPath();
     g.arc(cx, cy, r, 0, PI2);
     g.stroke();
     g.lineWidth = 0.8;
-    g.strokeStyle = GOLD;
+    g.strokeStyle = ICE;
     g.globalAlpha = 0.8;
     g.beginPath();
     g.arc(cx, cy, r + 4.5, 0, PI2);
@@ -727,7 +786,7 @@ export class Hud {
     g.arc(cx, cy, r - 4, 0, PI2);
     g.stroke();
     g.globalAlpha = 0.9;
-    g.strokeStyle = GOLD;
+    g.strokeStyle = ICE;
     for (let k = 0; k < 32; k++) {
       const a = (k * PI2) / 32,
         l = k % 8 === 0 ? 5 : k % 4 === 0 ? 3.2 : 2;
@@ -773,12 +832,9 @@ export class Hud {
     g.textAlign = al;
     if ("letterSpacing" in g) g.letterSpacing = "4px";
     g.lineJoin = "round";
-    g.lineWidth = 2.6;
-    g.strokeStyle = "#070408";
-    g.strokeText(nm, nx, ny);
     const ng = g.createLinearGradient(0, ny - 12, 0, ny + 2);
     ng.addColorStop(0, "#ffffff");
-    ng.addColorStop(1, GOLD_HI);
+    ng.addColorStop(1, ICE_HI);
     g.fillStyle = ng;
     g.shadowColor = P.glow;
     g.shadowBlur = 6;
@@ -800,8 +856,8 @@ export class Hud {
     const ex = nx + m * ((nw ? nw.width : nm.length * 11) + 8);
     g.save();
     const lg = g.createLinearGradient(ex, 0, ex + m * 70, 0);
-    lg.addColorStop(0, GOLD);
-    lg.addColorStop(1, "#d8b86700");
+    lg.addColorStop(0, ICE);
+    lg.addColorStop(1, "#b9c4ff00");
     g.fillStyle = lg;
     g.fillRect(Math.min(ex, ex + m * 70), ny - 4.5, 70, 0.9);
     dia(g, ex, ny - 4, 2.2);
@@ -810,21 +866,11 @@ export class Hud {
     g.shadowBlur = 6;
     g.fill();
     g.restore();
-    // Siege: Hanko 勝 (gewonnen) bzw. dünner Goldrahmen
+    // Rundensiege: Totenköpfe (gewonnen = leuchtend, noch offen = dunkle Umrisse)
     for (let k = 0; k < ROUND.wins; k++) {
       const on = k < f.wins,
-        px = mx(HB.x + HB.w - 8 - k * 19),
-        py = 60;
-      if (on) {
-        this.seal(g, px, py, 15, "勝", 1, m * (k ? 0.05 : -0.06));
-      } else {
-        g.save();
-        g.strokeStyle = GOLD_DIM;
-        g.lineWidth = 0.9;
-        g.setLineDash([2, 2]);
-        g.strokeRect(px - 7, py - 7, 14, 14);
-        g.restore();
-      }
+        px = mx(HB.x + HB.w - 10 - k * 22);
+      this.skull(g, px, 60, 19, on, P, m * (k ? 0.05 : -0.06));
     }
     g.restore();
   }
@@ -837,15 +883,15 @@ export class Hud {
       frac = hclamp(game.timeFrames / (ROUND.time * 60), 0, 1),
       low = sec <= 10 && game.phase === "fight",
       pu = low ? 1 + 0.05 * Math.sin(t * 0.5) : 1,
-      col = low ? "#ff5a46" : "#7ff0d0";
+      col = low ? "#d9b8ff" : "#8fe9ff";
     g.save();
     g.translate(cx, cy);
     g.scale(pu, pu);
     g.save();
     for (const s of [-1, 1]) {
       const lg = g.createLinearGradient(s * 38, 0, s * 80, 0);
-      lg.addColorStop(0, GOLD);
-      lg.addColorStop(1, "#d8b86700");
+      lg.addColorStop(0, ICE);
+      lg.addColorStop(1, "#b9c4ff00");
       g.strokeStyle = lg;
       g.lineWidth = 0.9;
       g.beginPath();
@@ -853,13 +899,13 @@ export class Hud {
       g.lineTo(s * 80, 0);
       g.stroke();
       dia(g, s * 42, 0, 2);
-      g.fillStyle = GOLD;
+      g.fillStyle = ICE;
       g.fill();
     }
     g.restore();
     const ig = g.createRadialGradient(0, -6, 2, 0, 0, 30);
-    ig.addColorStop(0, "#1c1216");
-    ig.addColorStop(1, "#050304");
+    ig.addColorStop(0, "#14163a");
+    ig.addColorStop(1, "#04051a");
     g.save();
     g.shadowColor = "#000";
     g.shadowBlur = 14;
@@ -869,9 +915,9 @@ export class Hud {
     g.fill();
     g.restore();
     const rg = g.createLinearGradient(0, -30, 0, 30);
-    rg.addColorStop(0, GOLD_HI);
-    rg.addColorStop(0.5, GOLD);
-    rg.addColorStop(1, GOLD_DIM);
+    rg.addColorStop(0, ICE_HI);
+    rg.addColorStop(0.5, ICE);
+    rg.addColorStop(1, ICE_DIM);
     g.strokeStyle = rg;
     g.lineWidth = 1.6;
     g.beginPath();
@@ -879,7 +925,7 @@ export class Hud {
     g.stroke();
     g.lineWidth = 0.7;
     g.globalAlpha = 0.55;
-    g.strokeStyle = GOLD;
+    g.strokeStyle = ICE;
     g.beginPath();
     g.arc(0, 0, 22.5, 0, PI2);
     g.stroke();
@@ -891,7 +937,7 @@ export class Hud {
         lit = k / 60 < frac,
         r0 = major ? 31.5 : 33,
         r1 = 36;
-      g.strokeStyle = lit ? (major ? "#fff" : col) : GOLD_DIM;
+      g.strokeStyle = lit ? (major ? "#fff" : col) : ICE_DIM;
       g.globalAlpha = lit ? 0.95 : 0.55;
       g.lineWidth = major ? 1.1 : 0.7;
       g.beginPath();
@@ -916,7 +962,7 @@ export class Hud {
       g.save();
       const u = (t * 0.04) % 1;
       g.globalAlpha = (1 - u) * 0.5;
-      g.strokeStyle = "#ff5a46";
+      g.strokeStyle = "#d9b8ff";
       g.lineWidth = 1;
       g.beginPath();
       g.arc(0, 0, 37 + u * 20, 0, PI2);
@@ -930,7 +976,7 @@ export class Hud {
       cx,
       cy + 8 * pu,
       23 * pu,
-      low ? ["#fff", "#ff8a7a"] : ["#ffffff", "#e6dcc0"],
+      low ? ["#fff", "#e6d4ff"] : ["#ffffff", "#d9e4ff"],
       "center",
       col,
       t,
@@ -944,35 +990,23 @@ export class Hud {
     g.save();
     for (const s of [-1, 1]) {
       const lg = g.createLinearGradient(cx + s * 48, 0, cx + s * 92, 0);
-      lg.addColorStop(0, GOLD);
-      lg.addColorStop(1, "#d8b86700");
+      lg.addColorStop(0, ICE);
+      lg.addColorStop(1, "#b9c4ff00");
       g.fillStyle = lg;
       g.fillRect(Math.min(cx + s * 48, cx + s * 92), ry - 3.5, 44, 0.8);
       dia(g, cx + s * 45, ry - 3.2, 2);
-      g.fillStyle = GOLD;
+      g.fillStyle = ICE;
       g.fill();
     }
     g.restore();
-    this.lab(g, "ROUND " + game.round, cx + 2, ry, 9.5, GOLD_HI, "center", 4);
-    // Stage-Anzeige (Arcade): STAGE n / total bzw. FINAL BOSS
+    this.lab(g, "ROUND " + game.round, cx + 2, ry, 9.5, ICE_HI, "center", 4);
+    // Stage-Anzeige (Arcade): STAGE n / total
     const A = game.arcade;
     if (A && A.mode === "versus") {
       const th = THEMES[(game.stageIndex || 0) % THEMES.length];
-      this.lab(g, "2 SPIELER · " + th.name, cx + 2, ry + 16, 9, "#c9b88a", "center", 4);
+      this.lab(g, "2 SPIELER · " + th.name, cx + 2, ry + 16, 9, "#b9c4ff", "center", 4);
     } else if (A && A.opponents.length) {
-      const boss = A.isBoss;
-      this.lab(
-        g,
-        boss ? "FINAL BOSS" : `STAGE ${A.stage + 1} / ${A.total}`,
-        cx + 2,
-        ry + 16,
-        9,
-        boss ? "#ff8a7a" : "#c9b88a",
-        "center",
-        4,
-        boss ? "#ff3a2a" : null,
-        boss ? "700" : "500",
-      );
+      this.lab(g, `STAGE ${A.stage + 1} / ${A.total}`, cx + 2, ry + 16, 9, "#b9c4ff", "center", 4, null, "500");
     }
   }
   // ---------- Hyper-Meter ----------
@@ -1000,7 +1034,7 @@ export class Hud {
         pu = 0.5 + 0.5 * Math.sin(t * 0.25 + k);
       g.save();
       g.lineWidth = 0.9;
-      g.strokeStyle = full ? P.a : "#333";
+      g.strokeStyle = full ? P.a : "#3a3f7a";
       if (full) {
         g.shadowColor = P.glow;
         g.shadowBlur = 12 + 10 * pu;
@@ -1010,7 +1044,7 @@ export class Hud {
       g.restore();
       g.save();
       para(g, x, SY, SW, SH, SK);
-      g.fillStyle = "#020104";
+      g.fillStyle = "#03041a";
       g.fill();
       g.clip();
       if (fill > 0) {
@@ -1021,7 +1055,7 @@ export class Hud {
           fg.addColorStop(0.7, P.a);
           fg.addColorStop(1, "#fff");
         } else {
-          fg.addColorStop(0, "#333");
+          fg.addColorStop(0, "#3a3f7a");
           fg.addColorStop(1, P.a);
         }
         g.fillStyle = fg;
@@ -1033,6 +1067,16 @@ export class Hud {
         sh.addColorStop(1, "#00000000");
         g.fillStyle = sh;
         g.fillRect(x, SY, fw + SK, SH);
+        for (let fx = x - SH; fx < x + fw + SH; fx += 8) {
+          g.fillStyle = ((fx / 8) | 0) % 2 ? "#ffffff14" : "#00000020";
+          g.beginPath();
+          g.moveTo(fx, SY + SH);
+          g.lineTo(fx + SH, SY);
+          g.lineTo(fx + SH + 4, SY);
+          g.lineTo(fx + 4, SY + SH);
+          g.closePath();
+          g.fill();
+        }
         if (full) {
           g.globalCompositeOperation = "lighter";
           g.globalAlpha = 0.25 + 0.3 * pu;
@@ -1066,12 +1110,32 @@ export class Hud {
       lx,
       H - 41,
       10,
-      lv > 0 ? P.a : "#555",
+      lv > 0 ? P.a : "#6a6fb0",
       al,
       5,
       lv > 0 ? P.glow : null,
       "700",
     );
+    // Spam-Sperre: drei Kristalle zeigen, wie oft dieselbe Taste hintereinander benutzt wurde (voll = gesperrt)
+    const sp = f.spam;
+    if (sp && sp.n > 0 && sp.t < SPAM.reset) {
+      const locked = sp.n >= SPAM.max;
+      g.save();
+      for (let k = 0; k < SPAM.max; k++) {
+        dia(g, mx(112 + k * 11), H - 45, 3.4);
+        if (k < sp.n) {
+          g.fillStyle = locked ? "#9b7bff" : P.a;
+          g.shadowColor = locked ? "#9b7bff" : P.glow;
+          g.shadowBlur = locked ? 8 : 4;
+          g.fill();
+        } else {
+          g.strokeStyle = ICE_DIM;
+          g.lineWidth = 0.9;
+          g.stroke();
+        }
+      }
+      g.restore();
+    }
     if (lv > 0) {
       const on = lv < 3 || Math.sin(t * 0.25) > -0.3;
       if (on)
@@ -1098,7 +1162,7 @@ export class Hud {
       g.lineWidth = 1.5;
       g.shadowColor = P.glow;
       g.shadowBlur = 12;
-      g.fillStyle = "#0a050a";
+      g.fillStyle = "#080a24";
       g.beginPath();
       g.roundRect ? g.roundRect(kx, ky, 18, 18, 3) : g.rect(kx, ky, 18, 18);
       g.fill();
@@ -1142,13 +1206,13 @@ export class Hud {
     });
     g.save();
     const tg = g.createLinearGradient(0, 0, 0, 130);
-    tg.addColorStop(0, "rgba(3,1,6,.82)");
-    tg.addColorStop(1, "rgba(3,1,6,0)");
+    tg.addColorStop(0, "rgba(4,6,24,.82)");
+    tg.addColorStop(1, "rgba(4,6,24,0)");
     g.fillStyle = tg;
     g.fillRect(0, 0, W, 130);
     const bg = g.createLinearGradient(0, H - 110, 0, H);
-    bg.addColorStop(0, "rgba(3,1,6,0)");
-    bg.addColorStop(1, "rgba(3,1,6,.78)");
+    bg.addColorStop(0, "rgba(4,6,24,0)");
+    bg.addColorStop(1, "rgba(4,6,24,.78)");
     g.fillStyle = bg;
     g.fillRect(0, H - 110, W, 110);
     g.restore();
@@ -1159,23 +1223,25 @@ export class Hud {
       );
     else if (game.phase === "result" && !game.timedOut)
       this.letterbox(g, 1 - hclamp(game.pf / 14, 0, 1));
-    fs.forEach((f, i) => this.player(g, i, f, t));
-    this.timer(g, game, t);
+    if (!game.melee) {
+      fs.forEach((f, i) => this.player(g, i, f, t));
+      this.timer(g, game, t);
+    }
     fs.forEach((f, i) => this.hyper(g, i, f, t));
     if (b.input && b.input.P) {
       const nm = "KI · " + b.input.P.name.toUpperCase();
       g.save();
       const lg = g.createLinearGradient(W - 150, 0, W - 22, 0);
-      lg.addColorStop(0, "#d8b86700");
-      lg.addColorStop(1, GOLD);
+      lg.addColorStop(0, "#b9c4ff00");
+      lg.addColorStop(1, ICE);
       g.fillStyle = lg;
       g.fillRect(W - 150, 96, 128, 0.8);
       g.restore();
-      this.lab(g, nm, W - 24, 92, 9, "#c9b88a", "right", 3);
+      this.lab(g, nm, W - 24, 92, 9, "#b9c4ff", "right", 3);
     }
     if (game.arcade && game.arcade.mode === "versus") {
       this.lab(g, "SPIELER 1", 24, 92, 9, "#7df3ff", "left", 3);
-      this.lab(g, "SPIELER 2", W - 24, 92, 9, "#ff8ae6", "right", 3);
+      this.lab(g, "SPIELER 2", W - 24, 92, 9, "#c9a0ff", "right", 3);
     }
     this.combos(g, game, t);
     this.banners(g, game, t);
@@ -1208,11 +1274,11 @@ export class Hud {
         sc = 1 + pp * 0.4,
         cc = comboCol(c.hits),
         fade = v.comboHits >= 2 ? 1 : hclamp(v.comboShow.t / 25, 0, 1),
-        y = 206;
+        y = 190;
       const ox = (Math.random() - 0.5) * pp * 8,
         oy = (Math.random() - 0.5) * pp * 6,
         num = String(c.hits),
-        nw = this.mw(g, num, 84, 500);
+        nw = this.mw(g, num, 46, 500);
       g.save();
       g.globalAlpha = fade;
       g.translate(x + ox, y + oy);
@@ -1220,37 +1286,37 @@ export class Hud {
       g.rotate(-dir * 0.04);
       g.translate(-x, -y);
       // Combo-Zahl – keine Box, nur Glow-Text
-      this.big(g, num, x, y, 84, cc, al, cc[1], t, false, 2 + pp * 3, 500);
-      this.sparks(g, x + (dir * nw) / 2, y - 30, nw / 2 + 34, 38, t, 3 + Math.min(6, c.hits >> 1), 21 + i, cc[1]);
-      const hx = x + dir * (nw + 14),
+      this.big(g, num, x, y, 46, cc, al, cc[1], t, false, 1 + pp * 2, 500);
+      this.sparks(g, x + (dir * nw) / 2, y - 16, nw / 2 + 20, 22, t, 2 + Math.min(3, c.hits >> 2), 21 + i, cc[1]);
+      const hx = x + dir * (nw + 10),
         lbl = c.hits >= 10 ? "HIT COMBO" : "HITS";
       this.fancy(
         g,
         lbl,
         hx,
-        y - 34,
-        15,
-        ["#fff", GOLD_HI],
+        y - 18,
+        11,
+        ["#fff", ICE_HI],
         al,
         null,
         t,
         false,
         false,
         600,
-        6,
+        4,
       );
       // Rang (GOOD! GREAT! EXCELLENT! ...)
       const rk = RANKS.find((r) => c.hits >= r[0]);
       if (rk) {
-        const rs = 18 + Math.min(6, c.hits * 0.3),
-          ry = y + 30;
+        const rs = 13 + Math.min(3, c.hits * 0.15),
+          ry = y + 31;
         this.glitz(
           g,
           rk[1],
           x,
           ry,
           rs,
-          c.hits >= 16 ? ["#fff", "#ff9a7a"] : ["#fff", GOLD_HI],
+          c.hits >= 16 ? ["#fff", "#cdb4ff"] : ["#fff", "#bfe9ff"],
           t,
           al,
           3,
@@ -1263,9 +1329,9 @@ export class Hud {
         g,
         dv,
         x,
-        y + 54,
-        17,
-        ["#fff", GOLD_HI],
+        y + 52,
+        12,
+        ["#fff", ICE_HI],
         al,
         null,
         t,
@@ -1278,7 +1344,8 @@ export class Hud {
     });
   }
   // ---------- Banner / Phasen ----------
-  hair(g, y, u, col = GOLD, h = 1) {
+  // Haarlinie (nur noch vereinzelt genutzt; Ausrufe haben keine Rahmen mehr)
+  hair(g, y, u, col = ICE, h = 1) {
     const { W } = this;
     g.save();
     const w = W * 0.6 * hclamp(u, 0, 1),
@@ -1288,13 +1355,6 @@ export class Hud {
     gr.addColorStop(1, col + "00");
     g.fillStyle = gr;
     g.fillRect(W / 2 - w / 2, y - h / 2, w, h);
-    if (u > 0.8) {
-      dia(g, W / 2 - (w / 2) * 0.92, y, 3);
-      g.fillStyle = col;
-      g.fill();
-      dia(g, W / 2 + (w / 2) * 0.92, y, 3);
-      g.fill();
-    }
     g.restore();
   }
   streak(g, y, u, col, h = 1) {
@@ -1305,13 +1365,13 @@ export class Hud {
       h = 44 * k;
     if (h <= 0) return;
     g.save();
-    g.fillStyle = "#020104";
+    g.fillStyle = "#03041a";
     g.fillRect(0, 0, W, h);
     g.fillRect(0, H - h, W, h);
     const gl = g.createLinearGradient(0, 0, W, 0);
-    gl.addColorStop(0, "#d8b86700");
-    gl.addColorStop(0.5, GOLD);
-    gl.addColorStop(1, "#d8b86700");
+    gl.addColorStop(0, "#b9c4ff00");
+    gl.addColorStop(0.5, ICE);
+    gl.addColorStop(1, "#b9c4ff00");
     g.fillStyle = gl;
     g.fillRect(0, h, W, 1);
     g.fillRect(0, H - h - 1, W, 1);
@@ -1329,182 +1389,79 @@ export class Hud {
           dir = game.round % 2 ? -1 : 1;
         g.save();
         g.globalAlpha = 1 - out;
-        this.hair(g, 196, e);
-        this.hair(g, 306, e);
         g.translate(W / 2 + dir * (1 - e) * 500 + out * -dir * 400, 251);
-        g.scale(1 + (1 - e) * 0.3, 1 + (1 - e) * 0.3);
-        const rg = g.createRadialGradient(0, -16, 10, 0, -16, 300);
-        rg.addColorStop(0, "#05030acc");
-        rg.addColorStop(1, "#05030a00");
-        g.fillStyle = rg;
-        g.fillRect(-300, -80, 600, 160);
-        this.big(
-          g,
-          "ROUND " + game.round,
-          0,
-          0,
-          58,
-          ["#ffffff", "#00f3ff"],
-          "center",
-          "#00f3ff",
-          t,
-          false,
-          2.5,
-          500,
-          14,
-        );
-        this.sparks(g, 0, -20, 170, 32, t, 7, 31);
+        g.scale(1 + (1 - e) * 0.2, 1 + (1 - e) * 0.2);
+        this.big(g, game.melee ? "MELEE" : "ROUND " + game.round, 0, 0, 34, ["#ffffff", "#9fe8ff"], "center", "#8f7bff", t, false, 1, 500, 8);
+        this.sparks(g, 0, -12, 100, 16, t, 4, 31);
         g.restore();
       } else {
         const u = hclamp((pf - 72) / 14, 0, 1),
           e = easeOutBack(u),
-          sc = 2.4 - 1.4 * e;
+          sc = 1.6 - 0.6 * e;
         if (pf < 84) {
-          g.fillStyle = `rgba(255,240,220,${(1 - (pf - 72) / 12) * 0.5})`;
+          g.fillStyle = `rgba(200,225,255,${(1 - (pf - 72) / 12) * 0.25})`;
           g.fillRect(0, 0, W, H);
         }
-        this.enso(
-          g,
-          W / 2,
-          236,
-          150 + u * 30,
-          86 + u * 14,
-          Math.min(1, u * 2.2),
-          NEON_MAG,
-          18,
-          1 - u * 0.55,
-        );
+        // Kristallsplitter-Strahlen (ohne Ring/Rahmen)
         g.save();
         g.globalCompositeOperation = "lighter";
-        g.strokeStyle = "#00f3ff";
+        g.strokeStyle = "#9fe8ff";
         g.lineWidth = 0.9;
-        for (let k = 0; k < 22; k++) {
-          const a = (k / 22) * PI2 + 0.1,
-            r0 = 80 + u * 170,
-            r1 = r0 + 30 + u * 200;
-          g.globalAlpha = (1 - u) * 0.8;
+        for (let k = 0; k < 14; k++) {
+          const a = (k / 14) * PI2 + 0.1,
+            r0 = 50 + u * 90,
+            r1 = r0 + 20 + u * 90;
+          g.globalAlpha = (1 - u) * 0.5;
           g.beginPath();
-          g.moveTo(W / 2 + Math.cos(a) * r0, 250 + Math.sin(a) * r0 * 0.5);
-          g.lineTo(W / 2 + Math.cos(a) * r1, 250 + Math.sin(a) * r1 * 0.5);
+          g.moveTo(W / 2 + Math.cos(a) * r0, 258 + Math.sin(a) * r0 * 0.5);
+          g.lineTo(W / 2 + Math.cos(a) * r1, 258 + Math.sin(a) * r1 * 0.5);
           g.stroke();
         }
         g.restore();
         g.save();
-        g.translate(W / 2, 262);
+        g.translate(W / 2, 266);
         g.scale(sc, sc);
-        g.rotate((1 - e) * -0.08);
-        this.big(
-          g,
-          "FIGHT!",
-          0,
-          0,
-          84,
-          ["#ffffff", "#ffd9a0"],
-          "center",
-          "#ff4a3a",
-          t,
-          false,
-          2 + (1 - u) * 5,
-          700,
-          6,
-        );
-        this.sparks(g, 0, -28, 190, 44, t, 12, 33, "#ffd9a0");
+        this.big(g, "FIGHT!", 0, 0, 48, ["#ffffff", "#bfe9ff"], "center", "#7b6bff", t, false, 1 + (1 - u) * 2, 600, 4);
+        this.sparks(g, 0, -16, 110, 22, t, 6, 33, "#bfe9ff");
         g.restore();
       }
     }
     if (ph === "ko" && !game.timedOut) {
       if (pf < 12) {
-        g.fillStyle = `rgba(255,240,230,${(1 - pf / 12) * 0.75})`;
+        g.fillStyle = `rgba(215,230,255,${(1 - pf / 12) * 0.5})`;
         g.fillRect(0, 0, W, H);
       }
       const e = easeOutBack(hclamp(pf / 10, 0, 1)),
-        jx = pf < 40 ? (Math.random() - 0.5) * 8 : 0;
-      this.enso(
-        g,
-        W / 2 + jx,
-        238,
-        190,
-        118,
-        hclamp(pf / 16, 0, 1),
-        VERM,
-        26,
-        0.95,
-        -2.4,
-      );
+        jx = pf < 40 ? (Math.random() - 0.5) * 4 : 0,
+        txt = game.melee ? "GAME!" : "K.O.";
       g.save();
-      g.translate(W / 2 + jx, 288);
-      g.scale(0.4 + 0.6 * e + Math.sin(pf * 0.2) * 0.015, 0.4 + 0.6 * e);
+      g.translate(W / 2 + jx, 270);
+      g.scale(0.5 + 0.5 * e, 0.5 + 0.5 * e);
+      // Kristall-Brechung: zwei versetzte Schichten, dann die Hauptschrift ohne Rahmen
       g.globalCompositeOperation = "lighter";
-      this.fancy(
-        g,
-        "K.O.",
-        -4,
-        0,
-        132,
-        ["#ff2a3a", "#ff2a3a"],
-        "center",
-        null,
-        t,
-        false,
-        true,
-        700,
-        6,
-      );
-      this.fancy(
-        g,
-        "K.O.",
-        4,
-        0,
-        132,
-        ["#20e0ff", "#20e0ff"],
-        "center",
-        null,
-        t,
-        false,
-        true,
-        700,
-        6,
-      );
+      this.fancy(g, txt, -2, 0, 68, ["#b98bff", "#b98bff"], "center", null, t, false, true, 700, 3);
+      this.fancy(g, txt, 2, 0, 68, ["#6fe3ff", "#6fe3ff"], "center", null, t, false, true, 700, 3);
       g.globalCompositeOperation = "source-over";
-      this.sparks(g, 0, -46, 170, 56, t, 12, 35);
-      this.fancy(
-        g,
-        "K.O.",
-        0,
-        0,
-        132,
-        ["#ffffff", "#00f3ff"],
-        "center",
-        "#ff3366",
-        t,
-        false,
-        false,
-        700,
-        6,
-      );
+      this.fancy(g, txt, 0, 0, 68, ["#ffffff", "#9fe8ff"], "center", "#8f7bff", t, false, false, 700, 3);
+      this.sparks(g, 0, -24, 90, 28, t, 6, 35);
       g.restore();
     }
     if (ph === "result") {
       const e = easeOutBack(hclamp(pf / 16, 0, 1)),
-        k = hclamp(pf / 20, 0, 1),
         nm = game.winner ? game.winner.char.name + " WINS" : "DRAW";
-      this.hair(g, 124, k);
-      this.hair(g, 188, k);
       g.save();
       g.translate(W / 2, 158);
-      g.scale(0.6 + 0.4 * e, 0.6 + 0.4 * e);
-      this.glitz(g, nm, 0, 0, 34, ["#ffffff", "#00f3ff"], t, "center", 5, 3);
+      g.scale(0.7 + 0.3 * e, 0.7 + 0.3 * e);
+      this.glitz(g, nm, 0, 0, 22, ["#ffffff", "#9fe8ff"], t, "center", 4, 3);
       if (game.timedOut)
-        this.lab(g, "TIME UP", 0, 24, 12, "#d6c8ff", "center", 8, "#00f3ff", "600");
+        this.lab(g, "TIME UP", 0, 20, 11, "#cfd8ff", "center", 6, "#7b6bff", "600");
       g.restore();
     }
     const A = game.arcade;
     if (ph === "match" && A && A.state !== "fight") {
       const e = easeOutBack(hclamp(A.t / 20, 0, 1)),
-        k = hclamp(A.t / 20, 0, 1),
         st = A.state,
         bad = st === "gameover",
-        col = bad ? "#ff6a52" : GOLD,
         title =
           st === "clear"
             ? "STAGE CLEAR"
@@ -1515,11 +1472,9 @@ export class Hud {
                 : "GAME OVER",
         sub =
           st === "clear"
-            ? "NÄCHSTER GEGNER:  " +
-              A.opponentName(A.stage + 1) +
-              (A.stage + 1 >= A.total - 1 ? "   ·   ENDGEGNER" : "")
+            ? "NÄCHSTER GEGNER:  " + A.opponentName(A.stage + 1)
             : st === "victory"
-              ? "Du hast den Minotaurus besiegt!"
+              ? "Du hast alle Gegner besiegt!"
               : st === "vsover"
                 ? (game.fighters[0].wins > game.fighters[1].wins ? game.fighters[0] : game.fighters[1]).char.name + " besiegt " + (game.fighters[0].wins > game.fighters[1].wins ? game.fighters[1] : game.fighters[0]).char.name + "   ·   " + game.fighters[0].wins + " : " + game.fighters[1].wins
                 : "Gegner:  " + A.opponentName(),
@@ -1532,76 +1487,24 @@ export class Hud {
                 ? "ENTER  Revanche   ·   ESC  Kämpferwahl"
                 : "ENTER  nochmal   ·   ESC  Charakterwahl";
       g.save();
-      this.hair(g, 122, k, col);
-      this.hair(g, 204, k, col);
       g.translate(W / 2, 158);
-      g.scale(0.6 + 0.4 * e, 0.6 + 0.4 * e);
-      this.glitz(
-        g,
-        title,
-        0,
-        0,
-        st === "victory" ? 30 : 36,
-        bad ? ["#ffffff", "#ff3366"] : ["#ffffff", "#00f3ff"],
-        t,
-        "center",
-        5,
-        5,
-      );
-      this.lab(g, sub, 0, 28, 12, bad ? "#ffb0a0" : "#e0e0ff", "center", 4, bad ? "#ff3366" : "#00f3ff", "600");
+      g.scale(0.7 + 0.3 * e, 0.7 + 0.3 * e);
+      this.glitz(g, title, 0, 0, st === "victory" ? 20 : 24, bad ? ["#ffffff", "#b79cff"] : ["#ffffff", "#9fe8ff"], t, "center", 4, 5);
+      this.lab(g, sub, 0, 24, 11, bad ? "#d9ccff" : "#d6e4ff", "center", 3, bad ? "#8f7bff" : "#6fe3ff", "600");
       g.restore();
       if (Math.sin(t * 0.15) > -0.2)
-        this.lab(g, pr, W / 2, 226, 11, "#00f3ff", "center", 5, "#ff00ff", "600");
+        this.lab(g, pr, W / 2, 218, 11, "#9fe8ff", "center", 4, "#8f7bff", "600");
     } else if (ph === "match") {
       const w = game.fighters.find((f) => f.wins >= ROUND.wins),
         e = easeOutBack(hclamp(pf / 20, 0, 1)),
         P = HPAL[game.fighters.indexOf(w)];
       g.save();
-      const hu = hclamp(pf / 24, 0, 1);
-      this.hair(g, 124, hu, P.a);
-      this.hair(g, 180, hu, P.a);
       g.translate(W / 2, 160);
-      g.scale(0.6 + 0.4 * e, 0.6 + 0.4 * e);
-      const nm = w.char.name + " WINS THE MATCH";
-      this.glitz(g, nm, 0, 0, 30, ["#ffffff", GOLD_HI], t, "center", 4, 7);
+      g.scale(0.7 + 0.3 * e, 0.7 + 0.3 * e);
+      this.glitz(g, w.char.name + " WINS THE MATCH", 0, 0, 20, ["#ffffff", "#bfe9ff"], t, "center", 3, 7);
       g.restore();
-      if (Math.sin(t * 0.15) > -0.2) {
-        g.save();
-        g.strokeStyle = GOLD;
-        g.lineWidth = 1;
-        g.fillStyle = "#120b0c";
-        g.beginPath();
-        g.roundRect
-          ? g.roundRect(W / 2 - 104, 196, 56, 20, 2)
-          : g.rect(W / 2 - 104, 196, 56, 20);
-        g.fill();
-        g.stroke();
-        g.restore();
-        this.lab(
-          g,
-          "ENTER",
-          W / 2 - 76,
-          210,
-          10.5,
-          GOLD_HI,
-          "center",
-          2,
-          null,
-          "600",
-        );
-        this.lab(
-          g,
-          "REMATCH",
-          W / 2 - 38,
-          210,
-          12,
-          "#e6dcc0",
-          "left",
-          6,
-          P.glow,
-          "500",
-        );
-      }
+      if (Math.sin(t * 0.15) > -0.2)
+        this.lab(g, "ENTER  ·  REMATCH", W / 2, 206, 11, "#cfd8ff", "center", 5, P.glow, "600");
     }
   }
   // ---------- Super-Cinematic ----------
@@ -1610,10 +1513,10 @@ export class Hud {
     const { W, H } = this,
       t = game.superFlash / 42,
       f = game.superOwner,
-      col = f.char.glow || "#fff",
+      col = HPAL[Math.max(0, game.fighters.indexOf(f)) % 2].glow,
       [ox, oy] = game.camera.toScreen(f.x, f.y - 80);
     g.save();
-    g.fillStyle = `rgba(5,0,10,${0.72 * Math.min(1, t * 2)})`;
+    g.fillStyle = `rgba(6,6,28,${0.72 * Math.min(1, t * 2)})`;
     g.fillRect(0, 0, W, H);
     g.globalCompositeOperation = "lighter";
     g.strokeStyle = col;
@@ -1637,38 +1540,8 @@ export class Hud {
     const e = easeOutBack(hclamp((1 - t) * 5, 0, 1));
     g.save();
     g.translate(W / 2, 160);
-    this.enso(
-      g,
-      0,
-      -10,
-      170 * e,
-      40 * e,
-      hclamp((1 - t) * 3, 0, 1),
-      VERM,
-      10,
-      0.7,
-      -2.8,
-    );
-    g.fillStyle = "#020104c8";
-    g.fillRect(-W * 0.5 * e, -46, W * e, 70);
-    this.hair(g, -46, e, GOLD);
-    this.hair(g, 24, e, GOLD);
-    g.scale(0.7 + 0.3 * e, 0.7 + 0.3 * e);
-    this.big(
-      g,
-      game.superName ? game.superName.toUpperCase() : "HYPER " + f.char.name + " BEAM",
-      0,
-      0,
-      42,
-      ["#ffffff", GOLD_HI],
-      "center",
-      col,
-      game.frame,
-      false,
-      2.5,
-      600,
-      8,
-    );
+    g.scale(0.8 + 0.2 * e, 0.8 + 0.2 * e);
+    this.big(g, game.superName ? game.superName.toUpperCase() : "HYPER " + f.char.name + " BEAM", 0, 0, 26, ["#ffffff", "#bfe9ff"], "center", col, game.frame, false, 1, 600, 5);
     g.restore();
   }
 }

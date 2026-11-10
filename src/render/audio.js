@@ -4,7 +4,7 @@
 // Hintergrundmusik: Tracks (music/<name>.ogg, vom Build als Data-URI in window.__MUSIC__) laufen als Loop auf eigenem Bus (nicht durch Kompressor/Tiefpass der Effekte).
 // 'menu' = Charakter-/Stage-Auswahl, 'fight' = Kämpfe. Pegel je Track relativ zur Gesamtlautstärke, damit Treffer-Sounds obenauf bleiben. Wechsel per Crossfade.
 const MUSIC_VOL={menu:.8,fight:.7},FADE_IN=.9,FADE_OUT=.7;
-const GAP={block_guard:45,body_fall:60,whoosh_light:40,whoosh_heavy:40,land:60,punch_light:35,punch_medium:35,punch_heavy:35,kick_light:35,kick_heavy:35,heavy_hit_impact:50,hit_critical:120,ko_hit:400,ui_round_start:600};
+const GAP={block_guard:45,body_fall:60,whoosh_light:40,whoosh_heavy:40,land:60,punch_light:35,punch_medium:35,punch_heavy:35,kick_light:35,kick_heavy:35,heavy_hit_impact:50,hit_critical:120,ko_hit:400,fw_finale:400,fw_rocket:150,ui_round_start:600};
 export class Sound{
  constructor(){this.vol=.7;this.muted=false;this.ctx=null;this.master=null;this.buf={};this.last={};this.voices=0;this.src=(typeof window!=='undefined'&&window.__SFX__)||{};
   this.msrc=(typeof window!=='undefined'&&window.__MUSIC__)||{};this.mbuf={};this.mvol=1;this.mmuted=false;this.want=null;this.cur=null;this.node=null;this.mbus=null}
@@ -37,8 +37,9 @@ export class Sound{
  // Tab/Fenster nicht sichtbar: Audio anhalten statt im Hintergrund weiterzuspielen
  suspend(){if(this.ctx&&this.ctx.state==='running')this.ctx.suspend()}
  resume(){if(this.ctx&&this.ctx.state==='suspended')this.ctx.resume()}
- play(name,o){const c=this.ctx,b=this.buf[name];if(!c||!b||this.muted||this.vol<=0||c.state!=='running')return;
-  const now=performance.now(),gap=GAP[name]||25;if(now-(this.last[name]===undefined?-1e9:this.last[name])<gap||this.voices>=28)return;this.last[name]=now;
+ play(name,o){const base=name;if(this.buf[name+'_b']&&Math.random()<.5)name+='_b';   // Varianten: <name>_b wechselt zufällig mit <name> (Schlag-Sounds)
+  const c=this.ctx,b=this.buf[name];if(!c||!b||this.muted||this.vol<=0||c.state!=='running')return;
+  const now=performance.now(),gap=GAP[base]||25;if(now-(this.last[base]===undefined?-1e9:this.last[base])<gap||this.voices>=28)return;this.last[base]=now;
   const vol=(o&&o.vol!==undefined)?o.vol:1,rate=(o&&o.rate)||1;
   const s=c.createBufferSource(),g=c.createGain();s.buffer=b;s.playbackRate.value=rate*(.96+Math.random()*.08);g.gain.value=vol;s.connect(g);g.connect(this.master);
   this.voices++;s.onended=()=>{this.voices--;g.disconnect()};s.start()}

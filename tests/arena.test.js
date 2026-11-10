@@ -7,7 +7,7 @@ import{CHARACTERS}from'../src/core/characters.js';
 import{GROUND,WALL_L,WALL_R,BARRIER,WORLD,HOUSE}from'../src/core/config.js';
 const ok=n=>console.log('  ✓',n);
 function setup(){const i1=new InputBuffer(),i2=new InputBuffer();
- const p1=new Fighter({char:CHARACTERS.hero,x:340,facing:1,input:i1}),p2=new Fighter({char:CHARACTERS.tiger,x:620,facing:-1,input:i2});
+ const p1=new Fighter({char:CHARACTERS.wolf,x:340,facing:1,input:i1}),p2=new Fighter({char:CHARACTERS.tiger,x:620,facing:-1,input:i2});
  const g=new Game(p1,p2);const tick=(pr=[],dx=0,dy=0)=>{const fz=g.hitstop>0||g.superFlash>0;i1.feed(dx,dy,pr,fz);i2.feed(0,0,[],fz);g.step()};
  while(g.phase!=='fight')tick();return{g,p1,p2,i1,i2,tick}}
 const ENDL=WALL_L-BARRIER.width,ENDR=WALL_R+BARRIER.width;

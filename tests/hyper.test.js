@@ -17,7 +17,7 @@ for(const key of Object.keys(CHARACTERS).filter(k=>CHARACTERS[k].name&&k!=='cust
  const hold=()=>g.superFlash>0||(p1.move&&p1.move.super&&p1.mf<p1.move.su+p1.move.ac-CAMERA.cine.lead);
  // Zoom bleibt, solange der Move aktiv ist; schon vor dem letzten Treffer wird rausgezoomt
  while((g.superFlash>0||(p1.move&&p1.move.super))&&n<400){i1.feed(0,0,[],g.superFlash>0);i2.feed(0,0,[],g.superFlash>0);g.step();n++;max=Math.max(max,g.camera.zoom);
-  if(n>25&&hold())min=Math.min(min,g.camera.zoom);if(atLaunch===null&&p2.state==='airhit')atLaunch=g.camera.zoom}
+  if(n>25&&hold())min=Math.min(min,g.camera.zoom);if(atLaunch===null&&p2.state==='airhit'&&p2.launched)atLaunch=g.camera.zoom}
  assert.ok(max>base+.1&&max<1.4,key+': moderater Zoom ('+base.toFixed(2)+' → '+max.toFixed(2)+')');
  assert.ok(n>50,key+': Attacke dauert '+n+' Frames');
  assert.ok(min>base+.07,key+': Zoom bleibt während der Attacke ('+min.toFixed(2)+')');

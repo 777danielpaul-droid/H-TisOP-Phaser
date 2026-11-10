@@ -58,7 +58,7 @@ function sheet(cols,rows,{cw=600,ch=600,bg=[0,255,0,255],figs={},base=540,body=[
 
 // 8) Figurenwerte: Eingaben werden begrenzt, Name bereinigt, Vorlage liefert Moves
 {const p=cusClean({name:'  <b>Rex</b> der Kämpfer-Hund 12345 ',template:'xx',hp:99999,tempo:-5,dmg:'abc',abwehr:200,glow:'rot'});
- assert.ok(p.name.length<=14&&!/[<>]/.test(p.name)&&p.name===p.name.toUpperCase());assert.equal(p.template,'hero');assert.equal(p.hp,1300);assert.equal(p.tempo,80);assert.equal(p.dmg,100);assert.equal(p.abwehr,125);assert.match(p.glow,/^#[0-9a-f]{6}$/i);
+ assert.ok(p.name.length<=14&&!/[<>]/.test(p.name)&&p.name===p.name.toUpperCase());assert.equal(p.template,'tiger');assert.equal(p.hp,1300);assert.equal(p.tempo,80);assert.equal(p.dmg,100);assert.equal(p.abwehr,125);assert.match(p.glow,/^#[0-9a-f]{6}$/i);
  const c=cusMakeChar({name:'Rex',template:'tiger',hp:1100,tempo:110,dmg:120,abwehr:80,glow:'#00ffaa'},CHARACTERS.tiger);
  assert.equal(c.id,'custom');assert.equal(c.sprites,'custom');assert.equal(c.hp,1100);assert.ok(Math.abs(c.walk-1.1)<1e-9&&Math.abs(c.dmg-1.2)<1e-9&&Math.abs(c.def-1.25)<1e-9);assert.equal(c.mods,CHARACTERS.tiger.mods)}
 
@@ -67,7 +67,7 @@ for(const s of CUS_SHEETS){assert.ok(CUS_PROMPT_CELLS[s.key],'Prompt-Text '+s.ke
  assert.ok(t.includes('a red panda monk')&&t.includes(`${s.c} columns x ${s.r} rows = ${s.c*s.r}`)&&t.includes('#00FF00'),s.key)}
 
 // 10) Spielbarkeit: eigene Figur mit nur einem Sheet (alle Zustände über Behelfe) kämpft stabil gegen die KI
-{CHARACTERS.custom=cusMakeChar({name:'Test',template:'witch',hp:1000,tempo:100,dmg:100,abwehr:100,glow:'#ff00ff'},CHARACTERS.witch);
+{CHARACTERS.custom=cusMakeChar({name:'Test',template:'st3g0',hp:1000,tempo:100,dmg:100,abwehr:100,glow:'#ff00ff'},CHARACTERS.st3g0);
  const i1=new InputBuffer(),ai=new AIController(2),ai1=new AIController(2);
  const p1=new Fighter({char:CHARACTERS.custom,x:340,facing:1,input:ai1}),p2=new Fighter({char:CHARACTERS.wolf,x:620,facing:-1,input:ai});
  const g=new Game(p1,p2);const states=new Set();for(let k=0;k<4000;k++){g.step();states.add(p1.anim);if(g.phase==='over'||p1.hp<=0||p2.hp<=0){p1.hp=p1.maxHp;p2.hp=p2.maxHp}}

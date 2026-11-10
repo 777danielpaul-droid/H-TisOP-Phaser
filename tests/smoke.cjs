@@ -7,7 +7,7 @@ global.document={getElementById:id=>id==='screen'?cvs():P(),createElement:()=>cv
 global.Image=class{set src(v){this.complete=false}};global.window=global;global.addEventListener=(e,f)=>{(L[e]=L[e]||[]).push(f)};global.performance={now:()=>T};
 let T=0,cb=null;global.requestAnimationFrame=f=>{cb=f};
 eval(fs.readFileSync('dist/game.js','utf8'));
-__arcade.start('hero');
+__arcade.start('tiger');
 const keys=['KeyA','KeyD','KeyW','KeyS','KeyJ','KeyK','KeyL','KeyU','KeyI','KeyO','Space','ArrowLeft'];
 const fire=(t,code)=>(L[t]||[]).forEach(f=>f({code,repeat:false,shiftKey:false,preventDefault(){}}));
 let seen=new Set();

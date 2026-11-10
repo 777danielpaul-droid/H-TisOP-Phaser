@@ -13,7 +13,7 @@ src/
     projectile.js  Projektile        hitbox.js  Hitbox
     camera.js      Camera (x, y, zoom): folgt beiden Kämpfern, zoomt nach Abstand/Sprunghöhe – rein rechnerisch
     particles.js / effects.js   Partikel + Treffer-/Bewegungseffekte
-    arcade.js      Arcade-Modus: Charakterwahl → Gegner-Leiter → Endgegner, Stage-Clear/Game Over/Victory
+    arcade.js      Arcade-Modus: Charakterwahl → Gegner-Leiter, Stage-Clear/Game Over/Victory
     game.js        Rundenablauf, Hitstop, Super-Flash, fester 60-Hz-Schritt
   render/    nur Darstellung (Canvas 2D)
     sprites.js (Sprite-Figuren aus Atlas, Animationen = Frame-Listen)  rig.js (Vektor-Skelett + Posen)  stage.js (Neon-Arena)  hud.js  renderer.js
@@ -59,30 +59,31 @@ Chain L→M→H (Rang steigt), Special-Cancel, Hyper-Cancel (Special→Super), J
 Zusatzfelder: `armor:[von,bis]` (Rüstung), `unb` (Griff), `dive`, `tp`, `heal`, `gain`, `v:{L,M,H}`, `proj` (Objekt oder Liste; `ox,vy,grav,pierce,uniq,lv,look`). Stats: `def, jump, dash, airJumps, meter`.
 
 ## Erweitern
-- Neuer Kämpfer: Eintrag in `characters.js` (+ Palette in `render/rig.js`).
+- Neuer Kämpfer: Eintrag in `characters.js` (+ Moveset in `movesets.js`, Sprites in `assets/<id>/` + `SPRITE_CHARS` in `render/sprites.js`).
 - Neuer Move: Eintrag in `BASE_MOVES` (`moves.js`) + Zuordnung in `Fighter.select()`; Pose in `rig.js` (`A`).
 - Neue Eingabe (Gamepad/P2): Klasse von `InputBuffer` erben und `tick()` implementieren.
 - Nach Änderungen: `node tools/build.mjs` (oder `build.bat`), Tests: `node tests/sim.test.js`.
 
-## Sprite-Figuren (MASTER, PALM MASTER)
-- Quellen: `assets/<id>/source/*.png` (Zellen 400×400, nicht im ZIP – die Originale hast du) → `python3 tools/make-sprites.py [hero|palm]` schneidet/trimmt/packt sie zu `assets/<id>/atlas.webp` + `meta.json` (+ `meta.js` für dev.html). Nur nötig, wenn sich die Sheets ändern; die fertigen Atlanten liegen bei.
+## Sprite-Figuren (H!T, ST3-G0)
+- Quellen: Tiger = Einzelframes `assets/tiger/source/` (`tools/make-sprites.py`) bzw. Posenbögen `assets/tiger/sheets/` (`tools/import-tiger-sheets.py`); ST3-G0 = Posenbögen `assets/st3g0/sheets/` (`tools/import-st3g0-sheets.py`). Beide packen zu `assets/<id>/atlas.webp` + `meta.json` (+ `meta.js` für dev.html). Nur nötig, wenn sich die Sheets ändern; die fertigen Atlanten liegen bei.
 - `tools/build.mjs` bettet alle Atlanten als Data-URI in `dist/game.js` ein (`window.__SPRITES__`) → läuft per Doppelklick, auch als Single-File-HTML.
-- Animationen: Frame-Listen in `render/sprites.js` (`HERO_ANIMS`, `PALM_ANIMS`). Der Fighter liefert `anim`, `animU` (0..1 über Move-Dauer bzw. Knockdown/Aufstehen) und `sf`. Optionen je Animation: `loop/fps`, `squash` (Ducken), `lean`, `bob`, `lying`, `flip` (gegen die Blickrichtung zeichnen, wenn Frames „nach vorn“ fallen).
-- Anker je Frame (make-sprites): `cell` = relativ zu Zellmitte/Fußlinie, `ground` = zentriert, Unterkante auf dem Boden, `air` = Körpermitte auf fester Höhe (damit eingebackene Bewegung der Sheets nicht doppelt zur Physik zählt).
-- Neuer Sprite-Kämpfer: Sheets in `assets/<id>/source/`, Eintrag in `CHARS` (make-sprites.py) und `SPRITE_CHARS` (sprites.js), Charakter in `characters.js` mit `sprites:'<id>'`.
-- Fehlende Frames werden behelfsmäßig ersetzt (Master: Laufen/Ducken/Sprung/Block; Palm Master: Ducken, keine echten Angriffs-Sheets → Gesten-Frames als Handflächen-Techniken).
+- Animationen: Frame-Listen in `render/sprites.js` (`TIGER_ANIMS`, `ST3G0_ANIMS`). Der Fighter liefert `anim`, `animU` (0..1 über Move-Dauer bzw. Knockdown/Aufstehen) und `sf`. Optionen je Animation: `loop/fps`, `squash` (Ducken), `lean`, `bob`, `lying`, `flip` (gegen die Blickrichtung zeichnen, wenn Frames „nach vorn“ fallen).
+- Anker je Frame: Fußlinie (Unterkante der Haut) = `f.y`, horizontal Körpermitte; fliegende Frames (`air`) = Körpermitte auf fester Höhe (damit eingebackene Bewegung der Sheets nicht doppelt zur Physik zählt).
+- Bodenschatten (`groundShadow` in `sprites.js`): Ellipse mit der Mitte auf der Fußlinie, Breite = Fußabstand der aktuellen Pose (gemessen aus dem Atlas, `footSpan`), in der Luft kleiner/blasser und unter dem Körper; liegende Posen (`SPRITE_CHARS[id].lie`, `lying`) haben keinen Schatten. `lean` schiefst die Figur am Boden (Füße bleiben stehen) und dreht sie nur in der Luft. Test: `tests/shadow.test.js`.
+- Neuer Sprite-Kämpfer: Atlas in `assets/<id>/`, Eintrag in `SPRITE_CHARS` (sprites.js, `lie` = Frames, in denen die Figur am Boden liegt), Charakter in `characters.js` mit `sprites:'<id>'`.
+- Fehlende Frames werden behelfsmäßig ersetzt (siehe HANDOVER.md, Abschnitt ST3-G0).
 - Knockdown: Launcher und harte Treffer setzen `launched` (keine Luft-Erholung) → Landung = harter Knockdown (`knockdown` → `wakeup`).
 
 ## Arcade-Modus (core/arcade.js)
 - Zustände: `select → fight → clear | gameover | victory`. Die Charakterwahl ist ein Zustand, kein eigenes Spiel: Solange `state==='select'` läuft kein `game.step()`, der Renderer zeichnet `drawSelect()`.
-- Leiter: `Arcade.ladderFor(id)` = `LADDER` ohne die eigene Figur + `BOSS` (Minotaurus, nicht in `ROSTER`, also nicht spielbar). Je Stage `game.rematch()` mit neuem Gegner (`p2.setChar`) und `game.stageIndex` → Hintergrund-Theme (`THEMES[stage]`).
-- Eine Stage ist geschafft bei 2 Runden-Siegen (`ROUND.wins`). Danach `clear` (Banner, auto-weiter nach 240 Frames, Enter überspringt); bei Niederlage `gameover` (Enter = nochmal gegen denselben Gegner, Esc = Charakterwahl); nach dem Boss `victory`.
-- Schwierigkeit (Leicht/Normal/Hart) wird im Startmenü mit ↑/↓ gewählt (auch im Menü M); der Endgegner ist eine Stufe härter (max. Hart).
-- Spielbare Figuren/Reihenfolge: `ROSTER`, `LADDER`, `BOSS` in `characters.js`. Der Wolf (Vektor-Figur) existiert noch, ist aber nicht im Roster.
-- `char.size` skaliert Hurtbox/Hitboxen/Kamera (Boss 1.25×). `mods` eines Charakters darf je Move ein Objekt oder eine Funktion `base => patch` sein.
+- Leiter: `Arcade.ladderFor(id)` = `LADDER` ohne die eigene Figur (kein Endgegner mehr). Je Stage `game.rematch()` mit neuem Gegner (`p2.setChar`) und `game.stageIndex` → Hintergrund-Theme (`THEMES[stage]`).
+- Eine Stage ist geschafft bei 2 Runden-Siegen (`ROUND.wins`). Danach `clear` (Banner, auto-weiter nach 240 Frames, Enter überspringt); bei Niederlage `gameover` (Enter = nochmal gegen denselben Gegner, Esc = Charakterwahl); nach dem letzten Gegner `victory`.
+- Schwierigkeit (Leicht/Normal/Hart) wird im Startmenü mit ↑/↓ gewählt (auch im Menü M).
+- Spielbare Figuren/Reihenfolge: `ROSTER`, `LADDER` in `characters.js`. Der Wolf (Vektor-Figur) existiert noch, ist aber nicht im Roster.
+- `char.size` skaliert Hurtbox/Hitboxen/Kamera. `mods` eines Charakters darf je Move ein Objekt oder eine Funktion `base => patch` sein.
 
 ## Stages (render/stage.js)
-`THEMES` = 4 Level (NEON CITY, CRIMSON TEMPLE, TOXIC DOCKS, LABYRINTH/Boss). Je Theme Farben, Skyline-Layer, Neon-Schilder, Boden; Stil `labyrinth` zeichnet Steinsäulen + Fackeln. Neues Level: Eintrag in `THEMES` (der Renderer wählt `THEMES[game.stageIndex]`).
+`THEMES` = 4 Level (NEON CITY, CRIMSON TEMPLE, TOXIC DOCKS, LABYRINTH). Je Theme Farben, Skyline-Layer, Neon-Schilder, Boden; Stil `labyrinth` zeichnet Steinsäulen + Fackeln. Neues Level: Eintrag in `THEMES` (der Renderer wählt `THEMES[game.stageIndex]`).
 
 ## Gasse mit brechbaren Hochhauswänden (core/barrier.js)
 `Arena` (`game.arena`) hält je Seite eine Begrenzung `{x, hp, max, step, final, visible, flash, show}`. `arena.l/.r` = aktuelle Spielfeldgrenzen (Start 110/850), beide Seiten brechbar (`BARRIER.steps = {L:1, R:1}`). `hitWall(game, victim, schaden, {launch})` wird von `combat.hit()` (Treffer/Block auf pinned Gegner) und `Fighter.physics()` (Aufprall > `BARRIER.impactV`) aufgerufen; bei hp ≤ 0 → `breakWall()`: Grenze rückt in das Gebäude (`x ± BARRIER.width`, aktuell 1000 px), Ziegel-Partikel, Shake/Hitstop, Opfer wird nach außen geschleudert (airhit, launched), `openT[side]` zählt Frames seit dem Bruch (Erdgeschoss-Fassade blendet aus, obere Fassade bleibt). Rückwände (`endL/endR`) sind `final` (unzerstörbar). `Game.startRound()` setzt die Arena zurück. Rendering: `Renderer.house()` → `houseSide('L'|'R')` mit Ebenen upper/ground/inner aus `houseLayers(theme, side)` (rechts Lobby, links Spielhalle), `areaBanner()` im Bildschirmraum.

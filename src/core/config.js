@@ -1,7 +1,19 @@
 // Zentrale Konstanten. Alle Zeiten in Frames (60 FPS), Distanzen in logischen Pixeln (960x540).
 export const W=960,H=540,GROUND=470,WALL_L=110,WALL_R=850;
-export const PHYS={gravity:.7,jumpV:-20.5,superJumpV:-21.5,airJumpV:-17,walk:4.2,back:3.4,airDrift:3.6,
+// Spam-Sperre: jede Angriffstaste (L/M/H/S) höchstens `max` Mal hintereinander; gesperrt, bis eine andere Taste benutzt wurde oder `reset` Frames seit dem letzten Einsatz vergangen sind (Hyper ist ausgenommen)
+export const SPAM={max:3,reset:90};
+export const PHYS={gravity:.7,jumpV:-20.5,superJumpV:-21.5,airJumpV:-17,hopV:-15.5,walk:4.2,back:3.4,airDrift:3.6,
  dash:12,dashFrames:13,airDash:11,airDashFrames:15,coyote:6,jumpBuffer:6,inputBuffer:10,cancelBuffer:10,juggleMax:8};
+// Pop-up / "Feder-Effekt": Jeder normale Bodentreffer (ohne Launcher/Knockdown) hebt den Gegner kurz in die Luft, damit man hinterherspringen kann (MvC2-Gefühl).
+// Stärke je Treffer nach Moveschaden (< mid = leicht, < heavy = mittel, sonst schwer), Projektile/Multi-Hits nutzen `multi`.
+// vy = Start-Auftrieb (negativ = hoch), vx = Rückstoß in Schlagrichtung, grav = Schwerkraft-Faktor im Pop (kleiner = schwebt länger),
+// cap = ab dieser Höhe (px) gibt es im Pop-up kaum noch Nachschub, reach = bis zu dieser Höhe (px) reicht die Hurtbox im Pop-up bis zum Boden (Tiefschläge treffen weiter), drag = horizontale Dämpfung je Frame (Gegner bleibt in Reichweite), land = Erholungs-Frames bei der Landung (kein Knockdown), mid/heavy = Schadensschwellen.
+export const BOUNCE={L:{vy:-4.8,vx:1.2},M:{vy:-5.4,vx:1.6},H:{vy:-9.2,vx:3},multi:{vy:-4.6,vx:1},proj:{vy:-6.5,vx:1.6},grav:.62,drag:.93,land:10,cap:110,reach:80,mid:45,heavy:75};
+// Melee-Modus (Smash-Stil): Schaden in %, Rückstoß wächst mit dem %-Wert, Stocks (Leben), offene Plattform ohne Wände.
+// pl/pr = Plattformkanten, x0/x1/y0/y1 = Blast-Zonen (wer sie verlässt, verliert einen Stock), pctScale = Move-Schaden -> %,
+// kbDiv = je höher, desto später fliegt man weit, base = Grund-Rückstoß je Trefferstärke (leicht/mittel/schwer), flinch = darunter bleibt man am Boden stehen.
+export const MELEE={stocks:3,pl:150,pr:810,x0:-260,x1:1220,y0:-430,y1:GROUND+300,pctScale:.17,pctMax:999,kbDiv:85,base:[4.2,6.2,8.6],hard:9.5,flinch:6.4,
+ stunBase:10,stunK:2.4,respawn:70,hover:100,inv:150,time:480};
 export const SPEED=1.5; // Standard-Spieltempo (Logik-Schritte pro 1/60 s); im Menü einstellbar
 export const COMBO_SCALE=[1,.95,.9,.85,.8,.7,.6,.5,.4,.3]; // Schadensskalierung je Treffer im Combo
 export const METER={max:300,bar:100};

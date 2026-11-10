@@ -48,7 +48,7 @@ const STUDIO=(()=>{
    const k=keyFromName(f.name);if(!k)S.loose.push(f.name);else{S.files[k]=f;if(!first)first=k}}
   if(first)focusAnim(first);schedule();refreshSlots();refreshReport()}
  // ---- Figur aktivieren / speichern ----
- async function activate(p,meta,blob){CHARACTERS.custom=cusMakeChar(p,CHARACTERS[p.template]||CHARACTERS.hero);
+ async function activate(p,meta,blob){CHARACTERS.custom=cusMakeChar(p,CHARACTERS[p.template]||CHARACTERS.tiger);
   const url=URL.createObjectURL(blob),img=new Image();img.src=url;
   try{await img.decode()}catch(e){await new Promise(r=>{img.onload=r;img.onerror=r})}
   if(S.url)URL.revokeObjectURL(S.url);S.url=url;

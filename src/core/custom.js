@@ -123,9 +123,9 @@ export function cusCompleteAnims(A){if(!A.idle)return null;const O={...A},i0=[A.
  return O}
 
 // ---------- Figur ----------
-export const CUS_TEMPLATES=[['hero','MASTER','ausgewogen: Welle, Reversal, Überkopf, Beinfeger'],['palm','PALM MASTER','Reichweite, Rüstung, Griff, Heilung'],['tiger','H!T','schnell: Teleport, Mehrfachtreffer, Dash'],['witch','SORCERESS','Fernkampf: Projektile, Falle, Blink']];
+export const CUS_TEMPLATES=[['tiger','H!T','schnell: Teleport, Mehrfachtreffer, Dash'],['st3g0','ST3-G0','zäh: Rüstungs-Sprint, Schwanzfeger, Feuer-Atem'],['kitsune','KITSUNE','ausgewogen: Geisterfeuer, Spiral-Tritt, Schwanzpeitsche']];
 export const CUS_LIMITS={hp:[700,1300],tempo:[80,130],dmg:[80,130],abwehr:[80,125]};
-export const CUS_DEFAULT={name:'MEIN KÄMPFER',template:'hero',hp:1000,tempo:100,dmg:100,abwehr:100,glow:'#ff4fd8'};
+export const CUS_DEFAULT={name:'MEIN KÄMPFER',template:'tiger',hp:1000,tempo:100,dmg:100,abwehr:100,glow:'#ff4fd8'};
 const cusClampN=(v,[a,b],d)=>{v=+v;return Number.isFinite(v)?Math.round(Math.min(b,Math.max(a,v))):d};
 export function cusClean(p){p=p||{};
  const name=String(p.name==null?CUS_DEFAULT.name:p.name).replace(/[^\p{L}\p{N} !.\-_']/gu,'').trim().toUpperCase().slice(0,14)||CUS_DEFAULT.name;

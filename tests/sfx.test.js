@@ -9,7 +9,7 @@ const names=l=>l.map(x=>x[0]);
 {const used=new Set();const add=l=>l.forEach(x=>used.add(x[0]));
  for(const k in BASE_MOVES){const m=BASE_MOVES[k];if(!m.box)continue;add([swingSound(m)]);add(hitSounds(m,{}));add(hitSounds(m,{launch:true}))}
  add(hitSounds({dmg:70,multi:4,super:true,anim:'special'},{launch:true}));add(hitSounds({dmg:70},{proj:true}));add(hitSounds({dmg:30},{proj:true}));
- for(const n of['ui_round_start','whoosh_heavy','hitstop_freeze','ko_hit','parry_clang','block_guard','dash','dodge','whiff_miss','ground_slam','body_fall','land','heavy_hit_full','heavy_hit_impact','heavy_hit_sweetener','hit_critical'])used.add(n);
+ for(const n of['ui_round_start','whoosh_heavy','hitstop_freeze','ko_hit','fw_finale','fw_rocket','parry_clang','block_guard','dash','dodge','whiff_miss','ground_slam','body_fall','land','heavy_hit_full','heavy_hit_impact','heavy_hit_sweetener','hit_critical'])used.add(n);
  for(let h=2;h<=9;h++)used.add(comboStep(h));
  for(const n of used)assert.ok(fs.existsSync(path.join(root,'sfx',n+'.ogg')),'fehlt: sfx/'+n+'.ogg');ok(used.size+' verwendete Sounds vorhanden')}
 // 2) Zuordnung Art/Stärke
@@ -23,7 +23,7 @@ assert.equal(swingSound(BASE_MOVES['5L'])[0],'whoosh_light');assert.equal(swingS
 assert.equal(comboStep(2),'combo_step_01');assert.equal(comboStep(5),'combo_step_04');assert.equal(comboStep(20),'combo_step_04');ok('Schlag/Tritt/Launcher/Hyper/Combo korrekt zugeordnet');
 // 3) Im Spiel
 function setup(){const i1=new InputBuffer(),i2=new InputBuffer(),log=[];
- const p1=new Fighter({char:CHARACTERS.hero,x:340,facing:1,input:i1}),p2=new Fighter({char:CHARACTERS.tiger,x:620,facing:-1,input:i2});
+ const p1=new Fighter({char:CHARACTERS.st3g0,x:340,facing:1,input:i1}),p2=new Fighter({char:CHARACTERS.tiger,x:620,facing:-1,input:i2});
  const g=new Game(p1,p2);g.audio={play:(n,o)=>log.push(n)};
  const tick=(pr=[],dx=0,dy=0,pr2=[],dx2=0)=>{const fz=g.hitstop>0||g.superFlash>0;i1.feed(dx,dy,pr,fz);i2.feed(dx2,0,pr2,fz);g.step()};
  while(g.phase!=='fight')tick();log.length=0;return{g,p1,p2,tick,log}}
@@ -35,10 +35,10 @@ const until=(f,n=200)=>{let k=0;while(!f()&&k++<n);return f()};
 {const{g,p1,p2,tick,log}=setup();p2.x=p1.x+70;for(let k=0;k<4;k++)tick([],0,0,[],1);tick(['L'],0,0,[],1);for(let k=0;k<40;k++)tick([],0,0,[],1);assert.ok(log.includes('block_guard'),'Block '+log);assert.ok(!log.some(n=>n.startsWith('punch')),'kein Treffer-Sound beim Block');ok('Block: block_guard ('+log.join(', ')+')')}
 {const{g,p1,tick,log}=setup();tick([],1);tick([],1);tick(['DASH'],1);for(let k=0;k<5;k++)tick([],1);assert.ok(log.includes('dash'),'Dash '+log);ok('Dash: dash')}
 {const{g,p1,tick,log}=setup();tick(['UP']);for(let k=0;k<80;k++)tick();assert.ok(log.includes('land'),'Landung '+log);ok('Sprung-Landung: land')}
-{const{g,p1,p2,tick,log}=setup();g.startSuper(p1);g.knockout(p2,p1);assert.ok(log.includes('heavy_hit_impact')&&log.includes('ko_hit'));ok('Hyper-Freeze + K.O.')}
+{const{g,p1,p2,tick,log}=setup();g.startSuper(p1);g.knockout(p2,p1);assert.ok(log.includes('heavy_hit_impact')&&log.includes('fw_finale'));ok('Hyper-Freeze + K.O.')}
 {const{g,p2,log}=setup(),A=g.arena;p2.x=A.r;A.hitWall(g,p2,1e6);assert.ok(log.includes('heavy_hit_impact')&&log.includes('ground_slam'),log);log.length=0;p2.x=A.r;A.hitWall(g,p2,1);assert.ok(log.includes('body_fall'));ok('Wand: Bruch + Aufprall')}
 {const{g,p1,p2,tick,log}=setup();p2.y=GROUND-60;p2.vy=8;p2.state='tumble';p2.hard=true;until(()=>p2.state==='knockdown',60,()=>g.simulate(false));while(p2.state!=='knockdown'&&p2.y<GROUND)g.simulate(false);assert.ok(log.includes('ground_slam'),log);ok('Harter Knockdown: ground_slam')}
 // 4) Ohne Audio (headless) läuft alles ohne Fehler
-{const i1=new InputBuffer(),i2=new InputBuffer(),g=new Game(new Fighter({char:CHARACTERS.hero,x:340,facing:1,input:i1}),new Fighter({char:CHARACTERS.tiger,x:620,facing:-1,input:i2}));
+{const i1=new InputBuffer(),i2=new InputBuffer(),g=new Game(new Fighter({char:CHARACTERS.st3g0,x:340,facing:1,input:i1}),new Fighter({char:CHARACTERS.tiger,x:620,facing:-1,input:i2}));
  for(let k=0;k<400;k++){i1.feed(0,0,k%30===10?['M']:[],false);i2.feed(0,0,[],false);g.step()}ok('ohne game.audio: keine Fehler')}
 console.log('Sound-Tests bestanden');

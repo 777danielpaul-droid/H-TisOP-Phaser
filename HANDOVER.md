@@ -8,8 +8,8 @@
 - Bewegung: Doppelsprung, Coyote-Time, Jump-Buffer, Dash/Air-Dash, hohe Sprünge; Spieltempo einstellbar (Standard 1.5×).
 - Kamera mit echtem Zoom/Schwenk (alle Welt-Objekte skalieren, HUD nicht), Weltgrenzen.
 - KI mit 3 Schwierigkeitsstufen (Leicht/Normal/Hart); Endgegner +1 Stufe.
-- **Arcade-Modus:** Startmenü mit Charakterwahl (Tastatur + Maus), Gegner-Leiter (alle anderen 3 + Minotaurus), je Stage 2 Runden-Siege, eigenes Level je Stage (4 Themes), Stage Clear / Game Over (Enter = nochmal) / Victory.
-- Figuren: **Master** (Sprites), **Palm Master** (Sprites), **Sorceress** (Sprites, Ring-Projektil als echtes Sprite), **Tiger** (Sprites, 35 Einzelframes), **Minotaurus** (Sprites, Endgegner, 1.25× groß, nicht spielbar). Der **Wolf** (Vektor) ist noch im Code, aber nicht im Roster.
+- **Arcade-Modus:** Startmenü mit Charakterwahl (Tastatur + Maus), Gegner-Leiter (alle anderen spielbaren Figuren, kein Endgegner mehr), je Stage 2 Runden-Siege, eigenes Level je Stage (4 Themes), Stage Clear / Game Over (Enter = nochmal) / Victory.
+- Figuren: **H!T** (`tiger`, Sprites) und **ST3-G0** (`st3g0`, Sprites) sowie die **Eigene Figur** (Upload im Startmenü). Der **Wolf** (Vektor) ist noch im Code (Test-Gegner), aber nicht im Roster. Master, Palm Master, Sorceress und Minotaurus (inkl. Endgegner-Logik, Sprites, Movesets, Aura/Partikel, Projektil-Looks, Spezial-Mechaniken Griff/Heilen/Falle/Durchdringen/Hörner-Stoß) wurden entfernt.
 - HUD (flashy), Pause-/Optionsmenü auf M, Vollbild auf F.
 
 ## Gasse zwischen zwei Hochhäusern (NEU, ersetzt die einseitige Hauswand)
@@ -32,9 +32,16 @@
 - **Zuordnung:** Stärke aus Move-Schaden (<45 leicht, <70 mittel, sonst schwer), Tritt = `anim` enthält „kick“. Schwung beim Start der aktiven Frames (`whoosh_light/heavy`, Launcher `heavy_hit_whoosh`, Rush zusätzlich `dash`); Treffer `punch_light/medium/heavy`, `kick_light`/`kick_heavy`; Launcher + Impact/Sweetener; Hyper-Finale `hit_critical`; harter Knockdown `heavy_hit_impact` + Landung `ground_slam`; Block `block_guard`, Rüstung `parry_clang`; Combo ab 2 Treffern `combo_step_01..04`; Fehlschlag mittlerer/schwerer Normals `whiff_miss`; Dash/Back-Dash/Air-Dash `dash`/`dodge`; Landung `land`, Knockdown `body_fall`; Wand `body_fall`, Bruch `heavy_hit_full` + `ground_slam`; Hyper-Start `hitstop_freeze`; K.O. `ko_hit`; Rundenstart `ui_round_start`; Projektil-Start `whoosh_heavy` (hoch gepitcht).
 - **Nicht im Browser gehört/geprüft:** Lautstärke-Balance, Ogg-Vorbis in Safari (ältere Versionen spielen Ogg nicht; dann bleibt das Spiel still, kein Fehler). Tests: `tests/sfx.test.js`.
 
+### Update v17: Pop-up / Feder-Effekt (MvC2-Luftkämpfe)
+- **Idee:** Jeder normale Bodentreffer (kein Launcher, kein Knockdown, nicht geblockt) hebt den Gegner kurz an (`state='airhit'`, `pop=true`). Man kann per Jump-Cancel hinterher und in der Luft weiterschlagen; Launcher/`hard` bleiben wie vorher.
+- **Werte:** `BOUNCE` in `src/core/config.js`: Stärke je Treffer nach Moveschaden (`L` < `mid` 45 ≤ `M` < `heavy` 75 ≤ `H`; Projektile `proj`, Mehrfachtreffer `multi`; pro Move überschreibbar mit `bounce:{vy,vx}`). Höhen ca.: L 25 px, M 32 px, H 94 px. `grav` (Schwerkraft im Pop), `drag` (Horizontal-Dämpfung), `land` (Erholung bei Landung), `cap` (ab dieser Höhe kaum Nachschub bei Re-Hits), `reach` (bis zu dieser Höhe reicht die Hurtbox im Pop bis zum Boden, damit Tiefschläge weiter treffen). `PHYS.hopV` = Sprung beim Jump-Cancel eines normalen Treffers (Launcher nutzt weiter `superJumpV`).
+- **Logik:** `combat.js` (`bounceOf`, Pop-Zweig statt `state='hit'`), `fighter.js` (`pop`-Flag, Schwerkraft/Dämpfung, weiche Landung → `hit` mit `BOUNCE.land` statt Knockdown, Hurtbox-Verlängerung, Anim: erst `hit`-Pose, ab Frame 14 `airhit`). Jump-Cancel (`jc:true`) jetzt auch bei 5L/5M/5H/2L/2M/6M/6H. Wand: ein gefederter Gegner an der Wand zählt weiter als „in der Ecke“ (`pinned`), KI behandelt `opp.pop` wie Bodenstand.
+- **Tests:** neu `tests/pop.test.js` (in `npm test`); `tests/hyper.test.js` erkennt „Wegfliegen“ jetzt über `p2.launched`, `tests/ai.test.js` hält gefederte Gegner an der Wand. `ai.test.js` (Ecken-Taktik, Marge 5 %) ist statistisch und kippt auch im Original gelegentlich.
+- **Nicht im Browser gefühlt:** Balancing (Hoch-/Weite der Pops, Jump-Cancel-Timing), Optik der Pop-Pose je Figur.
+
 ## HUD (v10): Gold-/Tusche-Design
 - `src/render/hud.js` ist das Martial-Arts-HUD (Tusche-Platten, Klingen-Lebensbalken, Portraits im Goldring mit Hanko-Siegel, Ring-Uhr, Pinsel-Combo-Zähler, Ensō-Banner). Serifenschrift mit CJK-Fallback (Kanji 武 闘 勝 壱 弐 参 brauchen eine Systemschrift mit CJK, sonst Kästchen).
-- Eigene Ergänzungen über das gelieferte HUD hinaus: Stage-Anzeige unter dem Timer (`STAGE n / total`, `FINAL BOSS`) und Arcade-Banner (Stage Clear / Game Over / Arcade geschafft) im selben Stil.
+- Eigene Ergänzungen über das gelieferte HUD hinaus: Stage-Anzeige unter dem Timer (`STAGE n / total`) und Arcade-Banner (Stage Clear / Game Over / Arcade geschafft) im selben Stil.
 - Portraits: `drawPortrait()` in `sprites.js` (Ausschnitt des ersten Idle-Frames); Figuren ohne Sprite (Wolf) bekommen den Anfangsbuchstaben.
 - Die Charakterwahl nutzt dieselben Text-Helfer (`hud.fancy/txt/lab`), Titel ist an den Gold-Stil angepasst.
 
@@ -49,27 +56,23 @@
 - Balancing der Figuren/KI nur grob (KI-Test gegen passiven Spieler).
 
 ## Bekannte Behelfe / offene Punkte
-1. **Master:** keine Lauf-/Duck-/Sprung-/Block-Frames → schnelle Idle-Frames mit Wippen, gestauchter Idle, Knie-hoch-Frame, Treffer-Frame. Knockdown = gedrehter Treffer-Frame.
-2. **Palm Master:** keine echten Angriffs-Sheets → Gesten-Frames (Zeigen, Handfläche) mit Energie-Leuchten als Angriffe.
-3. **Sorceress:** nur Idle, Sprung, Zauber-Sheet → alle Angriffe nutzen Zauber-Posen; Treffer/Knockdown sind Behelfe (geneigter Idle-Frame, gedreht/aufgerichtet).
-4. **Minotaurus:** Brüll-Schockwelle, Axt-Stoß (Lauf-Frames), Stampfen; Knockdown/Aufstehen = Roll-Sequenz. Keine eigenen Hit-/Duck-Frames.
-5. **Tiger** (Sprites aus `assets/tiger/source/`, Atlas via `python3 tools/make-sprites.py tiger`): keine Lauf-/Sprung-/Duck-Frames (Idle schnell + Wippen, Kick-Pose in der Luft, kniende Get-up-Pose zum Ducken), keine Sieg-Pose (Rising-Claw-Pose), `hit_light_*` (nur Kopf) ungenutzt. Zuordnung: `TIGER_ANIMS` in `src/render/sprites.js`. Die Vektor-Figur (`rig.js`) wird nur noch für den Wolf benutzt.
-6. Kein Sound, kein Gamepad, kein 2-Spieler-Modus, keine Rundenzeit-/Schwierigkeits-Persistenz außer Schwierigkeit (localStorage).
-7. Sprite-Zuordnung (Frame-Listen) steht in `src/render/sprites.js` (`*_ANIMS`) – dort lassen sich Posen einfach tauschen, wenn bessere Sheets kommen.
+1. **Tiger** (Sprites aus `assets/tiger/source/`, Atlas via `python3 tools/make-sprites.py tiger`): keine Lauf-/Sprung-/Duck-Frames (Idle schnell + Wippen, Kick-Pose in der Luft, kniende Get-up-Pose zum Ducken), keine Sieg-Pose (Rising-Claw-Pose), `hit_light_*` (nur Kopf) ungenutzt. Zuordnung: `TIGER_ANIMS` in `src/render/sprites.js`. Die Vektor-Figur (`rig.js`) wird nur noch für den Wolf benutzt.
+2. Kein Sound, kein Gamepad, kein 2-Spieler-Modus, keine Rundenzeit-/Schwierigkeits-Persistenz außer Schwierigkeit (localStorage).
+3. Sprite-Zuordnung (Frame-Listen) steht in `src/render/sprites.js` (`*_ANIMS`) – dort lassen sich Posen einfach tauschen, wenn bessere Sheets kommen.
 
 ## Wo was liegt
 - Architektur + Erweiterungen: `docs/ARCHITECTURE.md` (Zustandsautomat, Physik, Kamera, Arcade, Stages, Sprites).
 - Frame-Daten/Moves: `src/core/moves.js` · Charaktere/Roster/Leiter: `src/core/characters.js` · KI-Stufen: `src/core/ai.js` (`AI_LEVELS`) · Kamera-Werte: `src/core/config.js` (`CAMERA`) · Level-Themes: `src/render/stage.js` (`THEMES`) · Startmenü: `src/render/select.js`.
-- Assets: `assets/<id>/atlas.webp + meta.json` (fertig gepackt). Quell-Sheets nur im Paket „…_mit_sprite-quellen“ (`assets/<id>/source/`). Neu packen: `python3 tools/make-sprites.py [hero|palm|witch|mino]` (Pillow + numpy nötig).
+- Assets: `assets/<id>/atlas.webp + meta.json` (fertig gepackt). Tiger neu packen: `python3 tools/make-sprites.py` bzw. Posenbögen via `tiger-update`; ST3-G0: `st3g0-update` (Pillow + numpy + scipy nötig).
 
 ## Bauen und testen
 - Bauen (Node): `node tools/build.mjs` oder `build.bat`/`build.sh` → erzeugt `dist/game.js` und `dist/hitisop.html` (Sprites eingebettet). **Nach jeder Code-Änderung in `src/` neu bauen**, sonst läuft `index.html` mit altem Stand.
 - Tests (Node, kein Browser): `node tests/sim.test.js` (Kampfsystem), `node tests/camera.test.js`, `node tests/ai.test.js`, `node tests/arcade.test.js` (Arcade-Ablauf), `node tests/smoke.cjs` (Bundle mit DOM-Stub; Sprite-Bilder werden dort nicht geladen). Alle zusammen: `npm test` (+ smoke separat).
 
 ## Sinnvolle nächste Schritte
-1. Im echten Browser durchspielen (alle 4 Figuren, alle 4 Stages, Game Over/Retry, Menü M, Vollbild F) und Fehler/Gefühl notieren.
-2. Fehlende Sprite-Sheets nachliefern lassen (Master: Laufen/Ducken/Sprung/Block/Knockdown; Palm Master + Sorceress: echte Angriffe/Treffer) und in `HERO_ANIMS`/`PALM_ANIMS`/`WITCH_ANIMS` eintragen (ggf. `make-sprites.py` erweitern).
-3. Balancing: `AI_LEVELS`, Boss-Werte (`mino` in characters.js), Frame-Daten.
+1. Im echten Browser durchspielen (beide Figuren, Arcade, Game Over/Retry, Menü M, Vollbild F) und Fehler/Gefühl notieren.
+2. Fehlende ST3-G0-Posen nachliefern lassen (siehe `docs/ST3G0_PROMPTS.md`) und in `ST3G0_ANIMS` eintragen.
+3. Balancing: `AI_LEVELS`, Charakterwerte in characters.js, Frame-Daten.
 4. Optional: Sound, Gamepad, 2-Spieler, Wolf ins Roster.
 
 ## Arbeitsweise-Wünsche des Auftraggebers (bitte beibehalten)
@@ -78,7 +81,7 @@
 - Sprache: Deutsch.
 
 ## Tiger-Qualität (NEU): Sheet-Pipeline
-- Problem: Tiger-Frames sind klein/weich (~260 px Standhöhe) und zu wenige (6 Idle, 3–4 pro Angriff); Master hat 67 Frames in durchgehendem Stil.
+- Problem: Tiger-Frames sind klein/weich (~260 px Standhöhe) und zu wenige (6 Idle, 3–4 pro Angriff).
 - Lösung: neue Gemini-Sheets (3×2 bzw. 4×2 Zellen, grüner Hintergrund) nach `assets/tiger/sheets/` legen und `TIGER-UPDATE.bat` / `tiger-update.sh` ausführen. Prompts + Dateinamen: `docs/TIGER_PROMPTS.md`, Referenzbild: `assets/tiger/referenz/tiger_referenz.png`.
 - `tools/import-tiger-sheets.py`: Hintergrund entfernen, Raster schneiden (Lückenerkennung, sonst gleichmäßig), Maßstab über Zelle 1 (= neutrale Haltung, Standhöhe 300), Fußlinie + horizontaler Schwerpunkt je Frame, Atlas + `meta.anims`. Die Zuordnung Sheet → Spiel-Animation steht in `ANIMS` im Skript.
 - `sprites.js` übernimmt `meta.anims` automatisch (überschreibt nur Animationen, für die Sheets da sind; Rest bleibt `TIGER_ANIMS`). `fighter.js`: `air`-Animation läuft jetzt nach Flugbahn (vy).
@@ -86,7 +89,7 @@
 
 ## Eigene Figur im Startmenü (NEU)
 - Startmenü hat jetzt 5 Karten: 4 Kämpfer + Slot „EIGENE FIGUR“ (leer = gestricheltes „+“; Klick/Enter öffnet den Editor; mit Figur: Karte spielbar, „✎ EDIT“-Knopf oder Taste E bearbeitet). Auch im Pausenmenü (M) → „Editor öffnen“. `ROSTER` bleibt unverändert (4 Einträge, Tests), der 5. Slot ist `'custom'` und existiert nur, wenn `CHARACTERS.custom` registriert ist.
-- Editor (`src/render/customstudio.js`, HTML wird dynamisch erzeugt, CSS `styles/main.css` ab „Eigene Figur“): Sheets per Drag&Drop (Dateiname → Slot, z. B. `idle_1.png`) oder je Slot „Wählen“; Live-Vorschau mit Animationsauswahl; Name, Moves-Vorlage (MASTER/PALM/TIGER/SORCERESS), Leben/Tempo/Schaden/Abwehr, Leuchtfarbe; „Prompt“-Knopf je Sheet kopiert fertigen Gemini-Prompt (Figurenbeschreibung vom Nutzer). Nötig ist nur `idle_1`; fehlende Animationen übernehmen Behelfe (`cusCompleteAnims`).
+- Editor (`src/render/customstudio.js`, HTML wird dynamisch erzeugt, CSS `styles/main.css` ab „Eigene Figur“): Sheets per Drag&Drop (Dateiname → Slot, z. B. `idle_1.png`) oder je Slot „Wählen“; Live-Vorschau mit Animationsauswahl; Name, Moves-Vorlage (H!T/ST3-G0), Leben/Tempo/Schaden/Abwehr, Leuchtfarbe; „Prompt“-Knopf je Sheet kopiert fertigen Gemini-Prompt (Figurenbeschreibung vom Nutzer). Nötig ist nur `idle_1`; fehlende Animationen übernehmen Behelfe (`cusCompleteAnims`).
 - Logik ohne DOM in `src/core/custom.js` (Hintergrund entfernen, Raster, Maßstab über Zelle 1, Anker, Animationen, Figurenwerte, Prompts) = JS-Gegenstück zu `tools/import-tiger-sheets.py` (gleiche Sheet-Namen/Raster/ANKER-Logik; bei Änderungen beide anpassen). Unterschied: Im Editor sind spätere Teile (idle_2, walk_2) optional, das Python-Skript verlangt beide.
 - Speicherung: IndexedDB `hitisop`/`custom`/`fighter` (Profil, Original-Sheets, fertiger Atlas als Blob, Meta). Geladen beim Start (`studioLoadSaved`). Laufzeit-Registrierung: `registerSpriteChar('custom',…)` in `sprites.js` + `window.__SPRITES__.custom={meta,img}`.
 - Tests: `npm test` (inkl. `tests/custom.test.js`: reine Logik + Simulation gegen KI). UI-Tests mit simuliertem Browser in `tests/dom/` (eigene Installation: `npm i` dort; `studio.test.mjs`, `e2e.test.mjs`). Echter Browser (Layout/CSS des Editors, große Bilder, Safari/Firefox-WebP) noch nicht geprüft.
@@ -186,23 +189,23 @@
 
 ### Update v21: Sieger-Aura statt Sonnenstrahlen
 - `renderer.js` `celeb()`: Lichtsäule + rotierende Strahlen ersetzt durch **Kampfaura** (additiv, hinter dem Gewinner): gezackte Flammen-Silhouette in 3–4 Schichten, aufsteigende Energie-Streifen, Boden-Glühen + auslaufende Druckringe. Standard = Figurenfarbe (`char.glow`).
-- **H! T (`tiger`) = Blitzaura:** blaue/weiße Aura + zuckende Blitze um den Körper und zwei lange Blitze Fuß→Kopf (alle 3–4 Frames neu gewürfelt), kurzes Aufblitzen. **Minotaurus (`mino`) = Feueraura:** rot→orange→gelb, größer, Bodenfeuer + aufsteigende Glut.
+- **H! T (`tiger`) = Blitzaura:** blaue/weiße Aura + zuckende Blitze um den Körper und zwei lange Blitze Fuß→Kopf (alle 3–4 Frames neu gewürfelt), kurzes Aufblitzen. Alle anderen Figuren haben die Flammenaura.
 - `effects.js` `celebrate()`: passende Zusatzpartikel je Figur (Blitze/Funken, Glut, Standard-Funken). Detailgrad folgt `GFX.rays`. Weitere Figuren: neuer Zweig `kind` + Palette `P` in `celeb()`.
-- **Aura in zwei Ebenen:** `celeb(g,game,front)` wird zweimal aufgerufen: `front=false` vor den Figuren (große Flammen, Körper-/Boden-Glühen, hintere Ringhälfte), `front=true` direkt nach `drawFighter` (halbtransparente Innenflammen mit heller Kontur, Hälfte der Streifen, Blitze, vordere Ringhälfte, Bodenfeuer beim Minotaurus) -> Figur steht in der Aura statt davor. Deckkraft der Vorder-Ebene: Werte in den `front`-Zweigen der Flammenschichten.
+- **Aura in zwei Ebenen:** `celeb(g,game,front)` wird zweimal aufgerufen: `front=false` vor den Figuren (große Flammen, Körper-/Boden-Glühen, hintere Ringhälfte), `front=true` direkt nach `drawFighter` (halbtransparente Innenflammen mit heller Kontur, Hälfte der Streifen, Blitze, vordere Ringhälfte) -> Figur steht in der Aura statt davor. Deckkraft der Vorder-Ebene: Werte in den `front`-Zweigen der Flammenschichten.
 - **Blitzaura (H!T), Vordergrund:** zuckender: Blitze alle 2 Frames neu gewürfelt, je Blitz ~40 % aus (Blinken), 9 Segmente mit starkem Zickzack + Abzweig, 3 lange Blitze Fuß→Kopf, unregelmäßiges Voll-Aufblitzen (`str`) und Kern-Blinken alle 11 Frames. Stellschrauben im `kind==='bolt'&&front`-Block von `celeb()`.
 - **Aura flackert + züngelt (alle Figuren):** `celeb()` hat jetzt `fl` (Flacker-Faktor: schnelles Pulsieren + gelegentliches fast-Aus, ca. 16 % der 1/14-s-Takte) für Flammenschichten, Zungen und Körper-Glühen, und `licks()` = einzelne Flammenzungen mit Lebenszyklus (wachsen aus der Körperkontur, züngeln nach oben, verlöschen, tauchen an neuer Stelle auf; Hinter- und Vordergrund-Ebene, vorn mit Kontur). Die großen Silhouetten sind dafür dezenter. Stellschrauben: `fl`-Zeile (Dip-Häufigkeit/-Tiefe), `NL` (Anzahl Zungen), Alpha-Werte in den Layer-Zweigen.
 
 ## Hyper-Kamerafahrt (hitisop47)
-- Beim Hyper zoomt die Kamera sanft auf den Angreifer (Zoom 1.25, Boss etwas weniger) und bleibt im Zoom, solange der Hyper-Move aktiv ist (Freeze + Strahl). `lead` (28) Frames vor dem Ende der aktiven Phase zoomt sie schon wieder raus, damit sie beim letzten Treffer (Gegner fliegt weg) wieder voll draußen ist. Der Gegner bleibt die ganze Zeit im Bild. Werte: `CAMERA.cine` in `src/core/config.js` (zoom, lift, bias, margin, inF, outF, lead, maxF, lerpPos, lerpZoom). Logik: `Camera.focus()` + `Game.cineCamera()`.
+- Beim Hyper zoomt die Kamera sanft auf den Angreifer (Zoom 1.25, größere Figuren etwas weniger) und bleibt im Zoom, solange der Hyper-Move aktiv ist (Freeze + Strahl). `lead` (28) Frames vor dem Ende der aktiven Phase zoomt sie schon wieder raus, damit sie beim letzten Treffer (Gegner fliegt weg) wieder voll draußen ist. Der Gegner bleibt die ganze Zeit im Bild. Werte: `CAMERA.cine` in `src/core/config.js` (zoom, lift, bias, margin, inF, outF, lead, maxF, lerpPos, lerpZoom). Logik: `Camera.focus()` + `Game.cineCamera()`.
 - Das Hyper-Banner zeigt den echten Move-Namen je Figur (Tigerhatz, Inferno-Strahl …) statt „HYPER <Name> BEAM“.
 - Nicht im echten Browser geprüft (nur Logik-Tests); bei starker Unschärfe der Stage im Zoom `S` in `Stage.build` (stage.js) erhöhen.
 - Siegerpose-Aura (`Renderer.celeb`): Zacken der Kontur kleiner (`AURA_SPIKE` .62 → .4) und Flammenzungen etwas kürzer (`AURA_LICK` .82); beide Konstanten oben in `celeb()` einstellbar.
-- Siegerpose H!T (tiger): reine Blitzaura – keine Flammenkontur und keine Flammenzungen mehr (Blitze, Boden-/Körper-Glühen, Druckringe und Energie-Streifen bleiben). Standard-Aura und Minotaurus unverändert.
-- Flammenaura (Standard + Minotaurus) insgesamt kleiner (`SK` = .72 oben in `celeb()`): Flammenschichten und Zungen-Ansatzpunkte rücken enger an den Körper, die einzelnen Zacken und Flammenzungen behalten aber ihre ursprüngliche Größe (Zackenausschlag wird in `flame()` über `1/k` kompensiert). Einstellbar über `SK`.
+- Siegerpose H!T (tiger): reine Blitzaura – keine Flammenkontur und keine Flammenzungen mehr (Blitze, Boden-/Körper-Glühen, Druckringe und Energie-Streifen bleiben). Flammenaura der anderen Figuren unverändert.
+- Flammenaura (alle außer H!T) insgesamt kleiner (`SK` = .72 oben in `celeb()`): Flammenschichten und Zungen-Ansatzpunkte rücken enger an den Körper, die einzelnen Zacken und Flammenzungen behalten aber ihre ursprüngliche Größe (Zackenausschlag wird in `flame()` über `1/k` kompensiert). Einstellbar über `SK`.
 - Flammenzungen (`licks()` in `celeb()`) werden nach oben hin kleiner: Faktor `tp` (unten 1, am Kopf ≈ .45) skaliert Länge, Pendeln und teilweise die Breite.
 
 ## ST3-G0 (neue Figur, hitisop53)
-- Spielbar im Roster (`ROSTER`/`LADDER` in `src/core/characters.js`, Moveset `st3g0` in `src/core/movesets.js`, Animationen `ST3G0_ANIMS` in `src/render/sprites.js`). Arcade hat jetzt 4 Gegner + Boss (5 Stages); der Boss spielt immer in der letzten Arena, die ersten Arenen wiederholen sich (`Arcade.beginStage`).
+- Spielbar im Roster (`ROSTER`/`LADDER` in `src/core/characters.js`, Moveset `st3g0` in `src/core/movesets.js`, Animationen `ST3G0_ANIMS` in `src/render/sprites.js`). Arcade: jeder kämpft gegen alle anderen Figuren; Arenen der Reihe nach, bei mehr Gegnern als Arenen wiederholen sie sich (`Arcade.beginStage`).
 - Sprites: 4 Posen-Bögen (15 Posen, ein Duplikat übersprungen) in `assets/st3g0/sheets/bogen_N.jpeg`, importiert mit `tools/import-st3g0-sheets.py` (Doppelklick: `ST3G0-UPDATE.bat` / `st3g0-update.sh`). Atlas: `assets/st3g0/atlas.webp` + `meta.json`; Frame-Namen `p_<Bogen>_<Zelle>`.
 - Behelfs-Animationen (bis neue Bögen kommen): Ducken-/Luft-Angriffe nutzen Hocke bzw. Sprung-Pose, Treffer = geneigte Deckung, Knockdown = Rutschen → flach liegend (Blickrichtung der Liegepose evtl. anpassen). Fehlende Posen + fertige Gemini-Prompts: `docs/ST3G0_PROMPTS.md` (Bogen 5-12).
 - **Bögen 5-12 eingebaut** (aus `stego.zip`, 48 Posen, Atlas ca. 2 MB): Inhalt weicht vom Prompt-Plan in `docs/ST3G0_PROMPTS.md` ab. Tatsächlich: 5 = Knie-/Seitkick, langer Schlag, Block (5 Posen, 3+2), 6 = Ausfall/Flugkick/Frontkick/Klauen, 7 = Idle/Brüllen, 8 = Aufwärtshaken, 9 = Schlagfolge, 10-11 = Siegesposen, 12 = Hyper mit Flügel-Aura (Pendant zu 11).
@@ -210,3 +213,54 @@
   Special = Brüll-Pose (Bogen 7) mit Feuer-Atem (Projektil `look:'fire'` in `renderer.js`), Win = Drachen-Flügel-Pose (Bogen 12). Idle, Punch, Kick, Heavy, Upper, Block nutzen ebenfalls die neuen Posen. Weiter Behelf: Ducken-Angriffe, Luft-Schlag, Knockdown/Aufstehen (Prompt-Bögen 6 'Ducken' und 12 'Knockdown' fehlen noch).
 - Weiße Hintergrund-Taschen (zwischen Arm und Körper) und Staub-Wolken: Import entfernt die Taschen, Staub bleibt in den Posen (Fußlinie wird nur an der grünen Haut gemessen).
 - Startmenü: Gegner-Zeile kompakter ab 5 Gegnern, 2-Spieler-Kartenbreite für 6 Slots angepasst.
+
+
+## Figuren entfernt + Schatten/Bodenhaftung (hitisop9)
+- **Entfernt:** Master (`hero`), Palm Master (`palm`), Sorceress (`witch`), Minotaurus (`mino`, Endgegner): Charaktere, Movesets, KI-Profile, Sprite-Atlanten/-Animationen (`assets/hero|palm|witch|mino`), Projektil-Sprite-Code, Feuer-Aura und Partikel, Projektil-Looks (Blitz, Rune, Welle, Schock), Spezial-Mechaniken, die nur sie nutzten (Griff/`unb`, Heilen/`heal`, `gain`, Durchdringen/`pierce`, Falle/`uniq`, Hörner-Stoß/`rise`), Boss-Logik im Arcade (`BOSS`, `isBoss`, „FINAL BOSS“-Anzeige), Tools/Doku.
+- **Roster jetzt:** `ROSTER = ['tiger','st3g0']`, Eigene Figur als dritter Slot. Arcade = alle anderen Figuren hintereinander (bei 2 Figuren: 1 Gegner → danach Victory), keine Endgegner-Stage. Eigene-Figur-Vorlagen: H!T und ST3-G0 (`CUS_TEMPLATES`).
+- **Bodenschatten:** Mitte auf der Fußlinie (Füße stehen IM Schatten), Breite aus dem Fußabstand der Pose (`footSpan`), in der Luft kleiner/blasser, bei liegenden Posen (`SPRITE_CHARS[id].lie`) ganz weg. Siehe `docs/ARCHITECTURE.md`, Test `tests/shadow.test.js`.
+- **Bodenhaftung:** `lean` (Neigung) schiefst die Figur am Boden statt sie zu drehen – die Füße schweben dadurch nicht mehr; gedreht wird nur in der Luft.
+- **Sieger-/Verlierer-Posen Feinabstimmung (v25):** `SPRITE_CHARS[id].pose` in `src/render/sprites.js` (`POSE_ST3G0`, `POSE_KITSUNE`) = Größenfaktor `sc`, Drehung `rot` (rad), Absenkung `dy` (Spiel-Einheiten, näher zum Betrachter) und eigener Bodenschatten `shadow:[x,Radius,y]` je Animation. Unabhängig von den Anim-Listen, daher werden die Werte nicht von `meta.anims` (Tiger) überschrieben. Tiger bleibt unverändert (Referenz).
+  - ST3-G0: `win` ×0.9 (Flügel-Aura war zu groß), `defeat` ×0.8 + 18° gekippt (waagerechter) + 12 px tiefer + eigener Schatten (die Pose p_3_2 ist ein Luft-Sturz und wirkte schwebend).
+  - Kitsune: `win` ×0.92, `defeat` ×0.8.
+  - Nachjustieren: nur diese Zahlen ändern, dann `node tools/build.mjs`. Im echten Browser noch nicht geprüft (Kontrollbild per Nachbau der Zeichenlogik).
+- **v25b:** Kitsune ist die kleinste Figur: `SPRITE_CHARS.kitsune.fightScale=.78` (Kampf ca. 149 px, H!T 161, ST3-G0 206); `win` sc 1, `defeat` sc .9 (zusätzlich zu fightScale, nicht in `fullAnims`). ST3-G0 `defeat`: `dy` 30, `rot` .33, Schatten-Versatz 28 (liegt weiter vorn/unten).
+- **Kitsune-Hyper „Neunschwanz-Inferno“ (v26):** eigener Hyper statt des Standard-Strahls (`MODS.kitsune.super` in `src/core/movesets.js`): 1 Balken, 16 F Startup (unverwundbar bis F34), 54 aktive Frames mit `multi:6` = 9 Treffer à 32 Schaden (Skalierung min. 50 %), letzter Treffer = Launcher, Trefferbox `[-40,-200,500,220]` (breiter Fächer nach vorn, ca. 230 Schaden an stehendem Gegner). Anim `hyper` (Hocke → Meditation mit Leuchten → zurück, `KITSUNE_ANIMS`), Optik `tailsFx()` in `src/render/rig.js` (neun geschwungene Geisterfeuer-Schwänze mit Flammenkugeln, Move-Flag `fx:'tails'`, Länge folgt `box`), pro Schwanz ein Ring + Rauschen (`Fighter.tickAttack`). Optik noch nicht im echten Browser geprüft; Feinabstimmung: Winkel/Länge/Breite in `tailsFx`, Werte im Moveset.
+- **Zeichenreihenfolge (v26b):** `drawPri()` am Ende von `src/render/renderer.js`: liegend/K.O. (0) < getroffen/blockend (1) < neutral (2) < angreifend (3), bei Gleichstand nach Höhe `y`, danach P1/P2. Vorher zählte nur „liegend hinten, sonst y“ – bei gleicher Höhe war immer P2 vorn, egal wer zuschlug.
+- **ST3-G0-Hyper „Drachen-Feuersturm“ (v27):** ersetzt den Standard-Strahl (`MODS.st3g0.super`): 1 Balken, 24 F Startup (unverwundbar bis F34), 50 aktive Frames mit `multi:5` = 10 Treffer à 30 (min. 50 % Skalierung, ca. 220 Schaden), letzter Treffer = Launcher, Trefferbox `[40,-235,520,210]` (Kegel aus dem Maul, leicht abwärts). Anim `hyper` (Luft holen p_7_0/1 -> Brüllen p_7_2 lange gehalten -> p_7_3), Optik `breathFx()` in `src/render/rig.js` (Move-Flag `fx:'breath'`: wandernde Glutballen im Look der Feuerwelle, Maul-Leuchten, Funken; Länge folgt `box[2]`, Maul bei [64,-172]), Rauschen + Druckring alle 10 Frames in `Fighter.tickAttack`. Optik noch nicht im echten Browser geprüft.
+- **Stego-Verlierer (v28):** `POSE_ST3G0.defeat.dy` 30 -> 46 (Schatten-Versatz 44): liegt noch weiter vorn/unten.
+- **Tiger-Hyper „Blitz-Kamehameha“ (v28):** ersetzt „Tigerhatz“ (`MODS.tiger.super`). Neues Sheet `assets/tiger/sheets/neu_blitz.png` (2x2 Posen: 0 Aufladen/Hände an der Hüfte · 1 dito, Blick zur Seite · 2 kniender Ausfall = Abschuss · 3 Arme gespreizt, brüllend = Blitzeinschlag; das Gemini-Original hatte ein eingebackenes Schachbrett, das ich per Randfüllung freigestellt habe) – im Importer als `neu_blitz` (POSE_SHEETS, `REF_H` 416 = 505 × 0,823 wegen kleinerer Bogenauflösung) und Anim `hyper` (`ANIMS_NEU`) eingetragen; Atlas neu gebaut (`python3 tools/import-tiger-sheets.py`). Ablauf: 44 F Startup (Einschlag F6 mit Vollbild-Flash/Shake, Körperblitze + Aura, Blitzkugel an den Händen), dann 48 aktive Frames `multi:4` = 12 Treffer à 28 (min. 50 %), letzter Treffer = Launcher, Box `[40,-175,640,150]`, unverwundbar bis F50 (ca. 220 Schaden). Optik `boltFx()` in `src/render/rig.js` (Flag `fx:'bolt'`; Einschlagpunkt Kopf [-26,-170], Hände/Strahlursprung [74,-105]), Flash/Sounds in `Fighter.tickAttack`. Optik nur per Nachbau geprüft, nicht im Browser.
+- **ST3-G0 kleiner (v29):** `SPRITE_CHARS.st3g0.fightScale=.92` (Kampf ca. 190 px, bleibt größte Figur; H!T 161, Kitsune 149). Alle Posen skalieren mit; Pose-Schatten (`POSE_ST3G0.defeat.shadow`) und Feuer-Maulposition (`breathFx` [59,-158], Ring in `tickAttack`) angepasst. Trefferboxen unverändert.
+- **ST3-G0 Ducken (v30):** `crouch`/`cblock`/`cpunch`/`ckick` nutzen alle p_4_1 (nur 170 px statt 190 hoch, Hurtbox 96) -> jetzt `squash:.8` (Anim) + `POSE_ST3G0.*.sc .88` = ca. 120 px. Duck-Schlag/-Tritt sind weiterhin Platzhalter (Standbild p_4_1); eigene Duck-Posen wären besser.
+
+## Update v31: Spritesheet-Aura für Kitsune + ST3-G0 (Siegerpose)
+- **Neu:** Kitsune (lila-goldene Pixel-Flamme) und ST3-G0 (grüne Flamme) haben in der Siegerpose eine eigene Aura aus je einem 4-Frame-Sheet. **H!T behält die Blitzaura** (unverändert, `kind==='bolt'`).
+- **Assets:** Original-Sheets in `assets/aura/sheets/` (`kitsune_aura.jpeg`, `st3g0_aura.jpeg`); `tools/make-aura.py` (Pillow + numpy) entfernt den Hintergrund per Luminanz-Key und schreibt `assets/aura/<id>.webp` (Streifen, 4 Zellen, Flammenunterkante bündig) + `<id>.json`. Neu erzeugen: `python3 tools/make-aura.py`, danach `node tools/build.mjs`.
+- **Meta** (`assets/aura/<id>.json`, bleibt beim Neuerzeugen erhalten): `k` Größe (Flammenhöhe ≈ `210·size·k`), `fps` (7), `seq` Frame-Reihenfolge (Ping-Pong 0,1,2,3,2,1), `front` Deckkraft der Vordergrund-Ebene je Frame (ST3-G0 Frame 4 hat keine Lücke in der Mitte -> 0), `i` Akzentfarbe für Streifen/Funken.
+- **Code:** `build.mjs` bettet `assets/aura/*` als `window.__AURA__` ein. `Renderer.auraSprite(id)` lädt das Bild lazy; `celeb()` kennt jetzt `kind` `'bolt'` | `'sprite'` | `'aura'` (Fallback: alte prozedurale Flammen, wenn kein Aura-Sprite da ist, z. B. Eigene Figur). Bei `'sprite'` entfallen Flammenkontur/-zungen; Boden-Glühen, Druckringe, Energie-Streifen und Partikel bleiben. Neue Figur mit Aura = Sheet + `.json` in `assets/aura/<id>` ablegen.
+- Geprüft in Chromium (Siegerpose aller 3 Figuren, keine Konsolenfehler) + alle Node-Tests. Nicht geprüft: Performance auf schwacher Hardware (zusätzlich 1 Bild pro Frame, ca. 380×665 px).
+
+## Update: Melee-Modus (Smash-Stil) in den aktuellen Stand integriert
+- Aus `melee.zip` übernommen: `src/core/melee.js` (Prozent, Rückstoß, Blast-Zonen, Stocks, Respawn), `src/render/meleehud.js` (Plattform, Prozent-Plaketten, Pfeile), `MELEE` in `config.js`, Melee-Teile in `fighter.js`, `combat.js`, `ai.js` (`meleeRecover`), `camera.js`, `barrier.js` (offene Arena), `arcade.js` (Modus arcade/versus/melee, `cpu`, `stocks`), `game.js`, `main.js`, `select.js`, `hud.js`, `renderer.js`.
+- Der restliche Stand bleibt unverändert: Pop-up/Feder-Effekt, Kitsune-Hyper, Auren, Skins. Im Melee greift Pop-up nicht (Treffer laufen über `meleeHit`).
+- Bedienung im Startmenü: TAB = Modus (Arcade → 2 Spieler → Melee), T = Stocks, B = Spieler 2 Mensch/CPU, ▲▼ = CPU-Stärke.
+- Tests: `npm test` (inkl. `tests/melee.test.js`, `tests/smoke-melee.cjs`), alle bestanden. Nicht im echten Browser geprüft.
+- Melee gegen CPU: Standard ist jetzt Spieler 2 = CPU. Die Optionen oben rechts im Melee-Menü sind klickbare Felder (Mensch/CPU, CPU-Stärke, Stocks; Tasten B / ▲▼ / T gehen weiter). `MELEE_OPTS`/`hitMeleeOpt` in `select.js`.
+- 2-Spieler- und Melee-Menü (Kämpferwahl) im Stil des Arcade-Menüs: freie Idle-Figuren mit Bodenlicht in Spielerfarbe, ▼ P1 / ▼ P2 (✔ = bereit), Farbpunkte, rechts je Spieler ein Profil-Block (Porträt, Beschreibung, Balken, Stärken/Schwächen). Im Melee ohne LEBEN-Balken, Spieler 2 als „CPU“ beschriftet. Kopfzeile `title()` wie im Arcade-Menü (gilt auch für die Stage-Wahl). `vsCardRect` nutzt jetzt das Arcade-Raster (`cardRect`), `vsProfile()` in `select.js`.
+
+## HUD (v18): Kristall-Design (ersetzt Gold-/Tusche-Look)
+- Gesamtes HUD in Eisblau/Violett/Lavendel: `ICE`/`ICE_HI`/`ICE_DIM`/`CRYS` und `HPAL` oben in `src/render/hud.js`. P1 = Eisblau, P2 = Violett. Kein Gold, Rot, Orange mehr (auch Alarm bei wenig HP, Treffer-Blitz, Timer-Warnung, Melee-Prozentfarbe, Wand-HP-Balken, Menü-Akzente).
+- Schrift: keine Umrandung mehr (`fancy()`/`glitz()`), nur weicher Glow; Farbsaum (Chroma) auf einen Hauch reduziert. Ausrufe deutlich kleiner (ROUND 34, FIGHT! 48, K.O. 68, Combo-Zahl 46, Sieger-Texte 20–24, „DURCH DIE WAND!“ 22).
+- Entfernt: Ensō-Pinselringe um FIGHT!/K.O./Super, dunkle Platten und Haarlinien um Banner, ENTER-Kasten. Siegel/Kanji ersetzt durch Edelstein-Rauten (`seal()`), Hyper-Stufen als I/II/III, Wellenmuster durch Kristallgitter.
+- Lebensbalken und Hyper-Meter haben diagonale Kristall-Facetten plus wanderndes Glanzlicht.
+- Nur Optik geändert, keine Spiellogik. Nicht im echten Browser geprüft (nur offscreen gerendert).
+- Siegespose H!T (Blitzaura, `celeb()` in renderer.js): das unregelmäßige Aufblitzen ist jetzt eine obere Halbkreis-Scheibe (Radius 1,3 × Figurenhöhe, Mitte am Boden) statt eines blinkenden Rechtecks.
+
+### Update v17: Spam-Sperre (jede Taste nur 3× hintereinander)
+- `SPAM={max:3,reset:90}` in `src/core/config.js`. Jede Angriffstaste (L/M/H/S) startet höchstens 3 Mal in Folge einen Angriff; danach ignoriert der Kämpfer diese Taste, bis (a) eine andere Angriffstaste benutzt wurde oder (b) 90 Frames (~1,5 s) seit dem letzten Einsatz vergangen sind. Hyper (SUP) ist ausgenommen, Reset bei jeder neuen Runde. Gilt für Spieler und KI, auch bei Cancels/Ketten.
+- Logik: `Fighter.spamLocked(b)` / `noteSpam(b)` (gezählt in `startMove`), Prüfung in `tryAttack` und `tryCancel`. Zustand in `fighter.spam={btn,n,t}`.
+- HUD: drei kleine Kristalle neben „HYPER“ zeigen die Folge (voll + violett = gesperrt), siehe `Hud.hyper()`. Test: `node tests/spam.test.js`.
+
+### Update v18: Kitsune größer, Totenköpfe als Rundensieg-Anzeige
+- Kitsune: `fightScale` in `SPRITE_CHARS` (`src/render/sprites.js`) .78 → .83. Nur die Darstellung; Hurt-/Hitboxen (`char.size`) unverändert. Bleibt die kleinste Figur (H!T .85, ST3-G0 .92).
+- HUD: Rundensiege unter dem Lebensbalken sind jetzt Totenköpfe (`Hud.skull()`): gewonnen = leuchtend in der Spielerfarbe, offen = dunkler Umriss. Der Edelstein am Portrait bleibt.

@@ -3,18 +3,20 @@ import{WALL_L,WALL_R,GROUND,BARRIER,HOUSE}from'./config.js';
 // Gebäude (Innenraum). Rein logisch (kein DOM) -> headless testbar. Grenzen immer über arena.l / arena.r abfragen, nie über WALL_L/WALL_R.
 export class Arena{
  constructor(){this.reset()}
- reset(){this.L=this.make(-1,0);this.R=this.make(1,0);this.msg=null;this.broken=0;this.openT={L:-1,R:-1}}
+ reset(){this.L=this.make(-1,0);this.R=this.make(1,0);this.msg=null;this.broken=0;this.openT={L:-1,R:-1};this.open=null}
+ // Melee: keine Wände, Grenzen weit außerhalb (Blast-Zonen übernehmen)
+ setOpen(l,r){this.open={l,r}}
  make(dir,step){const side=dir<0?'L':'R',n=BARRIER.steps[side],final=step>=n,hp=final?Infinity:BARRIER.hp[Math.min(step,BARRIER.hp.length-1)];
   return{dir,step,final,visible:n>0,hp,max:hp,x:(dir<0?WALL_L:WALL_R)+dir*step*BARRIER.width,flash:0,show:0}}
- get l(){return this.L.x}
- get r(){return this.R.x}
+ get l(){return this.open?this.open.l:this.L.x}
+ get r(){return this.open?this.open.r:this.R.x}
  get endL(){return WALL_L-BARRIER.width*BARRIER.steps.L} // Rückwand des linken Gebäudes
  get endR(){return WALL_R+BARRIER.width*BARRIER.steps.R} // Rückwand des rechten Gebäudes
  // Innenraum eines aufgebrochenen Gebäudes: 'L' | 'R' | null (Hof/Gasse). Nur dort gibt es eine Decke (HOUSE.ceil).
  get ceil(){return HOUSE.ceil}
- inside(x){return this.L.step>0&&x<WALL_L?'L':this.R.step>0&&x>WALL_R?'R':null}
+ inside(x){if(this.open)return null;return this.L.step>0&&x<WALL_L?'L':this.R.step>0&&x>WALL_R?'R':null}
  // Welche Begrenzung berührt ein Kämpfer an Position x? 'L' | 'R' | null
- sideAt(x){return x<=this.l+6?'L':x>=this.r-6?'R':null}
+ sideAt(x){if(this.open)return null;return x<=this.l+6?'L':x>=this.r-6?'R':null}
  update(){for(const w of[this.L,this.R]){if(w.flash>0)w.flash--;if(w.show>0)w.show--}if(this.msg&&--this.msg.t<=0)this.msg=null;
   for(const k of['L','R'])if(this.openT[k]>=0)this.openT[k]++}
  // Schaden an der Wand hinter `victim`. Gibt true zurück, wenn sie dabei bricht.

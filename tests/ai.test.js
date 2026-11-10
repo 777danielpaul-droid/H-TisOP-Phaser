@@ -18,10 +18,10 @@ assert.ok(r[0].dmg<r[2].dmg*.45,'Leicht < 45 % von Hart ('+(r[0].dmg/r[2].dmg*10
 const a=new AIController(0);a.setLevel(2);assert.equal(a.P.name,'HART');a.setLevel(99);assert.equal(a.level,2);a.setLevel(-3);assert.equal(a.level,0);
 // Ecken-Taktik: Passiver Gegner steht an der Wand -> KI (HART) macht mit corner > 0 mehr Schaden / bricht die Wand schneller als mit corner = 0
 function pin(corner,frames=2400){const i1=new InputBuffer(),ai=new AIController(2);ai.P={...ai.P,corner};
- const p1=new Fighter({char:CHARACTERS.tiger,x:800,facing:-1,input:i1}),p2=new Fighter({char:CHARACTERS.hero,x:600,facing:1,input:ai});
+ const p1=new Fighter({char:CHARACTERS.tiger,x:800,facing:-1,input:i1}),p2=new Fighter({char:CHARACTERS.st3g0,x:600,facing:1,input:ai});
  const g=new Game(p1,p2);let dmg=0,breaks=0;
  for(let k=0;k<frames;k++){const hp=p1.hp;i1.feed(0,0,[]);g.step();if(g.phase==='fight'){if(p1.hp<hp)dmg+=hp-p1.hp;p1.hp=p1.maxHp;p2.hp=p2.maxHp;
-   if(['idle','hit','knockdown','wakeup'].includes(p1.state)&&p1.grounded)p1.x=Math.min(p1.x,g.arena.r); // Gegner bleibt an der rechten Wand
+   if((['idle','hit','knockdown','wakeup'].includes(p1.state)&&p1.grounded)||p1.pop)p1.x=Math.min(p1.x,g.arena.r); // Gegner bleibt an der rechten Wand
    if(g.arena.R.step>0){breaks++;g.arena.reset();p1.x=g.arena.r}}}
  return{dmg,breaks}}
 const pv=c=>{let d=0,b=0;const N=10;for(let n=0;n<N;n++){const t=pin(c);d+=t.dmg;b+=t.breaks}return{dmg:d/N,breaks:b/N}};

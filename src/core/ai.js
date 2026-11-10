@@ -1,4 +1,5 @@
 import{InputBuffer}from'./input.js';
+import{MELEE,GROUND}from'./config.js';
 // Schwierigkeitsstufen. Alle Werte hier justierbar:
 //  wait   = Pause zwischen Entscheidungen in Frames [min,max]     idle   = Chance, eine Entscheidung "zu verschlafen"
 //  react  = Reaktionszeit in Frames, bevor geblockt werden kann    block  = Blockchance pro Angriff
@@ -18,6 +19,8 @@ export class AIController extends InputBuffer{
  tick(me,opp,game){
   const P=this.P,R=Math.random,pr=[];let dx=0,dy=0;
   if(game.phase!=='fight'){this.feed(0,0,[]);return}
+  if(game.melee&&me.dead>0){this.feed(0,0,[]);return}
+  if(game.melee&&this.meleeRecover(me,game))return;   // außerhalb der Plattform: zurückkommen hat Vorrang
   const fwd=opp.x>=me.x?1:-1,dist=Math.abs(opp.x-me.x),frozen=game.hitstop>0||game.superFlash>0;
   if(this.keep.n>0){this.keep.n--;dx=this.keep.dx;dy=this.keep.dy}
   const go=(btn,x=0,y=0,n=3)=>{if(btn)pr.push(btn);dx=x;dy=y;this.keep={dx:x,dy:y,n}};
@@ -49,10 +52,10 @@ export class AIController extends InputBuffer{
   // --- Neutral: seltener und ruhiger entscheiden ---
   else if(this.wait>0)this.wait--;
   else if(!['attack','hit','block','knockdown','wakeup','airhit','tumble','ko'].includes(me.state)){
-   const A=game.arena,oppGap=fwd>0?A.r-opp.x:opp.x-A.l,pin=oppGap<150&&opp.grounded;                    // Gegner steht vor der Wand
+   const A=game.arena,oppGap=fwd>0?A.r-opp.x:opp.x-A.l,pin=oppGap<150&&(opp.grounded||opp.pop);                    // Gegner steht vor der Wand
    this.wait=Math.round((P.wait[0]+(R()*(P.wait[1]-P.wait[0])|0))*(pin?1-.45*P.corner:1));this.chain=0;const r=R();
    if(R()<P.idle*(pin?1-.85*P.corner:1))walk(0,0,18);                                          // abwarten
-   else if(!opp.grounded&&dist<170&&me.grounded){if(R()<P.antiair)go('S',fwd,0,4)}
+   else if(!opp.grounded&&!opp.pop&&dist<170&&me.grounded){if(R()<P.antiair)go('S',fwd,0,4)}
    else if(opp.state==='knockdown'||opp.state==='wakeup'){if(dist>100)walk(fwd,0,16);else go(r<.5?'M':'L')}
    else if(this.corner(me,opp,dist,fwd,go,walk,game)){}                                 // Ecke: Druck machen bzw. ausbrechen
    else if(this.tool(me,dist,fwd,go)){}                                  // figurentypische Moves (char.ai)
@@ -64,12 +67,22 @@ export class AIController extends InputBuffer{
    else{if(R()<P.back&&(fwd>0?me.x-game.arena.l:game.arena.r-me.x)>120)walk(-fwd,0,20);else if(r<.4)go('L');else if(r<.6)go('L',0,1);else if(r<.8)go('M');else go('H',0,1)}}
   // KI in der Luft: Luft-Special gelegentlich
   this.feed(dx,dy,pr,frozen)}
+ // Melee: Die KI fällt nicht freiwillig von der Plattform. Draußen/unter der Kante: zur Mitte steuern, bei Absturz springen/dashen.
+ // Am Rand wird nicht weiter nach außen gelaufen (kurz vor der Kante bremst sie).
+ meleeRecover(me,game){const M=MELEE,mid=(M.pl+M.pr)/2,off=!me.onStage||me.under||me.y>GROUND+2,R=Math.random;
+  if(['hit','block','airhit','tumble','knockdown','wakeup'].includes(me.state))return false;   // in Hitstun kann niemand steuern
+  if(!off){const near=me.x<M.pl+34?-1:me.x>M.pr-34?1:0;
+   if(near&&me.grounded&&(this.keep.dx===near||R()<.5)){this.keep={dx:-near,dy:0,n:6};this.feed(-near,0,[],game.hitstop>0);return true}   // Kante: zurück nach innen
+   return false}
+  const toMid=mid>=me.x?1:-1,pr=[],dy=0;
+  if(me.vy>1&&me.y>GROUND-60){if(me.airJumps>0)pr.push('UP');else if(me.airDashes>0&&Math.abs(me.x-mid)>150&&R()<.3)pr.push('DASH')}   // fällt unter Plattformhöhe: Doppelsprung, danach Air-Dash zur Mitte
+  this.feed(toMid,dy,pr,game.hitstop>0);return true}
  // Wand-Taktik: Steht der Gegner vor der Wand, setzt die KI nach (Dash, Projektil, Normals, Launcher = 1,5× Wandschaden). Steht sie selbst
  // mit dem Rücken zur Wand, bricht sie aus (Sprung über den Gegner) statt weiter zurückzuweichen. Chance skaliert mit P.corner (je Stufe).
  corner(me,opp,dist,fwd,go,walk,game){const P=this.P,A=game.arena,R=Math.random;if(!P.corner)return false;
   const oppGap=fwd>0?A.r-opp.x:opp.x-A.l,meGap=fwd>0?me.x-A.l:A.r-me.x;
   if(meGap<100&&dist<190&&R()<P.corner*.7){if(R()<.55)walk(fwd,-1,6);else go('M');return true}
-  if(oppGap>=150||!opp.grounded||R()>=P.corner)return false;
+  if(oppGap>=150||!(opp.grounded||opp.pop)||R()>=P.corner)return false;
   const r=R();
   if(dist>200){if(r<.45)go('DASH',fwd);else if(r<.65)go('S');else walk(fwd,0,20)}
   else if(dist>110){if(r<.3)go('M');else if(r<.5)go('S');else walk(fwd,0,10)}

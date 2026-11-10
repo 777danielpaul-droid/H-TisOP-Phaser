@@ -55,7 +55,6 @@ export class Effects{
   // Charakter-Aura (Renderer zeichnet die Flammen-/Blitzform): hier die passenden Partikel
   const sz=f.char.size||1;
   if(f.char.id==='tiger'){if(t%3===0)ps.bolt(f.x+(Math.random()-.5)*110,f.y-30-Math.random()*170*sz,Math.random()<.5?'#7df9ff':'#ffffff',Math.random()*6.283,60+Math.random()*80,6);if(t%5===0)ps.glitter(f.x,f.y-100,{count:5,speed:6,life:26,size:3,colors:['#ffffff','#7df9ff','#3fb8ff'],gravity:0})}
-  else if(f.char.id==='mino'){if(t%2===0)ps.glitter(f.x+(Math.random()-.5)*150*sz,GROUND-6,{count:2,speed:3.2,life:70,size:4,colors:['#ff3a00','#ff8a1a','#ffc12e','#fff4c8'],gravity:-.06,angle:-Math.PI/2,spread:.7})}
   else if(t%4===0)ps.glitter(f.x+(Math.random()-.5)*100,GROUND-6,{count:2,speed:3,life:60,size:3.4,colors:[col,'#ffe9a8','#ffffff'],gravity:-.05,angle:-Math.PI/2,spread:.8});
   if(t%40===8){ps.ring(f.x,GROUND-10,col,300);ps.shock(f.x,GROUND,col,330,30);ps.glitter(f.x,f.y-100,{count:26,speed:9,life:60,size:4.4,colors:[col,...GLITTER_PAL],gravity:.04})}
  }

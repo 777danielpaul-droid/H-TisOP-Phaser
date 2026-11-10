@@ -20,7 +20,7 @@ check('nach ~5 s ist alles verglüht',alive()===0&&ps.ff.length===0&&ps.rk.lengt
 
 // Dauerfeuer wie im Sieger-Finale: Pool läuft nie über, nichts hängt
 const q=new ParticleSystem();for(let t=0;t<600;t++){if(t%16===2)q.rocket(300+Math.random()*400,470,86+Math.random()*140,['#ffd23f','#ff4fd8','#fff'][t%3]);q.update()}
-check('Dauerfeuer: Pool bleibt bei 2400 Sternen',q.fs.length===2400);
+check('Dauerfeuer: Pool bleibt bei 4400 Sternen',q.fs.length===4400);
 for(let i=0;i<400;i++)q.update();
 check('Dauerfeuer: danach alles aus',q.fs.every(p=>!p.alive)&&!q.rk.length);
 

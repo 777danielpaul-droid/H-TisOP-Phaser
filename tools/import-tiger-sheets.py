@@ -30,9 +30,9 @@ GRID = {'idle_1': (3, 2), 'idle_2': (3, 2), 'walk_1': (3, 2), 'walk_2': (3, 2), 
         'punch': (3, 2), 'heavy': (3, 2), 'kick': (3, 2), 'crouch_atk': (3, 2), 'air_atk': (4, 2), 'claw': (4, 2), 'special': (4, 2),
         'hit': (3, 2), 'down': (4, 2), 'getup': (3, 2), 'block': (3, 2), 'win': (3, 2)}
 # Neue Posen-Bögen (2x2 Posen, Figuren dürfen über Zellgrenzen ragen -> Erkennung per zusammenhängender Figur statt Raster)
-POSE_SHEETS = {'neu_bewegung': (2, 2), 'neu_tritt': (2, 2), 'neu_schlag': (2, 2), 'neu_posen': (2, 2), 'neu_treffer': (2, 2), 'neu_sieg': (2, 2), 'neu_aufstehen': (2, 2)}
+POSE_SHEETS = {'neu_bewegung': (2, 2), 'neu_tritt': (2, 2), 'neu_schlag': (2, 2), 'neu_posen': (2, 2), 'neu_treffer': (2, 2), 'neu_sieg': (2, 2), 'neu_aufstehen': (2, 2), 'neu_blitz': (2, 2)}
 # Bögen, deren Zelle 1 keine neutrale Haltung ist (Kopf zurück / Brüllen): Maßstab aus fester Standhöhe im Sheet (Quellpixel) statt aus Zelle 1
-REF_H = {'neu_treffer': 505, 'neu_sieg': 505, 'neu_aufstehen': 505}
+REF_H = {'neu_treffer': 505, 'neu_sieg': 505, 'neu_aufstehen': 505, 'neu_blitz': 416}   # neu_blitz: Bogen nur 1264x843 (statt 1536x1024) -> 505 * 0.823
 GRID.update(POSE_SHEETS)
 # Fliegende Treffer-Frames: Körpermitte statt Fußlinie verankern
 # Einzelne Posen kleiner/größer darstellen: (Sheet, Zelle) -> Faktor (Besiegt-Pose war zu groß)
@@ -100,6 +100,8 @@ ANIMS_NEU = {
     'defeat':  dict(parts=[('neu_sieg', [2])]),
     # neu_aufstehen: 0 liegend · 1 Hocke aufrecht (Fäuste vor der Brust) · 2 Hocke vorgebeugt (Hand am Boden) · 3 Kampfstellung. Aufstehen: 0 -> 2 -> 1 -> 3
     'wakeup':  dict(parts=[('neu_aufstehen', [0, 2, 1, 3])]),
+    # neu_blitz (Hyper Blitz-Kamehameha): 0 Hände an der Hüfte (Aufladen) · 1 Hände an der Hüfte, Blick zur Seite · 2 kniender Ausfall, Hände nach vorn (Abschuss) · 3 Arme gespreizt, brüllend (Blitzeinschlag)
+    'hyper':   dict(parts=[('neu_blitz', [3, 3, 0, 1, 1, 2, 2, 2, 2, 2, 2, 0])]),
 }
 # Alte Einzelframes (assets/tiger/source) bleiben als Rückfall im Atlas
 LEG_SKIP = ('hit_light_',)

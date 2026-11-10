@@ -6,7 +6,7 @@ import{Hud}from'./hud.js';
 import{PostFX}from'./fx.js';
 import{GLPost}from'./gl.js';
 import{drawFighter,drawTrail}from'./rig.js';
-import{drawSpriteProjectile}from'./sprites.js';
+import{meleeStage,meleeHalo,drawMeleeHud}from'./meleehud.js';
 // Render-Pipeline:  [Screen-Shake] → [Kamera-Transform: Stage, Fighter, Projektile, Partikel, Debug-Boxen] → restore → [HUD unskaliert]
 export class Renderer{
  constructor(canvas){this.cv=canvas;this.g=canvas.getContext('2d');this.applyGfx();this.stages=THEMES.map(t=>new Stage(W,H,GROUND,WORLD,t));this.stage=this.stages[0];this.hud=new Hud(W,H);this.sel=new SelectScreen(this.hud);this.post=new PostFX();this.selT=0;this.scale=canvas.width/W}
@@ -36,11 +36,12 @@ export class Renderer{
   g.save();                                              // --- Screen-Space: Shake ---
   g.translate((game.kickX||0)+(game.shake>0?(Math.random()-.5)*game.shake*1.6:0),(game.kickY||0)+(game.shake>0?(Math.random()-.5)*game.shake*1.6:0));
   g.save();cam.apply(g);                                 // --- Welt: alles unter derselben Kamera-Matrix ---
-  this.stage.draw(g,t);game.particles.drawFw(g);this.house(g,game,t);   // Feuerwerk: vor dem Himmel, hinter den Häusern
-  for(const f of game.fighters)this.post.floorGlow(g,f,GROUND,t);
+  this.stage.draw(g,t);game.particles.drawFw(g);   // Feuerwerk: vor dem Himmel, hinter den Häusern
+  const ML=!!game.melee;if(ML){meleeStage(g,this.stage.theme,t);for(const f of game.fighters)meleeHalo(g,f,t)}else this.house(g,game,t);   // Melee: offene Plattform über dem Abgrund statt Gasse mit Häusern
+  for(const f of game.fighters)if(!ML||(f.onStage&&!f.under&&!(f.dead>0)))this.post.floorGlow(g,f,GROUND,t);
   this.celeb(g,game);
-  for(const f of game.fighters)drawTrail(g,f,t);
-  for(const f of[...game.fighters].sort((a,b)=>(a.state==='ko'||a.state==='knockdown'?-1:0)-(b.state==='ko'||b.state==='knockdown'?-1:0)||a.y-b.y))drawFighter(g,f,t,1,GROUND);
+  for(const f of game.fighters)if(!(f.dead>0))drawTrail(g,f,t);
+  for(const f of[...game.fighters].filter(f=>!(f.dead>0)).sort((a,b)=>drawPri(a)-drawPri(b)||a.y-b.y))drawFighter(g,f,t,ML&&f.inv>0&&game.frame%6<3?.5:1,ML&&!(f.onStage&&!f.under)?99999:GROUND);   // Melee: nach dem Respawn blinkt die Figur; Schatten nur auf der Plattform;   // Zeichenreihenfolge: Angreifer immer VOR dem Getroffenen (siehe drawPri)
   this.celeb(g,game,true);                                // Aura-Vordergrund: Figur steht IN der Aura
   for(const p of game.projectiles)this.projectile(g,p,p.owner);
   game.particles.draw(g,true);
@@ -50,16 +51,17 @@ export class Renderer{
   if(this.useGL){this.post.dust(g,W,H,t,'#cdbbff',26,.6);this.glFinish(this.sceneParams(game))}else this.post.scene(g,this.cv,game,game.frame);
   this.post.impact(ui,game);if(!this.useGL)this.post.dust(ui,W,H,t,'#cdbbff',26,.6);
   if(game.phase==='intro'&&game.pf<26){ui.save();ui.globalAlpha=1-game.pf/26;ui.fillStyle='#000';ui.fillRect(0,0,W,H);ui.restore()}   // Einblenden aus Schwarz
-  this.stage.overlay(ui);this.hud.draw(ui,game);this.hud.flash(ui,game);this.areaBanner(ui,game,t);   // HUD/UI: unskaliert und scharf
+  this.stage.overlay(ui);this.hud.draw(ui,game);if(ML)drawMeleeHud(ui,this.hud,game,t);this.hud.flash(ui,game);this.areaBanner(ui,game,t);   // HUD/UI: unskaliert und scharf
   if(game.debug)this.debugText(ui,game)}
+ // Spritesheet-Aura laden (window.__AURA__[id]={meta,atlas}); null solange das Bild noch lädt oder keine Aura-Sprites da sind
+ auraSprite(id){const A=typeof window!=='undefined'&&window.__AURA__&&window.__AURA__[id];if(!A||typeof Image==='undefined')return null;if(!A.img){A.img=new Image();A.img.onload=()=>{A.ok=true};A.img.src=A.atlas}return A.ok?A:null}
  // Sieger-Finale: Kampfaura (Anime-Power-up) hinter dem Gewinner, additiv, Welt-Raum. Standard = Flammen-Aura in der Figurenfarbe;
- // H!T (tiger) = Blitzaura, Minotaurus (mino) = Feueraura. Aufsteigende Energie-Streifen, Boden-Glühen + Druckringe, pulsierende Flammenzungen.
+ // H!T (tiger) = Blitzaura, alle anderen = Flammenaura. Aufsteigende Energie-Streifen, Boden-Glühen + Druckringe, pulsierende Flammenzungen.
  // Zwei Durchgänge: front=false hinter der Figur (große Flammen, Glühen), front=true davor (halbtransparente Innenflammen mit Kontur, Streifen, Blitze, vordere Ringhälfte) -> die Figur steht IN der Aura.
  celeb(g,game,front){const c=game.celeb;if(!c)return;const SK=.72;   // Gesamtgröße der Flammenaura (1 = alt): Flammenschichten und Zungen-Ansatzpunkte rücken enger zusammen, die einzelnen Zacken/Zungen behalten ihre Originalgröße
-  const f=c.f,id=f.char.id,kind=id==='tiger'?'bolt':id==='mino'?'fire':'aura',k=Math.min(1,c.t/30),T=c.t/60,sz=f.char.size||1,cx=f.x,gy=f.y,bh=210*sz,bw=62*sz,fx=Math.max(.35,GFX.rays);
-  const gl=f.char.glow||'#ffffff',P=kind==='fire'?{o:'#d81800',m:'#ff6a00',i:'#ffc12e',c:'#fff4c8',s:['#ff6a00','#ffc12e','#fff4c8']}
-   :kind==='bolt'?{o:'#2a8cff',m:'#5fd0ff',i:'#d8fbff',c:'#ffffff',s:['#3fe0ff','#ffffff','#7df9ff']}
-   :{o:gl,m:gl,i:'#ffe9a8',c:'#ffffff',s:[gl,'#ffd23f','#ffffff']};
+  const f=c.f,id=f.char.id,AS=id==='tiger'?null:this.auraSprite(id),kind=id==='tiger'?'bolt':AS?'sprite':'aura',k=Math.min(1,c.t/30),T=c.t/60,sz=f.char.size||1,cx=f.x,gy=f.y,bh=210*sz,bw=62*sz,fx=Math.max(.35,GFX.rays);
+  const gl=f.char.glow||'#ffffff',P=kind==='bolt'?{o:'#2a8cff',m:'#5fd0ff',i:'#d8fbff',c:'#ffffff',s:['#3fe0ff','#ffffff','#7df9ff']}
+   :{o:gl,m:gl,i:AS?AS.meta.i:'#ffe9a8',c:'#ffffff',s:[gl,AS?AS.meta.i:'#ffd23f','#ffffff']};
   const H=n=>{const v=Math.sin(n*12.9898)*43758.5453;return v-Math.floor(v)};
   // Flackern: Aura pulsiert unregelmäßig und fällt ab und zu fast aus (nicht dauernd voll sichtbar)
   const fl=Math.max(.12,.6+.4*Math.sin(T*21)*Math.sin(T*6.1+1))*(H(Math.floor(T*14)*1.7)<.16?.25:1);
@@ -86,23 +88,21 @@ export class Renderer{
   if(!front){const R0=bh*1.15*(kind==='bolt'?1:.85),rg=g.createRadialGradient(cx,gy-bh*.5,10,cx,gy-bh*.5,R0);rg.addColorStop(0,P.c+'88');rg.addColorStop(.3,P.m+'55');rg.addColorStop(1,P.o+'00');g.globalAlpha=k*(.5+.5*fl)*(.8+.2*Math.sin(T*8));g.fillStyle=rg;g.fillRect(cx-R0,gy-bh*.5-R0,R0*2,R0*2)}
   // Aura-Körper: mehrere Flammenschichten (außen breit/dunkel → innen schmal/hell)
   const by=gy+6;
-  if(kind==='fire'){const nn=Math.max(6,Math.round(12*fx)),NL=Math.round(20*fx)+6;
-   if(!front){flame(cx,by,bw*1.7,bh*1.55,1,nn,P.o,P.m,.3);flame(cx,by,bw*1.35,bh*1.35,5,nn,P.m,P.i,.32);flame(cx,by,bw*1.0,bh*1.1,9,nn,P.i,P.c,.22);
-    licks(NL,0,1.3,.75,0,P.m,P.i);licks(Math.round(NL*.6),60,1,.7,0,P.i,P.c)}
-   else{flame(cx,by,bw*1.25,bh*1.2,21,nn,P.m,P.i,.16,.3);licks(Math.round(NL*.7),30,1.1,.5,.45,P.m,P.i);
-    for(let q=0,N=Math.round(7*fx);q<N;q++){const o=(q/(N-1||1)-.5)*bw*5.2*SK;flame(cx+o,by,(16+H(q)*12)*sz,(46+H(q*3)*50)*sz,q*4+2,6,P.m,P.i,.5,0,1)}}}   // Bodenfeuer vor den Füßen
-  else{const nn=Math.max(8,Math.round(15*fx)),NL=Math.round(16*fx)+5,cA=P.m,cB=P.i;
-   if(kind!=='bolt'){   // H!T (Blitzaura): keine Flammen/Flammenzungen, nur Blitze (siehe unten) + Glühen + Energie-Streifen
+  {const nn=Math.max(8,Math.round(15*fx)),NL=Math.round(16*fx)+5,cA=P.m,cB=P.i;
+   if(kind==='aura'){   // Flammenkontur nur ohne Sprite-Aura (H!T = Blitzaura, Kitsune/ST3-G0 = Spritesheet-Aura): keine Flammen/Flammenzungen, nur Blitze (siehe unten) + Glühen + Energie-Streifen
    if(!front){flame(cx,by,bw*1.6,bh*1.4,1,nn,P.o,P.m,.28);flame(cx,by,bw*1.2,bh*1.18,5,nn,P.m,P.i,.26);
     licks(NL,0,1.15,.75,0,cA,cB);licks(Math.round(NL*.6),60,.9,.7,0,P.i,P.c)}
    else{flame(cx,by,bw*.95,bh*1.0,13,nn,P.m,P.i,.16,.3);licks(Math.round(NL*.7),30,1,.5,.45,cB,P.c)}}}
+  // Sprite-Aura (Kitsune: Lila-Gold-Pixelflamme, ST3-G0: grüne Flamme): 4-Frame-Sheet, additiv, Ping-Pong-Schleife. Hinten voll, vorn schwach (Figur steht in der Flamme)
+  if(kind==='sprite'){const M=AS.meta,seq=M.seq,fi=seq[Math.floor(c.t*M.fps/60)%seq.length],s=bh*M.k/M.ay*.85*(1+Math.sin(T*5)*.015),dw=M.w*s,dh=M.h*s,al=front?M.front[fi]:1;
+   if(al>0){g.save();g.imageSmoothingEnabled=true;g.globalAlpha=Math.min(1,k*al*(.82+.18*fl));g.drawImage(AS.img,fi*M.w,0,M.w,M.h,cx-dw/2,gy+8-M.ay*s,dw,dh);g.restore()}}
   // Aufsteigende Energie-Streifen (Anime-Speedlines)
   for(let q=0,N=Math.round(22*fx)+4;q<N;q++){if((q%2===1)!==!!front)continue;const ph=(T*(.8+H(q)*.9)+H(q*3.1))%1,x=cx+(H(q*5.1)-.5)*bw*2.9*(kind==='bolt'?1:SK),y=gy-ph*bh*1.8,len=(34+H(q*2)*70)*sz;g.globalAlpha=k*Math.sin(ph*Math.PI)*.85;g.strokeStyle=P.s[q%3];g.lineWidth=(1.2+H(q*7)*2.4)*sz;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.sin(T*3+q)*4,y+len);g.stroke()}
   // Blitzaura (H!T): zuckende Blitze um den Körper + zwei lange Blitze Fuß→Kopf, alle 3–4 Frames neu gewürfelt
   if(kind==='bolt'&&front){const fi=Math.floor(c.t/2),str=H(fi*.77+3);   // alle 2 Frames neu gewürfelt = Zucken; je Blitz an/aus = Blinken
    for(let q=0,N=Math.round(13*(.5+fx*.5));q<N;q++){const sd=fi*17+q*5.3;if(H(sd+7)<.4)continue;const a0=H(sd)*6.283,rr=(.6+H(sd+1)*.9)*bw,yy=gy-bh*(.05+H(sd+2)*.95);bolt(cx+Math.cos(a0)*rr,yy,a0+(H(sd+3)-.5)*1.2,(40+H(sd+4)*90)*sz,sd,1.2+H(sd+5)*1.6,.65+H(sd+6)*.35)}
    for(let sdn=0;sdn<3;sdn++){const sd=Math.floor(c.t/3)*31+sdn*100;if(H(sd+9)<.3)continue;const sx=cx+(sdn-1)*bw*(.9+H(sd)*.35);bolt(sx,gy,-Math.PI/2+(H(sd+2)-.5)*.5,bh*(.9+H(sd+4)*.4),sd,1.8+H(sd+5)*1.2,.8+H(sd+6)*.2)}   // lange Blitze Fuß→Kopf
-   if(str>.84){g.globalAlpha=k*(.16+(str-.84)*1.4);g.fillStyle=P.c;g.fillRect(cx-bh*1.3,gy-bh*1.6,bh*2.6,bh*1.8)}                       // unregelmäßiges Aufblitzen
+   if(str>.84){g.globalAlpha=k*(.16+(str-.84)*1.4);g.fillStyle=P.c;g.beginPath();g.arc(cx,gy,bh*1.3,Math.PI,6.283);g.closePath();g.fill()}                       // unregelmäßiges Aufblitzen (obere Halbkreis-Scheibe statt Kasten)
    if(c.t%11<2){const R0=bh*.85,rg=g.createRadialGradient(cx,gy-bh*.5,6,cx,gy-bh*.5,R0);rg.addColorStop(0,P.c+'aa');rg.addColorStop(.5,P.m+'44');rg.addColorStop(1,P.m+'00');g.globalAlpha=k*.55;g.fillStyle=rg;g.fillRect(cx-R0,gy-bh*.5-R0,R0*2,R0*2)}}   // Kern-Blinken
   g.restore()}
  // ---- Gasse zwischen zwei Hochhäusern: links Spielhalle, rechts Lobby. Fassaden reichen bis über den Bildrand, Erdgeschoss-Wand brechbar ----
@@ -204,7 +204,7 @@ export class Renderer{
     for(let i=0;i<10;i++){g.fillStyle=`hsl(${R()*360},70%,60%)`;g.beginPath();g.arc(kx+16+R()*(kw-32),ky+96+R()*12,8+R()*4,0,7);g.fill()}
     g.strokeStyle='#ccc';g.lineWidth=2;g.beginPath();g.moveTo(kx+50,ky+16);g.lineTo(kx+50,ky+56);g.moveTo(kx+42,ky+62);g.lineTo(kx+50,ky+56);g.lineTo(kx+58,ky+62);g.stroke();g.fillStyle=T.lights[0];g.fillRect(kx+6,ky+120,kw-12,20);glow(g,kx+kw/2,ky+60,90,'#8fd8ff33');
     const hx=mid-30,hy=top+36;g.fillStyle='#07040f';g.fillRect(hx,hy,220,74);glowRect(g,hx,hy,220,74,T.lights[1],12);g.save();g.shadowColor=T.lights[1];g.shadowBlur=10;g.fillStyle=T.lights[1];g.font='bold 14px "Courier New",monospace';g.textAlign='center';g.fillText('HIGH SCORE',hx+110,hy+20);   // Highscore-Tafel
-    g.fillStyle='#ffd23f';g.font='bold 12px "Courier New",monospace';['1. WOLF   999999','2. H!T    845200','3. HERO   760100'].forEach((l,i)=>g.fillText(l,hx+110,hy+38+i*14));g.restore();
+    g.fillStyle='#ffd23f';g.font='bold 12px "Courier New",monospace';['1. WOLF   999999','2. H!T    845200','3. ST3-G0  760100'].forEach((l,i)=>g.fillText(l,hx+110,hy+38+i*14));g.restore();
     neon(g,X0+80,top+50,150,30,'INSERT COIN',T.lights[2],16);neon(g,X0+190,top+92,110,28,'FREE PLAY',T.lights[0],15);
     if(X1-X0>800){neon(g,X0+340,top+62,110,28,'TOKENS',T.lights[1],15);neon(g,X0+700,top+66,130,28,'2 PLAYER',T.lights[0],15);neon(g,X0+500,top+128,120,26,'HYPER!',T.lights[2],15)}
     const cx0=X1-140,cw=120;g.fillStyle='#2a1a40';g.fillRect(cx0,fl-64,cw,64);g.fillStyle=T.line;g.fillRect(cx0-5,fl-70,cw+10,6);g.fillStyle='#00000055';for(let x=cx0+8;x<cx0+cw-8;x+=28)g.fillRect(x,fl-54,20,44);   // Preis-Tresen
@@ -231,29 +231,20 @@ export class Renderer{
    g.beginPath();g.moveTo(L.ew-d*8,L.top-2);for(let i=0;i<7;i++)g.lineTo(L.ew+d*(4+R(i)*20),L.top+8+i*10);g.lineTo(L.ew-d*8,L.top+78);g.fill();
    g.fillStyle='#4a3238';for(let i=0;i<18;i++){const wd=6+R(i+5)*14;g.fillRect(d>0?L.ew-40+R(i+9)*110:L.ew+40-R(i+9)*110-wd,GROUND+2-R(i+3)*16,wd,5+R(i+7)*9)}g.restore()}
   if(w.show>0&&!w.final&&!open){const a=Math.min(1,w.show/40),bw=64,f=Math.max(0,w.hp/w.max),bx=L.ew+d*40;g.save();g.globalAlpha=a;g.fillStyle='#000a';g.fillRect(bx-bw/2-1,L.top+46,bw+2,9);
-   g.fillStyle=f>.5?'#ffd23f':f>.25?'#ff9a3a':'#ff3a3a';g.fillRect(bx-bw/2,L.top+47,bw*f,7);g.restore()}}
+   g.fillStyle=f>.5?'#8fe9ff':f>.25?'#9b7bff':'#d9ccff';g.fillRect(bx-bw/2,L.top+47,bw*f,7);g.restore()}}
  // Banner nach dem Durchbruch (Bildschirmraum)
  areaBanner(g,game,t){const m=game.arena.msg;if(!m)return;const a=Math.min(1,m.t/30)*Math.min(1,(170-m.t)/8+.2);
-  g.save();g.globalAlpha=Math.max(0,a);this.hud.fancy(g,'DURCH DIE WAND!',W/2,200,34,['#ffffff','#ffd9a0'],'center','#ffb347',t,false,false,700,5);
-  const ex=m.dir>0?W-56:56,p=.6+.4*Math.sin(t*10);g.globalAlpha=Math.max(0,a)*p;this.hud.fancy(g,m.dir>0?'»»':'««',ex,282,46,['#ffffff','#ffb347'],'center','#ffb347',t,false,false,700,0);g.restore()}
+  g.save();g.globalAlpha=Math.max(0,a);this.hud.fancy(g,'DURCH DIE WAND!',W/2,200,22,['#ffffff','#bfe9ff'],'center','#8f7bff',t,false,false,700,4);
+  const ex=m.dir>0?W-56:56,p=.6+.4*Math.sin(t*10);g.globalAlpha=Math.max(0,a)*p;this.hud.fancy(g,m.dir>0?'»»':'««',ex,276,28,['#ffffff','#9fe8ff'],'center','#8f7bff',t,false,false,700,0);g.restore()}
  look(g,p,col){const L=p.def.look,t=p.age;g.save();g.translate(p.x,p.y);g.globalCompositeOperation='lighter';
-  if(L==='bolt'){const h=p.h/2,k=Math.min(1,t/3);g.strokeStyle='#fff';g.shadowColor=col;g.shadowBlur=24;g.lineWidth=7*k;g.beginPath();g.moveTo(0,-h);
-   for(let i=1;i<=7;i++)g.lineTo(((i*53+t*17)%30)-15,-h+i*h*2/7);g.stroke();g.strokeStyle=col;g.lineWidth=3;g.stroke()}
-  else if(L==='mine'){const r=p.w/2,pu=.75+.25*Math.sin(t*.2);g.scale(1,.42);g.translate(0,r*.9);g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=18;g.lineWidth=4;g.globalAlpha=pu;
-   g.beginPath();g.arc(0,0,r,0,7);g.stroke();g.beginPath();g.arc(0,0,r*.62,t*.05,t*.05+4.2);g.stroke();g.beginPath();g.arc(0,0,r*.25,0,7);g.fill()}
-  else if(L==='wave'){const d=Math.sign(p.vx),R=p.h/2;g.shadowColor=col;g.shadowBlur=20;g.lineWidth=5;g.strokeStyle=col;
-   for(let i=0;i<3;i++){g.globalAlpha=1-i*.28;g.beginPath();g.arc(-d*i*22,0,R,d>0?-1.1:Math.PI-1.1,d>0?1.1:Math.PI+1.1);g.stroke()}
-   g.globalAlpha=.35;g.fillStyle=col;g.beginPath();g.ellipse(0,0,p.w/2,R*.8,0,0,7);g.fill()}
-  else if(L==='claw'){const d=Math.sign(p.vx);g.strokeStyle='#fff';g.shadowColor=col;g.shadowBlur=14;g.lineWidth=4;
+  if(L==='claw'){const d=Math.sign(p.vx);g.strokeStyle='#fff';g.shadowColor=col;g.shadowBlur=14;g.lineWidth=4;
    for(const o of[-12,0,12]){g.beginPath();g.moveTo(-d*34,o*1.3);g.quadraticCurveTo(0,o-8,d*30,o*.8+6);g.stroke()}g.strokeStyle=col;g.lineWidth=2;g.stroke()}
   else if(L==='fire'){const d=Math.sign(p.vx),R=p.h/2,fl=1+.12*Math.sin(t*.7);   // Feuerwelle: flackernde Glutballen mit Schweif nach hinten
    for(let i=5;i>=0;i--){const cx=-d*i*R*.62,r=R*(1-i*.11)*fl,cy=Math.sin(t*.5+i*1.7)*R*.18*i/3;g.globalAlpha=Math.max(0,1-i*.15);
     const gr=g.createRadialGradient(cx,cy,r*.1,cx,cy,r);gr.addColorStop(0,'#fffbd0');gr.addColorStop(.35,'#ffc531');gr.addColorStop(.7,'#ff5a14cc');gr.addColorStop(1,'#c0180000');
     g.fillStyle=gr;g.beginPath();g.arc(cx,cy,r,0,7);g.fill()}}
-  else if(L==='shock'){const d=Math.sign(p.vx);const gr=g.createLinearGradient(-d*60,0,d*30,0);gr.addColorStop(0,'#0000');gr.addColorStop(1,col);g.fillStyle=gr;
-   g.beginPath();g.ellipse(0,0,p.w/2,p.h/2,0,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=3;g.beginPath();g.ellipse(d*10,0,p.w/3,p.h/2.3,0,-1.2,1.2);g.stroke()}
   g.restore()}
- projectile(g,p,o){if(p.def.look&&p.def.look!=='ring'){this.look(g,p,o.char.glow||'#fff');return}if(drawSpriteProjectile(g,p,o))return;const col=o.char.glow||'#fff',d=Math.sign(p.vx);g.save();g.globalCompositeOperation='lighter';
+ projectile(g,p,o){if(p.def.look&&p.def.look!=='ring'){this.look(g,p,o.char.glow||'#fff');return}const col=o.char.glow||'#fff',d=Math.sign(p.vx);g.save();g.globalCompositeOperation='lighter';
   const tr=g.createLinearGradient(p.x,0,p.x-d*120,0);tr.addColorStop(0,col+'aa');tr.addColorStop(1,'#0000');g.fillStyle=tr;g.beginPath();g.ellipse(p.x-d*50,p.y,70,16,0,0,7);g.fill();
   const gr=g.createRadialGradient(p.x,p.y,2,p.x,p.y,42);gr.addColorStop(0,'#fff');gr.addColorStop(.35,col);gr.addColorStop(1,'#0000');g.fillStyle=gr;g.beginPath();g.arc(p.x,p.y,42,0,7);g.fill();g.restore()}
  debugBoxes(g,game){g.save();g.lineWidth=1.5/game.camera.zoom;for(const f of game.fighters){const h=f.hurtbox();g.strokeStyle='#3fff7a';g.strokeRect(h.x,h.y,h.w,h.h);const a=f.activeHitbox();if(a){g.strokeStyle='#ff3a3a';g.strokeRect(a.rect.x,a.rect.y,a.rect.w,a.rect.h)}}
@@ -262,3 +253,5 @@ export class Renderer{
   game.fighters.forEach((f,i)=>g.fillText(`${f.state} sf:${f.sf} mf:${f.mf} ${f.moveName} y:${Math.round(f.y)} airJ:${f.airJumps} airD:${f.airDashes}`,10,520-i*14));
   const c=game.camera;g.fillText(`cam x:${c.x.toFixed(0)} y:${c.y.toFixed(0)} zoom:${c.zoom.toFixed(2)}`,10,492);g.restore()}
 }
+// Zeichen-Priorität (höher = weiter vorn): liegend/K.O. hinten < getroffen/blockend < neutral < angreifend. Bei Gleichstand entscheidet die Höhe (y), danach die Reihenfolge P1/P2.
+const drawPri=f=>f.state==='ko'||f.state==='knockdown'?0:(f.state==='hit'||f.state==='airhit'||f.state==='tumble'||f.state==='block')?1:f.state==='attack'?3:2;

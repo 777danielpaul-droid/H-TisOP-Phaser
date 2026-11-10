@@ -81,14 +81,68 @@ export function attackFx(g,f,fist,glow){const m=f.move;
    const bg=g.createLinearGradient(0,fist[1]-h,0,fist[1]+h);bg.addColorStop(0,'#0000');bg.addColorStop(.35,glow);bg.addColorStop(.5,'#fff');bg.addColorStop(.65,glow);bg.addColorStop(1,'#0000');
    g.fillStyle=bg;g.fillRect(x0,fist[1]-h,BL,h*2);
    const eg=g.createLinearGradient(x0+BL-180,0,x0+BL,0);eg.addColorStop(0,'#fff0');eg.addColorStop(1,'#000f');g.globalCompositeOperation='destination-out';g.fillStyle=eg;g.fillRect(x0+BL-180,fist[1]-h-2,180,h*2+4)}
-  g.restore()}}
+  g.restore()}
+ if(f.state==='attack'&&m&&m.fx==='tails')tailsFx(g,f,m,glow);else if(f.state==='attack'&&m&&m.fx==='breath')breathFx(g,f,m);else if(f.state==='attack'&&m&&m.fx==='bolt')boltFx(g,f,m)}
+// Neunschwanz-Inferno (Kitsune-Hyper): neun Geisterfeuer-Schwänze fächern sich nach vorn auf, wippen, enden in Flammenkugeln. Weltmaß (passt zur Trefferbox m.box), Ursprung = Körpermitte.
+function tailsFx(g,f,m,glow){const t=f.mf,t0=m.su-8,t1=m.su+m.ac;if(t<t0||t>t1+10)return;
+ const grow=Math.min(1,(t-t0)/12),fade=t>t1?Math.max(0,1-(t-t1)/10):1,L=(m.box?m.box[2]+m.box[0]:460)*.92*grow,N=9;
+ g.save();g.globalCompositeOperation='lighter';g.globalAlpha=fade;
+ const ox=-6,oy=-72,pulse=.8+.2*Math.sin(t*.9);
+ const gr=g.createRadialGradient(ox,oy,4,ox,oy,70*grow);gr.addColorStop(0,'#fff');gr.addColorStop(.4,glow);gr.addColorStop(1,'#0000');g.fillStyle=gr;g.beginPath();g.arc(ox,oy,70*grow,0,7);g.fill();   // Kern-Leuchten
+ for(let i=0;i<N;i++){
+  const u=i/(N-1),ang=-.95+u*1.55+Math.sin(t*.22+i*1.7)*.09,len=L*(.7+.3*Math.sin(i*2.3+1)*.5+.3*(1-Math.abs(u-.45)*1.2)),
+   cx=ox+Math.cos(ang)*len,cy=oy+Math.sin(ang)*len*.8+30*Math.sin(u*3)-6,
+   bend=(Math.sin(t*.4+i*1.1))*42,mx=ox+Math.cos(ang)*len*.5-Math.sin(ang)*bend,my=oy+Math.sin(ang)*len*.4+Math.cos(ang)*bend,w=15*pulse;
+  const nx=-Math.sin(ang),ny=Math.cos(ang);
+  g.beginPath();g.moveTo(ox-nx*w,oy-ny*w);g.quadraticCurveTo(mx-nx*w*1.3,my-ny*w*1.3,cx,cy);g.quadraticCurveTo(mx+nx*w*1.3,my+ny*w*1.3,ox+nx*w,oy+ny*w);g.closePath();
+  const lg=g.createLinearGradient(ox,oy,cx,cy);lg.addColorStop(0,'#fff');lg.addColorStop(.3,glow);lg.addColorStop(1,'#0000');g.fillStyle=lg;g.fill();   // Schweif
+  g.strokeStyle='#ffffffcc';g.lineWidth=2;g.beginPath();g.moveTo(ox,oy);g.quadraticCurveTo(mx,my,cx,cy);g.stroke();                                        // heller Kern
+  const R=16+6*Math.sin(t*.7+i);const fg=g.createRadialGradient(cx,cy,1,cx,cy,R*1.8);fg.addColorStop(0,'#fff');fg.addColorStop(.4,glow);fg.addColorStop(1,'#0000');g.fillStyle=fg;g.beginPath();g.arc(cx,cy,R*1.8,0,7);g.fill()}   // Flammenkugel an der Spitze
+ g.restore()}
+// Drachen-Feuersturm (ST3-G0-Hyper): Feuerstrom aus dem Maul, kegelförmig nach vorn leicht abwärts. Glutballen wandern nach außen, werden größer und verlöschen; Weltmaß (Länge = m.box[2]).
+function breathFx(g,f,m){const t=f.mf,t0=m.su-6,t1=m.su+m.ac;if(t<t0||t>t1+12)return;
+ const grow=Math.min(1,(t-t0)/10),fade=t>t1?Math.max(0,1-(t-t1)/12):1,L=(m.box?m.box[2]:520)*grow,MX=59,MY=-158,N=30,slope=.14;
+ g.save();g.globalCompositeOperation='lighter';
+ for(let j=N-1;j>=0;j--){const p=(j/N+t*.042)%1,x=MX+p*L,y=MY+p*L*slope+Math.sin(t*.45+j*2.1)*p*16,r=9+p*(70+14*Math.sin(t*.6+j)),a=fade*Math.pow(1-p,.55)*(p<.04?p/.04:1);
+  if(a<=.02)continue;g.globalAlpha=Math.min(1,a);
+  const gr=g.createRadialGradient(x,y,r*.1,x,y,r);gr.addColorStop(0,'#fffbd0');gr.addColorStop(.35,'#ffc531');gr.addColorStop(.7,'#ff5a14cc');gr.addColorStop(1,'#c0180000');
+  g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,7);g.fill()}
+ g.globalAlpha=fade;const mg=g.createRadialGradient(MX,MY,2,MX,MY,38);mg.addColorStop(0,'#fff');mg.addColorStop(.4,'#ffc531');mg.addColorStop(1,'#ff5a1400');g.fillStyle=mg;g.beginPath();g.arc(MX,MY,38,0,7);g.fill();   // Leuchten am Maul
+ for(let i=0;i<10;i++){const p=((i*.137+t*.03)%1),x=MX+p*L*(.5+.5*((i*7)%3)/2),y=MY+p*L*slope*1.1-(10+(i*13)%40)*p-Math.sin(t*.3+i)*8;g.globalAlpha=fade*(1-p);g.fillStyle='#ffd27a';g.beginPath();g.arc(x,y,2.2,0,7);g.fill()}   // Funken
+ g.restore()}
+// Blitz-Kamehameha (H!T-Hyper): 1) Blitz schlägt von oben in den Kopf ein, 2) Körper knistert / lädt sich auf, 3) Blitzkugel zwischen den Händen, 4) breiter Blitzstrahl nach vorn.
+// Weltmaß; Zeitpunkte relativ zu m.su (Startup) und m.ac (aktiv). Zackenlinien sind pro Frame neu gewürfelt (deterministisch) = Flackern.
+const rn=(a,b)=>{const x=Math.sin(a*127.1+b*311.7)*43758.5453;return x-Math.floor(x)};
+function zig(g,x0,y0,x1,y1,n,amp,seed){g.beginPath();g.moveTo(x0,y0);const dx=x1-x0,dy=y1-y0,l=Math.hypot(dx,dy)||1,nx=-dy/l,ny=dx/l;for(let i=1;i<n;i++){const u=i/n,o=(rn(i,seed)-.5)*2*amp;g.lineTo(x0+dx*u+nx*o,y0+dy*u+ny*o)}g.lineTo(x1,y1)}
+function bolt(g,x0,y0,x1,y1,n,amp,seed,w,a){   // dreifach gezeichneter Blitz: weiter Schein, Mantel, weißer Kern
+ for(const[lw,col,al]of[[w*3.2,'#3fa0ff',.28],[w*1.6,'#8fd8ff',.6],[w*.55,'#ffffff',1]]){g.globalAlpha=a*al;g.strokeStyle=col;g.lineWidth=lw;zig(g,x0,y0,x1,y1,n,amp,seed);g.stroke()}}
+function boltFx(g,f,m){const t=f.mf,su=m.su,end=su+m.ac,seed=Math.floor(t/2)*3.7;if(t<3||t>end+10)return;
+ const HX=-26,HY=-170,OX=74,OY=-105,L=(m.box?m.box[2]:620)*.96;
+ g.save();g.globalCompositeOperation='lighter';g.lineCap='round';g.lineJoin='round';
+ if(t>=3&&t<=26){const a=t<8?(t-3)/5:Math.max(0,1-(t-8)/18);   // 1) Einschlag von oben
+  bolt(g,HX+rn(1,seed)*30-15,-1100,HX,HY,22,34,seed,5,a);
+  for(let b=0;b<2;b++){const y=-900+b*260+rn(b,seed)*120;bolt(g,HX+(rn(b,2)-.5)*20,y,HX+(b?1:-1)*(80+rn(b,seed)*60),y+130,5,14,seed+b,2.2,a*.8)}   // Verästelungen
+  g.globalAlpha=a*.8;const hg=g.createRadialGradient(HX,HY,2,HX,HY,90);hg.addColorStop(0,'#fff');hg.addColorStop(.35,'#8fd8ff');hg.addColorStop(1,'#3fa0ff00');g.fillStyle=hg;g.beginPath();g.arc(HX,HY,90,0,7);g.fill()}
+ if(t>=7&&t<=end+8){const fade=t>end?Math.max(0,1-(t-end)/8):Math.min(1,(t-7)/8);   // 2) Aufladen: Aura + Körperblitze
+  g.globalAlpha=fade*(.28+.08*Math.sin(t*.9));const ag=g.createRadialGradient(0,-95,10,0,-95,150);ag.addColorStop(0,'#bfe6ff');ag.addColorStop(.5,'#3fa0ff');ag.addColorStop(1,'#1060ff00');g.fillStyle=ag;g.beginPath();g.ellipse(0,-95,120,150,0,0,7);g.fill();
+  for(let i=0;i<7;i++){const sd=seed+i*5.3,x=(rn(i,sd)-.5)*130,y=-20-rn(i+9,sd)*160,an=rn(i+3,sd)*6.28,l=22+rn(i+5,sd)*36;bolt(g,x,y,x+Math.cos(an)*l,y+Math.sin(an)*l,4,7,sd,1.6,fade*.9)}}
+ if(t>=su*.4&&t<su){const u=(t-su*.4)/(su*.6),R=6+u*20+Math.sin(t*1.3)*2.5;   // 3) Blitzkugel zwischen den Händen
+  g.globalAlpha=1;const sg=g.createRadialGradient(18,-96,1,18,-96,R*2);sg.addColorStop(0,'#fff');sg.addColorStop(.35,'#9fe0ff');sg.addColorStop(1,'#3fa0ff00');g.fillStyle=sg;g.beginPath();g.arc(18,-96,R*2,0,7);g.fill();
+  for(let i=0;i<6;i++){const an=rn(i,seed)*6.28;bolt(g,18,-96,18+Math.cos(an)*R*2.2,-96+Math.sin(an)*R*2.2,4,6,seed+i,1.5,.9)}}
+ if(t>=su&&t<=end+10){const grow=Math.min(1,(t-su+1)/6),fade=t>end?Math.max(0,1-(t-end)/10):1,len=L*grow,wob=1+.1*Math.sin(t*1.7);   // 4) Blitzstrahl
+  const jag=(w,a)=>{g.globalAlpha=fade*a;g.lineWidth=w;zig(g,OX,OY,OX+len,OY+Math.sin(t*.5)*5,16,10,seed);g.stroke()};
+  g.strokeStyle='#2f7fff';jag(104*wob,.2);g.strokeStyle='#6fd0ff';jag(66*wob,.38);g.strokeStyle='#cfeeff';jag(34*wob,.8);g.strokeStyle='#fff';jag(14*wob,1);
+  for(let i=0;i<7;i++){const u=(i+rn(i,seed))/7,bx=OX+len*u,by=OY,an=(rn(i+4,seed)<.5?-1:1)*(.35+rn(i+8,seed)*.5);bolt(g,bx,by,bx+Math.cos(an)*70,by+Math.sin(an)*70*(rn(i,3)<.5?1:-1)+(rn(i,5)-.5)*40,4,9,seed+i,2,fade*.9)}   // Seitenblitze
+  g.globalAlpha=fade;for(const[cx,R]of[[OX+8,64],[OX+len,84]]){const bg=g.createRadialGradient(cx,OY,2,cx,OY,R);bg.addColorStop(0,'#fff');bg.addColorStop(.4,'#8fd8ff');bg.addColorStop(1,'#3fa0ff00');g.fillStyle=bg;g.beginPath();g.arc(cx,OY,R,0,7);g.fill()}   // Leuchten an Hand und Spitze
+  g.globalAlpha=fade*.35;g.fillStyle='#8fd8ff';g.beginPath();g.ellipse(OX+len*.5,8,len*.5,9,0,0,7);g.fill()}   // Bodenschein
+ g.restore()}
 // Zeichnet einen Kämpfer. Füße stehen bei (f.x, f.y); f nach rechts blickend, gespiegelt via f.facing.
 export function drawFighter(g,f,clock,alpha=1,floorY=470){
  if(f.char.sprites)return drawSpriteFighter(g,f,clock,alpha,floorY);   // Sprite-Figur (Atlas) statt Vektor-Skelett
  const C=PAL[f.char.pal],po=poseOf(f),[tl,hd,ba1,ba2,fa1,fa2,bt,bs,ft,fs,hx,mouth,hy]=po;
  g.save();g.globalAlpha=alpha;
  if(f.comboFlash>0){const fa=f.comboFlash/EFFECT.comboFlash;g.save();g.globalCompositeOperation='lighter';g.fillStyle='#ffffff';g.globalAlpha=.55*fa;g.fillRect(-70,-165,140,170);g.restore()}
- if(alpha===1){g.fillStyle='#0008';g.beginPath();g.ellipse(f.x,floorY+4,Math.max(18,52-(floorY-f.y)*.15),10,0,0,7);g.fill()}
+ if(alpha===1){g.fillStyle='#0008';g.beginPath();g.ellipse(f.x,floorY,Math.max(18,52-(floorY-f.y)*.15),10,0,0,7);g.fill()}
  g.translate(f.x,f.y);g.scale(f.facing,1);
  const drop=Math.max(Math.cos(bt)*46+Math.cos(bs)*44,Math.cos(ft)*46+Math.cos(fs)*44)+10;g.translate(hx,hy?hy:-drop);
  if(f.state==='tumble')g.rotate(-f.sf*.3);

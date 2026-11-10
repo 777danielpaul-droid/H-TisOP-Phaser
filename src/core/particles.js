@@ -1,7 +1,7 @@
 import{W,H,GFX}from'./config.js';
 const qn=n=>Math.max(1,Math.round(n*GFX.fx));   // Partikelmenge je Qualitätsstufe
 // Feuerwerk-Parameter (1:1 aus Ghostwriter, Zeiten in Sekunden bzw. Frames bei 60 FPS, Distanzen in logischen Pixeln)
-const FW={rise:[39,57],stars:210,radius:[.24,.36],jitter:.06,depth:.2,drag:1.9,gravity:190,life:[1.7,2.7],size:11,pool:2400};
+const FW={rise:[39,57],stars:210,radius:[.24,.36],jitter:.06,depth:.2,drag:1.9,gravity:190,life:[1.7,2.7],size:11,pool:4400};
 const GOLDEN=Math.PI*(3-Math.sqrt(5));
 // Rakete nach k Frames: schnell am Anfang, zum Scheitel langsamer, mit leichtem Wackeln
 function fwPos(r,age){const k=Math.min(1,Math.max(0,age/r.rise)),e=1-Math.pow(1-k,2.2);return{x:r.x0+Math.sin(age*.2)*5*(1-k),y:r.y0-(r.y0-r.topY)*e,k}}
@@ -62,9 +62,11 @@ export class ParticleSystem{
   p.ph=Math.random()*6.2832;p.sp=2+Math.random()*6;p.ho=(Math.random()-.5)*50;p.white=Math.random()<.14;p.alive=true;p.age=0;p.z=0;return p}
  // Die Explosion: echte Kugel. Flugrichtungen gleichmäßig auf einer 3D-Kugel (Fibonacci-Spirale), sichtbar ist die Seitenansicht.
  boom(r){const R=(r.sc||1)*Math.min(W,H)*(FW.radius[0]+Math.random()*(FW.radius[1]-FW.radius[0])),off=Math.random()*6.2832;
-  const NS=Math.max(40,Math.round(FW.stars*GFX.fireworks));for(let i=0;i<NS;i++){const p=this._fwStar(),z=1-(2*(i+.5))/NS+(Math.random()-.5)*.04,side=Math.sqrt(Math.max(0,1-z*z)),ang=off+i*GOLDEN,v=R*FW.drag*(1-Math.random()*FW.jitter);
-   p.x=r.x;p.y=r.y;p.vx=Math.cos(ang)*side*v;p.vy=Math.sin(ang)*side*v;p.z=z;p.life=(FW.life[0]+Math.random()*(FW.life[1]-FW.life[0]))*(r.sc&&r.sc<1?.65:1);p.h=r.h}
+  const NS=Math.max(40,Math.round(FW.stars*GFX.fireworks*(r.nx||1)));for(let i=0;i<NS;i++){const p=this._fwStar(),z=1-(2*(i+.5))/NS+(Math.random()-.5)*.04,side=Math.sqrt(Math.max(0,1-z*z)),ang=off+i*GOLDEN,v=R*FW.drag*(1-Math.random()*FW.jitter);
+   p.x=r.x;p.y=r.y;p.vx=Math.cos(ang)*side*v;p.vy=Math.sin(ang)*side*v;p.z=z;p.life=(FW.life[0]+Math.random()*(FW.life[1]-FW.life[0]))*(r.sc&&r.sc<1?.65:1)*(r.lf||1);p.h=r.h}
   this.ff.push({x:r.x,y:r.y,age:0});if(this.onBoom)this.onBoom(r)}
+ // Riesen-Kugel für den Finalschlag (ohne Aufstieg, sofort): sc = Radius-Faktor (1 = normale Rakete ~ 130-195 px), nx = Sternenmenge, lf = Lebensdauer; r.fin -> kein Böller-Sound, dafür Flare/Starburst im onBoom-Handler
+ mega(x,y,color,sc=2.5,nx=3,lf=1.4){const r={sc,x,y,h:hexHue(color),nx,lf,fin:true,mega:true};this.boom(r)}
  ring(x,y,color,max=60){this.rings.push({x,y,r:6,max,color,life:14,l0:14})}
  update(){for(const p of this.p){p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.vx*=.96;p.life--}
   this.p=this.p.filter(p=>p.life>0);
