@@ -21,7 +21,10 @@ const BOUNCE={L:{vy:-4.8,vx:1.2},M:{vy:-5.4,vx:1.6},H:{vy:-9.2,vx:3},multi:{vy:-
 // pl/pr = Plattformkanten, x0/x1/y0/y1 = Blast-Zonen (wer sie verlässt, verliert einen Stock), pctScale = Move-Schaden -> %,
 // kbDiv = je höher, desto später fliegt man weit, base = Grund-Rückstoß je Trefferstärke (leicht/mittel/schwer), flinch = darunter bleibt man am Boden stehen.
 const MELEE={stocks:3,pl:150,pr:810,x0:-260,x1:1220,y0:-430,y1:GROUND+300,pctScale:.17,pctMax:999,kbDiv:85,base:[4.2,6.2,8.6],hard:9.5,flinch:6.4,
- stunBase:10,stunK:2.4,respawn:70,hover:100,inv:150,time:480};
+ stunBase:10,stunK:2.4,respawn:70,hover:100,inv:150,time:480,
+ // Rettungssprung (Hoch + Special in der Luft, 1x pro Luftphase): start = Ansprung-Frames (kurzes Verharren), frames = Steigphase, vy = Start-Steigtempo (negativ = hoch), decay = Abbremsen je Frame,
+ // vx = Steuertempo zur Seite. Reichweite ca. 350 px hoch / ~170 px zur Seite -> reicht nur, wenn man nicht zu weit draussen ist.
+ rec:{start:5,frames:26,vy:-18,decay:.45,vx:4.2}};
 const SPEED=1.5; // Standard-Spieltempo (Logik-Schritte pro 1/60 s); im Menü einstellbar
 const COMBO_SCALE=[1,.95,.9,.85,.8,.7,.6,.5,.4,.3]; // Schadensskalierung je Treffer im Combo
 const METER={max:300,bar:100};
@@ -764,7 +767,7 @@ class Fighter{
  reset(){Object.assign(this,{x:this.startX,y:GROUND,vx:0,vy:0,facing:this.startFacing,hp:this.maxHp,state:'idle',sf:0,mf:0,move:null,moveName:'',
   hitDone:false,contact:false,hitCd:0,stun:0,coyote:0,airJumps:this.maxAJ,airDashes:1,launched:false,chainLen:0,comboHits:0,comboDmg:0,juggle:0,pop:false,hard:false,landLag:0,dashDir:0,
   noGrav:false,kdFrames:0,blockCrouch:false,anim:'idle',animU:0,_mo:0,spam:{btn:'',n:0,t:999},
-  pct:0,stocks:0,dead:0,inv:0,hover:0,onStage:true,under:false});this.trail.length=0;this.comboShow={hits:0,dmg:0,t:0}}
+  pct:0,stocks:0,dead:0,inv:0,hover:0,onStage:true,under:false,recUsed:false});this.trail.length=0;this.comboShow={hits:0,dmg:0,t:0}}
  // Kämpfer wechseln (Menü): neue Stats + Moves, danach Zurücksetzen
  setChar(char,skin=0){this.char=char;this.skin=skin|0;this.moves=buildMoves(char);this.maxHp=char.hp;this.reset()}
  get grounded(){return this.y>=GROUND&&this.onStage&&!this.under}   // Melee: nur auf der Plattform (onStage), nicht darunter (under) -> sonst fällt man
@@ -809,17 +812,19 @@ class Fighter{
   switch(this.state){
    case'attack':this.tickAttack(opp,game);break;
    case'hit':case'block':this.vx*=.84;if(--this.stun<=0){this.endCombo();this.blockCrouch=false;this.setState('idle')}break;
-   case'airhit':if(this.pop)this.vx*=BOUNCE.drag;if(--this.stun<=0){this.endCombo();this.pop=false;const M=!!game.melee;this.airJumps=M?this.maxAJ:0;this.airDashes=M?1:0;this.setState('air')}break;   // Melee: nach dem Hitstun darf man zurückspringen/dashen
+   case'airhit':if(this.pop)this.vx*=BOUNCE.drag;if(--this.stun<=0){this.endCombo();this.pop=false;const M=!!game.melee;this.airJumps=M?this.maxAJ:0;this.airDashes=M?1:0;if(M)this.recUsed=false;this.setState('air')}break;   // Melee: nach dem Hitstun darf man zurückspringen/dashen
    case'knockdown':if(this.sf>=this.kdFrames)this.setState('wakeup');break;
    case'wakeup':if(this.sf>=18)this.setState('idle');break;
    case'dash':this.tickDash(game);break;
    case'airdash':this.tickAirDash(game);break;
+   case'recover':this.tickRecover(game);break;
    case'tumble':case'ko':case'win':break;
    default:this.free(game)}
   this.physics(game)}
  // ---------- Freie Aktionen ----------
  free(game){const i=this.input;
   if(this.landLag>0)this.landLag--;
+  if(this.tryRecover(game))return;
   if(this.tryAttack(game))return;
   if(this.tryDash(game))return;
   this.tryJump(game);
@@ -844,6 +849,19 @@ class Fighter{
   return false}
  tickDash(game){if(this.sf>4&&(this.tryAttack(game)))return;if(this.sf>3&&this.tryJump(game))return;
   if(this.sf>=PHYS.dashFrames){this.vx*=.3;this.setState('idle')}}
+ // Melee: Rettungssprung (Hoch + Special in der Luft). Einmal pro Luftphase (Landung, Treffer oder Respawn geben ihn zurück). Kurzes Verharren, dann steiler Aufstieg, seitlich steuerbar;
+ // danach ohne Doppelsprung/Air-Dash weiter (hilflos) -> reicht nur, wenn man nicht zu weit draussen ist.
+ tryRecover(game){const i=this.input;if(!game.melee||this.grounded||this.recUsed)return false;
+  if(!(i.dy<0&&i.pressed('S')))return false;
+  i.consume('S');i.consume('UP');this.recUsed=true;this.move=null;this.moveName='';this.vy=0;this.vx*=.3;this.noGrav=true;if(i.dx)this.facing=i.dx;this.setState('recover');
+  const gl=this.char.glow||'#fff';game.fx.ps.ring(this.x,this.y-70,gl,100);game.sfx('whoosh_heavy',{vol:.8,rate:1.15});return true}
+ tickRecover(game){const R=MELEE.rec,i=this.input;
+  if(this.grounded){this.land(game);return}                       // auf der Plattform angekommen
+  if(this.sf<=R.start){this.vy=0;this.vx*=.8;return}               // Ansprung: kurz in der Luft verharren
+  const t=this.sf-R.start;
+  if(t>R.frames){this.noGrav=false;this.airJumps=0;this.airDashes=0;this.setState('air');return}   // Aufstieg vorbei: hilflos weiterfallen
+  this.vy=R.vy+R.decay*t;this.vx+=(i.dx*R.vx-this.vx)*.25;if(i.dx)this.facing=i.dx;
+  if(t%3===1)game.fx.ps.ring(this.x,this.y-60,this.char.glow||'#fff',46)}
  tickAirDash(game){if(this.sf>5&&this.tryAttack(game)){this.noGrav=false;return}
   if(this.sf>=PHYS.airDashFrames){this.noGrav=false;this.vx*=.5;this.setState('air')}}
  // ---------- Moves ----------
@@ -923,7 +941,7 @@ class Fighter{
   else if(this.y>=GROUND){const fall=this.vy>0;this.y=GROUND;if(fall)this.land(game);this.vy=0}}
  // Melee: nach einem Stock-Verlust zurück ins Spiel – schwebt über der Mitte, kurz unverwundbar, mit allen Sprüngen
  respawn(x,y,facing){Object.assign(this,{x,y,vx:0,vy:0,facing,state:'air',sf:0,mf:0,move:null,moveName:'',hitDone:false,contact:false,hitCd:0,stun:0,launched:false,hard:false,noGrav:true,
-  comboHits:0,comboDmg:0,juggle:0,pct:0,dead:0,hover:MELEE.hover,inv:MELEE.inv,onStage:true,under:false,airJumps:this.maxAJ,airDashes:1,landLag:0,blockCrouch:false,meter:Math.min(this.meter,100)});
+  comboHits:0,comboDmg:0,juggle:0,pct:0,dead:0,hover:MELEE.hover,inv:MELEE.inv,onStage:true,under:false,recUsed:false,airJumps:this.maxAJ,airDashes:1,landLag:0,blockCrouch:false,meter:Math.min(this.meter,100)});
   this.comboShow={hits:0,dmg:0,t:0};this.trail.length=0;this.input.clear()}
  // Decke im Gebäude: Kopf (Höhe der Luft-Hurtbox) darf die Unterkante der Decke nicht überschreiten. Vom Hof aus gilt die Decke als Türsturz:
  // Wer mit dem Kopf darüber liegt, kommt nicht durch die Bresche (wird an der Wandlinie gestoppt), statt in die Decke zu "ploppen".
@@ -938,13 +956,14 @@ class Fighter{
   if(s==='ko'){this.vx=0;game.fx.land(this.x,GROUND,true);game.sfx('body_fall',{vol:.7});return}
   if(s==='attack'){const m=this.move;if(m&&m.air){this.move=null;this.landLag=m.land||4;this.setState('idle')}}
   else if(s==='airdash'){this.noGrav=false;this.setState('idle')}
+  else if(s==='recover'){this.noGrav=false;this.setState('idle');this.landLag=3}
   else if(s==='air'){this.setState('idle');this.landLag=3}
-  this.airJumps=this.maxAJ;this.airDashes=1;this.vx*=.3;game.fx.land(this.x,GROUND,false);game.sfx('land',{vol:.6})}
+  this.recUsed=false;this.airJumps=this.maxAJ;this.airDashes=1;this.vx*=.3;game.fx.land(this.x,GROUND,false);game.sfx('land',{vol:.6})}
  // ---------- Animation (für den Renderer) ----------
  updateAnim(){const s=this.state,m=this.move;this.animU=0;
   switch(s){
    case'idle':this.anim='idle';break;case'walk':this.anim='walk';break;case'crouch':this.anim='crouch';break;case'air':this.anim='air';this.animU=Math.max(0,Math.min(.999,(this.vy+18)/36));break;   // Sprung-Frames nach Flugbahn (steigen -> Scheitel -> fallen)
-   case'dash':this.anim='dash';break;case'airdash':this.anim='airdash';break;
+   case'dash':this.anim='dash';break;case'airdash':case'recover':this.anim='airdash';break;
    case'attack':this.anim=m?m.anim:'idle';this.animU=m?Math.min(1,this.mf/(m.su+m.ac+Math.max(m.rc,6))):0;break;
    case'hit':this.anim='hit';this.animU=Math.min(1,this.sf/12);break;
    case'block':this.anim=this.blockCrouch?'cblock':'block';break;
@@ -955,7 +974,7 @@ class Fighter{
    case'wakeup':this.anim='wakeup';this.animU=Math.min(1,this.sf/18);break;
    case'ko':this.anim=this.grounded?(this.char.defeat?'defeat':'kd'):'airhit';this.animU=Math.min(1,this.sf/(this.grounded?16:34));break;
    case'win':this.anim='win';this.animU=Math.min(.999,this.sf/180);break;default:this.anim='idle'}
-  const fast=s==='dash'||s==='airdash'||(s==='attack'&&m&&m.lunge);
+  const fast=s==='dash'||s==='airdash'||s==='recover'||(s==='attack'&&m&&m.lunge);
   for(const t of this.trail)t.age++;this.trail=this.trail.filter(t=>t.age<14);
   if(fast&&this.sf%3===0)this.trail.push({x:this.x,y:this.y,facing:this.facing,anim:this.anim,animU:this.animU,sf:this.sf,state:s,char:this.char,move:null,age:0})}
 }
@@ -1183,6 +1202,7 @@ class AIController extends InputBuffer{
    if(near&&me.grounded&&(this.keep.dx===near||R()<.5)){this.keep={dx:-near,dy:0,n:6};this.feed(-near,0,[],game.hitstop>0);return true}   // Kante: zurück nach innen
    return false}
   const toMid=mid>=me.x?1:-1,pr=[],dy=0;
+  if(me.state!=='recover'&&!me.recUsed&&me.airJumps===0&&me.vy>1&&me.y>GROUND-10&&me.y<GROUND+330&&R()<[.1,.2,.35][this.level]){this.feed(toMid,-1,['S'],game.hitstop>0);return true}   // Doppelsprung verbraucht: Rettungssprung (Hoch + Special)
   if(me.vy>1&&me.y>GROUND-60){if(me.airJumps>0)pr.push('UP');else if(me.airDashes>0&&Math.abs(me.x-mid)>150&&R()<.3)pr.push('DASH')}   // fällt unter Plattformhöhe: Doppelsprung, danach Air-Dash zur Mitte
   this.feed(toMid,dy,pr,game.hitstop>0);return true}
  // Wand-Taktik: Steht der Gegner vor der Wand, setzt die KI nach (Dash, Projektil, Normals, Launcher = 1,5× Wandschaden). Steht sie selbst
@@ -2502,6 +2522,216 @@ class Hud {
     this.fancy(g, s, x, y, size, [col, col], align, glow, 0, false, false, 600);
     this._fam = o;
   }
+  // ---------- Kristall-Bausteine für Menüs (gleiche Formensprache wie das Kampf-HUD) ----------
+  // Haarlinie mit Raute an den Enden; fade = 'r' (läuft nach rechts aus) | 'l' | null
+  kRule(g, x1, x2, y, col = ICE, fade = null, al = 1) {
+    g.save();
+    g.globalAlpha = al;
+    const gr = g.createLinearGradient(x1, 0, x2, 0);
+    gr.addColorStop(0, fade === "l" ? col + "00" : col);
+    gr.addColorStop(1, fade === "r" ? col + "00" : col);
+    g.strokeStyle = gr;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(x1 + 5, y);
+    g.lineTo(x2 - 5, y);
+    g.stroke();
+    g.fillStyle = col;
+    if (fade !== "l") {
+      dia(g, x1, y, 2.4);
+      g.fill();
+    }
+    if (fade !== "r") {
+      dia(g, x2, y, 2.4);
+      g.fill();
+    }
+    g.restore();
+  }
+  // Senkrechte Haarlinie mit Rauten (Trenner zwischen Liste und Profil)
+  kVRule(g, x, y1, y2, col = ICE, al = 1) {
+    g.save();
+    g.globalAlpha = al;
+    const gr = g.createLinearGradient(0, y1, 0, y2);
+    gr.addColorStop(0, col + "00");
+    gr.addColorStop(0.12, col);
+    gr.addColorStop(0.88, col);
+    gr.addColorStop(1, col + "00");
+    g.strokeStyle = gr;
+    g.shadowColor = col;
+    g.shadowBlur = 6;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(x, y1);
+    g.lineTo(x, y2);
+    g.stroke();
+    g.shadowBlur = 0;
+    g.fillStyle = col;
+    dia(g, x, y1 + 8, 2.6);
+    g.fill();
+    dia(g, x, y2 - 8, 2.6);
+    g.fill();
+    g.restore();
+  }
+  // Abgeschrägtes Rechteck (Pfad)
+  kChamfer(g, x, y, w, h, c = 10) {
+    g.beginPath();
+    g.moveTo(x + c, y);
+    g.lineTo(x + w, y);
+    g.lineTo(x + w, y + h - c);
+    g.lineTo(x + w - c, y + h);
+    g.lineTo(x, y + h);
+    g.lineTo(x, y + c);
+    g.closePath();
+  }
+  // Eckklammern mit Raute (Rahmen um Porträts / Karten)
+  kBrackets(g, x, y, w, h, len = 14, col = ICE, al = 1) {
+    g.save();
+    g.globalAlpha = al;
+    g.strokeStyle = col;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(x, y + len);
+    g.lineTo(x, y);
+    g.lineTo(x + len, y);
+    g.moveTo(x + w - len, y + h);
+    g.lineTo(x + w, y + h);
+    g.lineTo(x + w, y + h - len);
+    g.stroke();
+    g.fillStyle = col;
+    dia(g, x, y, 2.4);
+    g.fill();
+    dia(g, x + w, y + h, 2.4);
+    g.fill();
+    g.restore();
+  }
+  // Schräge Platte (Knöpfe, Reiter, Umschalter): on = aktiv (Farbe + Glanz), sonst dunkle Mulde mit Haarlinie
+  kPlate(g, x, y, w, h, o = {}) {
+    const { col = ICE, on = false, al = 1, sk = 8, t = 0 } = o;
+    g.save();
+    g.globalAlpha = al;
+    para(g, x, y, w, h, sk);
+    const f = g.createLinearGradient(0, y, 0, y + h);
+    if (on) {
+      f.addColorStop(0, col + "55");
+      f.addColorStop(1, col + "16");
+    } else {
+      f.addColorStop(0, "#0b0c2ad8");
+      f.addColorStop(1, "#05061ad8");
+    }
+    g.fillStyle = f;
+    g.fill();
+    g.lineWidth = 1;
+    g.strokeStyle = on ? col : ICE_DIM;
+    if (on) {
+      g.shadowColor = col;
+      g.shadowBlur = 8 + 3 * Math.sin(t * 0.08);
+    }
+    g.stroke();
+    g.shadowBlur = 0;
+    if (on) {
+      g.save();
+      para(g, x, y, w, h, sk);
+      g.clip();
+      const sh = g.createLinearGradient(0, y, 0, y + h);
+      sh.addColorStop(0, "#ffffff48");
+      sh.addColorStop(0.4, "#ffffff08");
+      sh.addColorStop(1, "#0000");
+      g.fillStyle = sh;
+      g.fillRect(x, y, w + sk, h);
+      const sc = ((t * 0.012) % 1.8) * (w + 80) - 40 + x,
+        sg = g.createLinearGradient(sc - 14, 0, sc + 14, 0);
+      sg.addColorStop(0, "#fff0");
+      sg.addColorStop(0.5, "#ffffff50");
+      sg.addColorStop(1, "#fff0");
+      g.fillStyle = sg;
+      g.fillRect(sc - 14, y, 28, h);
+      g.restore();
+    } else {
+      g.globalAlpha = al * 0.4;
+      g.strokeStyle = ICE_DIM;
+      para(g, x - 3, y - 3, w + 6, h + 6, sk);
+      g.stroke();
+    }
+    g.restore();
+  }
+  // Wertebalken im Kristall-Stil (schräge Mulde, Verlauf, Facettenstreifen, Glanz, Segmentstriche)
+  kBar(g, x, y, w, h, v, col, t = 0, sk = 5) {
+    v = hclamp(v, 0, 1);
+    g.save();
+    para(g, x, y, w, h, sk);
+    const tg = g.createLinearGradient(0, y, 0, y + h);
+    tg.addColorStop(0, "#04051a");
+    tg.addColorStop(1, "#0a0c2a");
+    g.fillStyle = tg;
+    g.fill();
+    g.strokeStyle = ICE_DIM;
+    g.globalAlpha = 0.8;
+    g.lineWidth = 0.8;
+    g.stroke();
+    g.globalAlpha = 1;
+    g.save();
+    para(g, x, y, w, h, sk);
+    g.clip();
+    const fw = w * v;
+    if (fw > 0.5) {
+      const fg = g.createLinearGradient(x, 0, x + fw + sk, 0);
+      fg.addColorStop(0, col + "66");
+      fg.addColorStop(0.75, col);
+      fg.addColorStop(1, "#ffffff");
+      g.fillStyle = fg;
+      para(g, x, y, fw, h, sk);
+      g.fill();
+      const sh = g.createLinearGradient(0, y, 0, y + h);
+      sh.addColorStop(0, "#ffffff70");
+      sh.addColorStop(0.35, "#ffffff10");
+      sh.addColorStop(1, "#00000060");
+      g.fillStyle = sh;
+      g.fillRect(x, y, fw + sk, h);
+      for (let fx = x - h; fx < x + fw + h; fx += 9) {
+        g.fillStyle = ((fx / 9) | 0) % 2 ? "#ffffff14" : "#00000020";
+        g.beginPath();
+        g.moveTo(fx, y + h);
+        g.lineTo(fx + h, y);
+        g.lineTo(fx + h + 4.5, y);
+        g.lineTo(fx + 4.5, y + h);
+        g.closePath();
+        g.fill();
+      }
+      const sc = ((t * 0.012 + x * 0.01) % 1.9) * (fw + 60) - 30 + x,
+        sg = g.createLinearGradient(sc - 12, 0, sc + 12, 0);
+      sg.addColorStop(0, "#fff0");
+      sg.addColorStop(0.5, "#ffffff80");
+      sg.addColorStop(1, "#fff0");
+      g.fillStyle = sg;
+      g.fillRect(sc - 12, y, 24, h);
+    }
+    g.strokeStyle = "#05061ac0";
+    g.lineWidth = 1;
+    for (let k = 1; k < 10; k++) {
+      const f = k / 10;
+      g.beginPath();
+      g.moveTo(x + sk + w * f, y);
+      g.lineTo(x + w * f, y + h);
+      g.stroke();
+    }
+    g.restore();
+    if (fw > 3) {
+      g.fillStyle = "#fff";
+      g.shadowColor = col;
+      g.shadowBlur = 6;
+      dia(g, x + sk * 0.5 + fw, y + h / 2, 2);
+      g.fill();
+    }
+    g.restore();
+  }
+  // Untertitel mit auslaufenden Haarlinien und Rauten links/rechts (wie „ROUND 1“ im HUD)
+  kSub(g, s, cx, y, size, col, sp = 4, t = 0) {
+    const tw = s.length * (size * 0.56 + sp);
+    this.lab(g, s, cx + sp / 2, y, size, col, "center", sp, null, "700");
+    const gap = tw / 2 + 16;
+    this.kRule(g, cx - gap - 72, cx - gap, y - size * 0.36, ICE, "l", 0.85);
+    this.kRule(g, cx + gap, cx + gap + 72, y - size * 0.36, ICE, "r", 0.85);
+  }
   // Text in anderer Schrift (z. B. F_TECH für Logo/Ziffern)
   fam(f, fn) {
     const o = this._fam;
@@ -3776,7 +4006,7 @@ function hitMode(lx,ly){const m=MODE_PILL;if(ly<m.y||ly>m.y+m.h||lx<m.x||lx>m.x+
 // Stage-Karten (Versus): 4 Level + Zufall
 const stageRect=(i,n=5)=>{const w=170,gap=14,tot=n*w+(n-1)*gap,x0=(960-tot)/2;return{x:x0+i*(w+gap),y:128,w,h:190}};
 function hitStage(lx,ly,n=5){for(let i=0;i<n;i++){const r=stageRect(i,n);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
-const P1C='#00f3ff',P2C='#b98bff';
+const P1C='#6fe3ff',P2C='#b98bff';
 // 2-Spieler-Kämpferwahl: eigene Karten (4 Kämpfer + Platz für die eigene Figur), unabhängig von der Kämpferliste des Arcade-Menüs
 const vsCardRect=(i,n=4)=>cardRect(i,n);   // gleiches Raster wie im Arcade-Menü
 function hitVsCard(lx,ly,n=4){for(let i=0;i<n;i++){const r=vsCardRect(i,n);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
@@ -3784,7 +4014,7 @@ const DIFF=['LEICHT','NORMAL','HART'],DCOL=['#7fe8ff','#9b9bff','#d38bff'];
 const FIG={tiger:.9,st3g0:.88,kitsune:.86};   // Größenausgleich je Figur in der Liste
 const PX=508,PW=422;   // Profilbereich rechts (x, Breite)
 const VTEXT={tiger:['LET\'S GO','上吧！'],st3g0:['UNLIKELY','不太可能'],kitsune:['TRY!','试试吧！']};   // Schriftzug im Übergangsvideo + chinesische Übersetzung
-const DIM='#9d8fd0',TXT='#d6c8ff';
+const DIM='#8f95d8',TXT='#d6dcff';
 class SelectScreen{
  constructor(hud){this.hud=hud;this.fakes={};this.ln=null;this.fw=null;this._lt=null;this.sfx=null;this.vids={};try{for(const id of ROSTER)this.vid(id)}catch(e){}}
  // Kurzvideo je Figur (WebM, vom Build als Data-URI in window.__VIDEOS__); wird beim ersten Zugriff angelegt und vorgeladen, ohne Video/Browser-Support bleibt alles beim Alten
@@ -3811,9 +4041,9 @@ class SelectScreen{
    g.shadowBlur=0;g.globalAlpha=al*.5;g.strokeStyle=c;g.lineWidth=1.5;g.strokeText(txt,lx,yy)};
   row(T[0],y,size,col);row(T[1],y+size*.78,size*.58,col2);g.restore()}
  // Kurzvideo als Rahmen-Feld (16:9) zeichnen
- vidPanel(g,v,x,y,w,h,col,al,flash){g.save();g.globalAlpha=al;g.shadowColor=col;g.shadowBlur=24;g.fillStyle='#000';g.beginPath();g.roundRect(x,y,w,h,8);g.fill();g.shadowBlur=0;g.save();g.clip();
-  try{if(v)g.drawImage(v,x,y,w,h)}catch(e){}g.restore();g.strokeStyle=col;g.lineWidth=2;g.beginPath();g.roundRect(x,y,w,h,8);g.stroke();
-  if(flash>0){g.globalAlpha=al*Math.min(.92,flash*.55);g.fillStyle='#fff';g.beginPath();g.roundRect(x,y,w,h,8);g.fill()}g.restore()}
+ vidPanel(g,v,x,y,w,h,col,al,flash){g.save();g.globalAlpha=al;g.shadowColor=col;g.shadowBlur=24;g.fillStyle='#000';this.hud.kChamfer(g,x,y,w,h,12);g.fill();g.shadowBlur=0;g.save();g.clip();
+  try{if(v)g.drawImage(v,x,y,w,h)}catch(e){}g.restore();g.strokeStyle=col;g.lineWidth=1.4;this.hud.kChamfer(g,x,y,w,h,12);g.stroke();g.strokeStyle='#4a4c9a';g.lineWidth=1;this.hud.kChamfer(g,x-5,y-5,w+10,h+10,15);g.stroke();
+  if(flash>0){g.globalAlpha=al*Math.min(.92,flash*.55);g.fillStyle='#fff';this.hud.kChamfer(g,x,y,w,h,12);g.fill()}g.restore()}
  // Feuerwerk weiterlaufen lassen (Schritte in 60-Hz-Frames, unabhängig von der Monitorfrequenz)
  stepLaunch(t,cellCx){const ln=this.ln;if(!ln)return;const dt=this._lt==null?1:Math.min(3,Math.max(0,t-this._lt));ln.acc+=dt;
   const col=ln.col,col2=ln.col2,vid=!!(ln.vid||ln.vid2),V=ln.V||70,FIN=Math.max(1,V-50),fx=ln.fx,sp=ln.sp,fy=ln.fy;
@@ -3845,10 +4075,10 @@ class SelectScreen{
  wrap(g,s,size,maxW){const out=[];let line='';for(const w of String(s).split(' ')){const tr=line?line+' '+w:w;if(line&&this.hud.mw(g,tr,size)>maxW){out.push(line);line=w}else line=tr}if(line)out.push(line);return out}
  draw(g,arcade,t,W,H){if(arcade.pvp)return this.drawVs(g,arcade,t,W,H);const hud=this.hud;this.modePill(g,arcade,t);
   // Titel (klein, links oben) + Unterzeile
-  hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#00f3ff','#00f3ff'],'center',null,t,false,true,900,4);g.restore();
+  hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#7fe8ff','#7fe8ff'],'center',null,t,false,true,900,4);g.restore();
    hud.fancy(g,'H!TisOP',W/2+2,64,40,['#b98bff','#b98bff'],'center',null,t,false,true,900,4);
    hud.fancy(g,'H!TisOP',W/2,64,40,['#ffffff','#bfb0ff'],'center','#8f6bff',t,false,false,900,4)});
-  hud.lab(g,'WÄHLE DEINEN KÄMPFER',W/2+2,88,13,'#9fe8ff','center',4,null,'700');
+  hud.kSub(g,'WÄHLE DEINEN KÄMPFER',W/2,88,13,'#9fe8ff',4,t);
   const slots=[...ROSTER,'custom'],N=slots.length,cur=arcade.cursor;
   // Kämpfer links: nur Figur + Name, kein Rahmen. Auswahl = Licht am Boden, voller Glanz, Name hell.
   slots.forEach((id,i)=>{const ch=CHARACTERS[id],r=cardRect(i,N),sel=i===cur,pulse=.5+.5*Math.sin(t*.1),cx=r.x+r.w/2,col=ch?ch.glow||'#fff':'#3fe0ff',base=r.y+r.h-50;
@@ -3859,7 +4089,7 @@ class SelectScreen{
    else{g.strokeStyle=col;g.lineWidth=3;g.lineCap='round';g.globalAlpha=sel?.95:.5;g.beginPath();g.moveTo(cx-16,base-50);g.lineTo(cx+16,base-50);g.moveTo(cx,base-66);g.lineTo(cx,base-34);g.stroke();g.globalAlpha=sel?1:.55}
    hud.fam(F_DISP,()=>hud.fancy(g,ch?ch.name:'EIGENE FIGUR',cx,r.y+r.h-24,sel?19:17,sel?['#ffffff',col]:['#cfc6ee','#a79bd6'],'center',sel?col:null,t,false,false,400,1));
    if(ch)this.skinDots(g,ch,arcade.skinOf(id),cx,r.y+r.h-7,sel);
-   if(ch&&ch.custom){const e=editRect(r);g.globalAlpha=sel?1:.6;g.strokeStyle=col;g.lineWidth=1;g.beginPath();g.roundRect(e.x,e.y,e.w,e.h,5);g.stroke();hud.txt(g,'✎ EDIT',e.x+e.w/2,e.y+13,10,'#fff','center')}
+   if(ch&&ch.custom){const e=editRect(r);g.globalAlpha=sel?1:.6;hud.kPlate(g,e.x,e.y,e.w-6,e.h,{col,on:sel,sk:5,t});hud.txt(g,'✎ EDIT',e.x+e.w/2-1,e.y+13,10,'#fff','center')}
    g.restore()});
   this.profile(g,slots[cur],arcade,t,W);
   if(this.ln){const r=cardRect(cur,N),ln=this.ln;
@@ -3877,14 +4107,14 @@ class SelectScreen{
   g.save();
   // zarte Fläche statt Rahmen
   const bg=g.createLinearGradient(PX-20,0,PX+PW+20,0);bg.addColorStop(0,'#0a061800');bg.addColorStop(.12,'#0a0618cc');bg.addColorStop(1,'#0a0618cc');g.fillStyle=bg;g.fillRect(PX-20,104,PW+50,396);
-  g.fillStyle=col+'88';g.fillRect(PX-1,112,2,380);
+  hud.kVRule(g,PX,112,492,col,.9);
   if(!ch){   // leerer Slot
    hud.fam(F_DISP,()=>hud.fancy(g,'EIGENE FIGUR',PX+16,162,40,['#ffffff',col],'left',col,t,false,false,400,2));
    this.wrap(g,'Lade deine Sprite-Sheets hoch, stelle Name, Moves und Werte ein und kämpfe mit deinem eigenen Charakter.',14,PW-30).forEach((l,k)=>hud.txt(g,l,PX+16,198+k*20,14,TXT,'left'));
    hud.txt(g,'Es reicht ein einziges Sheet (Idle); alles andere kannst du nach und nach ergänzen.',PX+16,262,12,DIM,'left');g.restore();return}
   // Porträt
   const py=116,ps=150,ph=170,pcx=PX+16+ps/2,pcy=py+ph/2;
-  const pg=g.createRadialGradient(pcx,pcy+30,6,pcx,pcy+30,ps*.8);pg.addColorStop(0,col+'55');pg.addColorStop(1,'#0000');g.fillStyle=pg;g.fillRect(PX+8,py-6,ps+16,ph+12);
+  const pg=g.createRadialGradient(pcx,pcy+30,6,pcx,pcy+30,ps*.8);pg.addColorStop(0,col+'55');pg.addColorStop(1,'#0000');g.fillStyle=pg;g.fillRect(PX+8,py-6,ps+16,ph+12);hud.kBrackets(g,PX+8,py-4,ps+16,ph+8,12,col,.85);
   g.save();
   if(!drawFullFrame(g,ch,PX+16,py,ps,ph,arcade.skinOf(id))){g.fillStyle=col;g.font=`900 90px ${F_TECH}`;g.textAlign='center';g.fillText(ch.name[0],pcx,pcy+30)}
   g.restore();
@@ -3900,13 +4130,12 @@ class SelectScreen{
   const by=py+ph+16,bx=PX+16,lw=84,bw=PW-16-lw-70;
   bars.forEach(([lab,val,v],k)=>{const y=by+k*22;v=Math.max(.04,Math.min(1,v));
    hud.lab(g,lab,bx,y+4,11,DIM,'left',2,null,'700');
-   g.fillStyle='#ffffff18';g.fillRect(bx+lw,y-5,bw,8);
-   const fg=g.createLinearGradient(bx+lw,0,bx+lw+bw,0);fg.addColorStop(0,col+'88');fg.addColorStop(1,col);g.fillStyle=fg;g.fillRect(bx+lw,y-5,bw*v,8);
+   hud.kBar(g,bx+lw,y-5,bw,8,v,col,t,5);
    hud.lab(g,String(val),bx+lw+bw+10,y+4,12,'#fff','left',1,null,'700')});
   // Stärken / Schwächen
   let y=by+4*22+10;
   const block=(sign,txt,c)=>{if(!txt)return;const lines=this.wrap(g,txt,13,PW-16-30);hud.lab(g,sign,bx,y,14,c,'left',0,null,'800');lines.forEach((l,k)=>hud.txt(g,l,bx+22,y+k*17,13,c,'left'));y+=lines.length*17+6};
-  block('+',ch.pros,'#7dffc8');block('–',ch.cons,'#d9b8ff');
+  block('+',ch.pros,'#9fe8ff');block('–',ch.cons,'#c9b8ff');
   // Arcade-Gegner
   {const lad=Arcade.ladderFor(ch.id);y=Math.max(y+8,440);
    hud.lab(g,'ARCADE – DEINE GEGNER',bx,y,11,DIM,'left',2,null,'700');
@@ -3924,14 +4153,14 @@ class SelectScreen{
   if(!this.ln&&Math.sin(t*.14)>-.4)hud.fam(F_DISP,()=>hud.fancy(g,label,34,496,24,['#ffffff','#9fe8ff'],'left','#8f7bff',t,false,false,400,2));
   hud.lab(g,'◀ ▶  KÄMPFER',34,516,11,DIM,'left',2,null,'700');hud.lab(g,'▲ ▼  SCHWIERIGKEIT',34,532,11,DIM,'left',2,null,'700');hud.lab(g,DIFF[d],190,532,11,DCOL[d],'left',2,DCOL[d],'800');
   if(hasCustom)hud.lab(g,'E = EIGENE FIGUR BEARBEITEN',W-24,532,10,'#7d6fb0','right',2,null,'600')}
- modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','versus','melee'].indexOf(A.mode),cols=[P1C,P2C,'#8f7bff'],col=cols[k],sw=m.w/3;g.save();g.fillStyle='#0a0618dd';g.strokeStyle='#7a5cff88';g.lineWidth=1.5;g.beginPath();g.roundRect(m.x,m.y,m.w,m.h,13);g.fill();g.stroke();
-  const hx=m.x+k*sw;g.fillStyle=col+'33';g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=10;g.beginPath();g.roundRect(hx+2,m.y+2,sw-4,m.h-4,11);g.fill();g.stroke();g.restore();
-  ['ARCADE','2 SPIELER','MELEE'].forEach((n,i)=>hud.txt(g,n,m.x+sw*(i+.5),m.y+18,13,i===k?'#fff':'#9d8fd0','center'));hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#7d6fb0','left')}
+ modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','versus','melee'].indexOf(A.mode),cols=[P1C,P2C,'#8f7bff'],sw=m.w/3;
+  ['ARCADE','2 SPIELER','MELEE'].forEach((n,i)=>{const on=i===k,x=m.x+i*sw+(i?3:0),w=sw-6;hud.kPlate(g,x,m.y,w,m.h,{col:cols[i],on,sk:9,t});hud.txt(g,n,x+w/2+4,m.y+18,13,on?'#ffffff':DIM,'center',on?cols[i]:null)});
+  hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#7d86c8','left')}
  title(g,t,W,sub,col='#9fe8ff'){const hud=this.hud;
-  hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#00f3ff','#00f3ff'],'center',null,t,false,true,900,4);g.restore();
+  hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#7fe8ff','#7fe8ff'],'center',null,t,false,true,900,4);g.restore();
    hud.fancy(g,'H!TisOP',W/2+2,64,40,['#b98bff','#b98bff'],'center',null,t,false,true,900,4);
    hud.fancy(g,'H!TisOP',W/2,64,40,['#ffffff','#bfb0ff'],'center','#8f6bff',t,false,false,900,4)});
-  hud.lab(g,sub,W/2+2,88,13,col,'center',4,null,'700')}
+  hud.kSub(g,sub,W/2,88,13,col,4,t)}
  // ---- 2-Spieler-Modus: Kämpferwahl (zwei Cursor) ----
  drawVs(g,A,t,W,H){const hud=this.hud,v=A.vs,M=A.mode==='melee';this.modePill(g,A,t);
   if(v.step===1)return this.drawStagePick(g,A,t,W,H);
@@ -3951,8 +4180,8 @@ class SelectScreen{
    g.restore()});
   // Profil rechts wie im Arcade-Menü, je Spieler ein Block
   g.save();const bg=g.createLinearGradient(PX-20,0,PX+PW+20,0);bg.addColorStop(0,'#0a061800');bg.addColorStop(.12,'#0a0618cc');bg.addColorStop(1,'#0a0618cc');g.fillStyle=bg;g.fillRect(PX-20,104,PW+50,396);
-  g.fillStyle=P1C+'88';g.fillRect(PX-1,112,2,180);g.fillStyle=P2C+'88';g.fillRect(PX-1,312,2,180);
-  g.fillStyle='#ffffff14';g.fillRect(PX+8,302,PW-16,1);g.restore();
+  hud.kVRule(g,PX,112,292,P1C,.9);hud.kVRule(g,PX,312,492,P2C,.9);
+  hud.kRule(g,PX+8,PX+PW-8,302,'#4a4c9a','r',.9);g.restore();
   this.vsProfile(g,A,t,1,slots[v.c1],104,P1C,M);this.vsProfile(g,A,t,2,slots[v.c2],304,P2C,M);
   // Fuß: Wartehinweis + Steuerung
   const one=v.locked[0]!==v.locked[1];if(one&&Math.sin(t*.14)>-.4)hud.fam(F_DISP,()=>hud.fancy(g,`WARTE AUF SPIELER ${v.locked[0]?2:1}`,34,496,22,['#ffffff','#9fe8ff'],'left','#8f7bff',t,false,false,400,2));
@@ -3967,22 +4196,21 @@ class SelectScreen{
   g.restore();
   const tx=px+ps+16,rw=PX+PW-8;
   hud.lab(g,(M&&A.cpu&&pl===2?'CPU':`SPIELER ${pl}`)+(skinCount(ch.sprites)>1?'  ·  '+skinName(ch.sprites,A.vsSkinOf(pl)).toUpperCase():''),tx,y0+20,11,pc,'left',2,pc,'800');
-  hud.txt(g,lk?'✔ BEREIT':'wählt …',rw,y0+20,12,lk?'#7dffc8':DIM,'right');
+  hud.txt(g,lk?'✔ BEREIT':'wählt …',rw,y0+20,12,lk?'#9fe8ff':DIM,'right');
   hud.fam(F_DISP,()=>hud.fancy(g,ch.name,tx,y0+54,32,['#ffffff',col],'left',col,t,false,false,400,2));
   const parts=ch.desc.split(' · ');hud.lab(g,parts[0].toUpperCase(),tx,y0+74,11,TXT,'left',2,null,'700');if(parts[1])hud.lab(g,parts[1].toUpperCase(),tx,y0+90,11,col,'left',2,null,'700');
   const all=[['LEBEN',ch.hp,(ch.hp-700)/(1500-700)],['TEMPO',Math.round(ch.walk*100)+'%',ch.walk/1.4],['SCHADEN',Math.round(ch.dmg*100)+'%',ch.dmg/1.3],['ABWEHR',Math.round(100/(ch.def||1))+'%',(1/(ch.def||1))/1.3]];
   const bars=M?all.slice(1):all,by=y0+(M?112:106),lw=72,bw=PW-(tx-PX)-lw-56,st=M?18:15;
   bars.forEach(([lab,val,vv],k)=>{const y=by+k*st;vv=Math.max(.04,Math.min(1,vv));
-   hud.lab(g,lab,tx,y+4,10,DIM,'left',2,null,'700');g.fillStyle='#ffffff18';g.fillRect(tx+lw,y-4,bw,7);
-   const fg=g.createLinearGradient(tx+lw,0,tx+lw+bw,0);fg.addColorStop(0,col+'88');fg.addColorStop(1,col);g.fillStyle=fg;g.fillRect(tx+lw,y-4,bw*vv,7);
+   hud.lab(g,lab,tx,y+4,10,DIM,'left',2,null,'700');hud.kBar(g,tx+lw,y-4,bw,7,vv,col,t,4);
    hud.lab(g,String(val),tx+lw+bw+8,y+4,11,'#fff','left',1,null,'700')});
   const fit=(txt)=>{let q=String(txt||'');while(q.length>3&&hud.mw(g,q,11)>PW-16-24)q=q.slice(0,-2);return q===String(txt||'')?q:q.trimEnd()+'…'};
   const sy=y0+174;
-  if(ch.pros){hud.lab(g,'+',px,sy,13,'#7dffc8','left',0,null,'800');hud.txt(g,fit(ch.pros),px+16,sy,11,'#7dffc8','left')}
-  if(ch.cons){hud.lab(g,'–',px,sy+15,13,'#d9b8ff','left',0,null,'800');hud.txt(g,fit(ch.cons),px+16,sy+15,11,'#d9b8ff','left')}}
+  if(ch.pros){hud.lab(g,'+',px,sy,13,'#9fe8ff','left',0,null,'800');hud.txt(g,fit(ch.pros),px+16,sy,11,'#9fe8ff','left')}
+  if(ch.cons){hud.lab(g,'–',px,sy+15,13,'#c9b8ff','left',0,null,'800');hud.txt(g,fit(ch.cons),px+16,sy+15,11,'#c9b8ff','left')}}
  // Melee-Optionen (rechts oben, klickbar): Spieler 2 = Mensch/CPU (B), CPU-Stärke (▲▼ bzw. Klick), Stocks (T)
- meleeOpts(g,A,t,W){const hud=this.hud,c='#bfe9ff',on='#7dffc8';
-  const row=(i,txt,col,hot)=>{const r=MELEE_OPTS[i];g.save();g.fillStyle=hot?col+'22':'#0a0618cc';g.strokeStyle=hot?col:'#7a5cff88';g.lineWidth=1.5;g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,9);g.fill();g.stroke();g.restore();hud.txt(g,txt,r.x+r.w/2,r.y+r.h-7,13,col,'center')};
+ meleeOpts(g,A,t,W){const hud=this.hud,c='#bfe9ff',on='#9fe8ff';
+  const row=(i,txt,col,hot)=>{const r=MELEE_OPTS[i],w=r.w-8;hud.kPlate(g,r.x,r.y,w,r.h,{col,on:hot,sk:8,t});hud.txt(g,txt,r.x+w/2+4,r.y+r.h-7,13,col,'center')};
   row(0,A.cpu?'GEGEN CPU  (klicken / B)':'2 SPIELER LOKAL  (klicken / B)',A.cpu?on:c,A.cpu);
   row(1,A.cpu?`CPU-STÄRKE: ${DIFF[A.difficulty]}  (klicken / ▲▼)`:'CPU-STÄRKE: –  (erst CPU wählen)',A.cpu?DCOL[A.difficulty]:'#6a5d96',A.cpu);
   row(2,`STOCKS: ${A.stocks}  (klicken / T)`,c,false);
@@ -3994,10 +4222,10 @@ class SelectScreen{
   for(let i=0;i<N;i++){const r=stageRect(i,N),T=THEMES[i],sel=v.stage===i,pulse=.5+.5*Math.sin(t*.12),cx=r.x+r.w/2,col=T?T.lights[0]:'#9fe8ff';
    g.save();g.translate(cx,r.y+r.h/2);const sc=sel?1.06+.01*pulse:.96;g.scale(sc,sc);g.translate(-cx,-(r.y+r.h/2));g.globalAlpha=sel?1:.65;g.shadowColor=col;g.shadowBlur=sel?28:6;
    const gr=g.createLinearGradient(0,r.y,0,r.y+r.h);if(T){gr.addColorStop(0,T.sky[1]);gr.addColorStop(.55,T.sky[3]);gr.addColorStop(1,T.floor[0])}else{gr.addColorStop(0,'#1a1240');gr.addColorStop(1,'#0a0618')}
-   g.fillStyle=gr;g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,12);g.fill();g.shadowBlur=0;g.save();g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,12);g.clip();
+   g.fillStyle=gr;hud.kChamfer(g,r.x,r.y,r.w,r.h,14);g.fill();g.shadowBlur=0;g.save();hud.kChamfer(g,r.x,r.y,r.w,r.h,14);g.clip();
    if(T){g.fillStyle=T.moon[0]+'88';g.beginPath();g.arc(cx+30,r.y+70,26,0,7);g.fill();g.fillStyle='#00000066';for(let k=0;k<7;k++){const bh=26+((k*37)%34);g.fillRect(r.x+8+k*23,r.y+r.h-70-bh,19,bh+20)}g.fillStyle=T.floor[0];g.fillRect(r.x,r.y+r.h-58,r.w,58);g.strokeStyle=T.line;g.lineWidth=2;g.beginPath();g.moveTo(r.x,r.y+r.h-58);g.lineTo(r.x+r.w,r.y+r.h-58);g.stroke()}
    else hud.fancy(g,'?',cx,r.y+r.h/2+20,72,['#ffffff','#8f7bff'],'center','#8f7bff',t);
-   g.restore();g.strokeStyle=sel?'#fff':col;g.lineWidth=sel?4:2;g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,12);g.stroke();
+   g.restore();g.save();g.strokeStyle=sel?'#eaf6ff':col;g.globalAlpha*=sel?1:.7;g.lineWidth=1.2;hud.kChamfer(g,r.x,r.y,r.w,r.h,14);g.stroke();if(sel){g.lineWidth=1;g.strokeStyle='#4a4c9a';hud.kChamfer(g,r.x-5,r.y-5,r.w+10,r.h+10,17);g.stroke()}g.restore();
    hud.fancy(g,T?T.name:'ZUFALL',cx,r.y+r.h-30,T?17:20,['#ffffff',col],'center',col,t,true);hud.txt(g,T?T.desc:'neu bei jeder Revanche',cx,r.y+r.h-12,11,'#d6c8ff','center');g.restore()}
   hud.fancy(g,`${CHARACTERS[slots[v.c1]].name}`,W*.25,372,22,['#ffffff',P1C],'center',P1C,t);hud.fancy(g,'VS',W/2,372,26,['#ffffff','#9fe8ff'],'center','#8f7bff',t);hud.fancy(g,`${CHARACTERS[slots[v.c2]].name}`,W*.75,372,22,['#ffffff',P2C],'center',P2C,t);
   hud.txt(g,'SPIELER 1',W*.25,390,11,'#9fe8ff','center');hud.txt(g,'SPIELER 2',W*.75,390,11,'#c9a0ff','center');

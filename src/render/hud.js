@@ -298,6 +298,216 @@ export class Hud {
     this.fancy(g, s, x, y, size, [col, col], align, glow, 0, false, false, 600);
     this._fam = o;
   }
+  // ---------- Kristall-Bausteine für Menüs (gleiche Formensprache wie das Kampf-HUD) ----------
+  // Haarlinie mit Raute an den Enden; fade = 'r' (läuft nach rechts aus) | 'l' | null
+  kRule(g, x1, x2, y, col = ICE, fade = null, al = 1) {
+    g.save();
+    g.globalAlpha = al;
+    const gr = g.createLinearGradient(x1, 0, x2, 0);
+    gr.addColorStop(0, fade === "l" ? col + "00" : col);
+    gr.addColorStop(1, fade === "r" ? col + "00" : col);
+    g.strokeStyle = gr;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(x1 + 5, y);
+    g.lineTo(x2 - 5, y);
+    g.stroke();
+    g.fillStyle = col;
+    if (fade !== "l") {
+      dia(g, x1, y, 2.4);
+      g.fill();
+    }
+    if (fade !== "r") {
+      dia(g, x2, y, 2.4);
+      g.fill();
+    }
+    g.restore();
+  }
+  // Senkrechte Haarlinie mit Rauten (Trenner zwischen Liste und Profil)
+  kVRule(g, x, y1, y2, col = ICE, al = 1) {
+    g.save();
+    g.globalAlpha = al;
+    const gr = g.createLinearGradient(0, y1, 0, y2);
+    gr.addColorStop(0, col + "00");
+    gr.addColorStop(0.12, col);
+    gr.addColorStop(0.88, col);
+    gr.addColorStop(1, col + "00");
+    g.strokeStyle = gr;
+    g.shadowColor = col;
+    g.shadowBlur = 6;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(x, y1);
+    g.lineTo(x, y2);
+    g.stroke();
+    g.shadowBlur = 0;
+    g.fillStyle = col;
+    dia(g, x, y1 + 8, 2.6);
+    g.fill();
+    dia(g, x, y2 - 8, 2.6);
+    g.fill();
+    g.restore();
+  }
+  // Abgeschrägtes Rechteck (Pfad)
+  kChamfer(g, x, y, w, h, c = 10) {
+    g.beginPath();
+    g.moveTo(x + c, y);
+    g.lineTo(x + w, y);
+    g.lineTo(x + w, y + h - c);
+    g.lineTo(x + w - c, y + h);
+    g.lineTo(x, y + h);
+    g.lineTo(x, y + c);
+    g.closePath();
+  }
+  // Eckklammern mit Raute (Rahmen um Porträts / Karten)
+  kBrackets(g, x, y, w, h, len = 14, col = ICE, al = 1) {
+    g.save();
+    g.globalAlpha = al;
+    g.strokeStyle = col;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(x, y + len);
+    g.lineTo(x, y);
+    g.lineTo(x + len, y);
+    g.moveTo(x + w - len, y + h);
+    g.lineTo(x + w, y + h);
+    g.lineTo(x + w, y + h - len);
+    g.stroke();
+    g.fillStyle = col;
+    dia(g, x, y, 2.4);
+    g.fill();
+    dia(g, x + w, y + h, 2.4);
+    g.fill();
+    g.restore();
+  }
+  // Schräge Platte (Knöpfe, Reiter, Umschalter): on = aktiv (Farbe + Glanz), sonst dunkle Mulde mit Haarlinie
+  kPlate(g, x, y, w, h, o = {}) {
+    const { col = ICE, on = false, al = 1, sk = 8, t = 0 } = o;
+    g.save();
+    g.globalAlpha = al;
+    para(g, x, y, w, h, sk);
+    const f = g.createLinearGradient(0, y, 0, y + h);
+    if (on) {
+      f.addColorStop(0, col + "55");
+      f.addColorStop(1, col + "16");
+    } else {
+      f.addColorStop(0, "#0b0c2ad8");
+      f.addColorStop(1, "#05061ad8");
+    }
+    g.fillStyle = f;
+    g.fill();
+    g.lineWidth = 1;
+    g.strokeStyle = on ? col : ICE_DIM;
+    if (on) {
+      g.shadowColor = col;
+      g.shadowBlur = 8 + 3 * Math.sin(t * 0.08);
+    }
+    g.stroke();
+    g.shadowBlur = 0;
+    if (on) {
+      g.save();
+      para(g, x, y, w, h, sk);
+      g.clip();
+      const sh = g.createLinearGradient(0, y, 0, y + h);
+      sh.addColorStop(0, "#ffffff48");
+      sh.addColorStop(0.4, "#ffffff08");
+      sh.addColorStop(1, "#0000");
+      g.fillStyle = sh;
+      g.fillRect(x, y, w + sk, h);
+      const sc = ((t * 0.012) % 1.8) * (w + 80) - 40 + x,
+        sg = g.createLinearGradient(sc - 14, 0, sc + 14, 0);
+      sg.addColorStop(0, "#fff0");
+      sg.addColorStop(0.5, "#ffffff50");
+      sg.addColorStop(1, "#fff0");
+      g.fillStyle = sg;
+      g.fillRect(sc - 14, y, 28, h);
+      g.restore();
+    } else {
+      g.globalAlpha = al * 0.4;
+      g.strokeStyle = ICE_DIM;
+      para(g, x - 3, y - 3, w + 6, h + 6, sk);
+      g.stroke();
+    }
+    g.restore();
+  }
+  // Wertebalken im Kristall-Stil (schräge Mulde, Verlauf, Facettenstreifen, Glanz, Segmentstriche)
+  kBar(g, x, y, w, h, v, col, t = 0, sk = 5) {
+    v = hclamp(v, 0, 1);
+    g.save();
+    para(g, x, y, w, h, sk);
+    const tg = g.createLinearGradient(0, y, 0, y + h);
+    tg.addColorStop(0, "#04051a");
+    tg.addColorStop(1, "#0a0c2a");
+    g.fillStyle = tg;
+    g.fill();
+    g.strokeStyle = ICE_DIM;
+    g.globalAlpha = 0.8;
+    g.lineWidth = 0.8;
+    g.stroke();
+    g.globalAlpha = 1;
+    g.save();
+    para(g, x, y, w, h, sk);
+    g.clip();
+    const fw = w * v;
+    if (fw > 0.5) {
+      const fg = g.createLinearGradient(x, 0, x + fw + sk, 0);
+      fg.addColorStop(0, col + "66");
+      fg.addColorStop(0.75, col);
+      fg.addColorStop(1, "#ffffff");
+      g.fillStyle = fg;
+      para(g, x, y, fw, h, sk);
+      g.fill();
+      const sh = g.createLinearGradient(0, y, 0, y + h);
+      sh.addColorStop(0, "#ffffff70");
+      sh.addColorStop(0.35, "#ffffff10");
+      sh.addColorStop(1, "#00000060");
+      g.fillStyle = sh;
+      g.fillRect(x, y, fw + sk, h);
+      for (let fx = x - h; fx < x + fw + h; fx += 9) {
+        g.fillStyle = ((fx / 9) | 0) % 2 ? "#ffffff14" : "#00000020";
+        g.beginPath();
+        g.moveTo(fx, y + h);
+        g.lineTo(fx + h, y);
+        g.lineTo(fx + h + 4.5, y);
+        g.lineTo(fx + 4.5, y + h);
+        g.closePath();
+        g.fill();
+      }
+      const sc = ((t * 0.012 + x * 0.01) % 1.9) * (fw + 60) - 30 + x,
+        sg = g.createLinearGradient(sc - 12, 0, sc + 12, 0);
+      sg.addColorStop(0, "#fff0");
+      sg.addColorStop(0.5, "#ffffff80");
+      sg.addColorStop(1, "#fff0");
+      g.fillStyle = sg;
+      g.fillRect(sc - 12, y, 24, h);
+    }
+    g.strokeStyle = "#05061ac0";
+    g.lineWidth = 1;
+    for (let k = 1; k < 10; k++) {
+      const f = k / 10;
+      g.beginPath();
+      g.moveTo(x + sk + w * f, y);
+      g.lineTo(x + w * f, y + h);
+      g.stroke();
+    }
+    g.restore();
+    if (fw > 3) {
+      g.fillStyle = "#fff";
+      g.shadowColor = col;
+      g.shadowBlur = 6;
+      dia(g, x + sk * 0.5 + fw, y + h / 2, 2);
+      g.fill();
+    }
+    g.restore();
+  }
+  // Untertitel mit auslaufenden Haarlinien und Rauten links/rechts (wie „ROUND 1“ im HUD)
+  kSub(g, s, cx, y, size, col, sp = 4, t = 0) {
+    const tw = s.length * (size * 0.56 + sp);
+    this.lab(g, s, cx + sp / 2, y, size, col, "center", sp, null, "700");
+    const gap = tw / 2 + 16;
+    this.kRule(g, cx - gap - 72, cx - gap, y - size * 0.36, ICE, "l", 0.85);
+    this.kRule(g, cx + gap, cx + gap + 72, y - size * 0.36, ICE, "r", 0.85);
+  }
   // Text in anderer Schrift (z. B. F_TECH für Logo/Ziffern)
   fam(f, fn) {
     const o = this._fam;

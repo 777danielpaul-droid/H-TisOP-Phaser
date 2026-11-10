@@ -13,7 +13,10 @@ export const BOUNCE={L:{vy:-4.8,vx:1.2},M:{vy:-5.4,vx:1.6},H:{vy:-9.2,vx:3},mult
 // pl/pr = Plattformkanten, x0/x1/y0/y1 = Blast-Zonen (wer sie verlässt, verliert einen Stock), pctScale = Move-Schaden -> %,
 // kbDiv = je höher, desto später fliegt man weit, base = Grund-Rückstoß je Trefferstärke (leicht/mittel/schwer), flinch = darunter bleibt man am Boden stehen.
 export const MELEE={stocks:3,pl:150,pr:810,x0:-260,x1:1220,y0:-430,y1:GROUND+300,pctScale:.17,pctMax:999,kbDiv:85,base:[4.2,6.2,8.6],hard:9.5,flinch:6.4,
- stunBase:10,stunK:2.4,respawn:70,hover:100,inv:150,time:480};
+ stunBase:10,stunK:2.4,respawn:70,hover:100,inv:150,time:480,
+ // Rettungssprung (Hoch + Special in der Luft, 1x pro Luftphase): start = Ansprung-Frames (kurzes Verharren), frames = Steigphase, vy = Start-Steigtempo (negativ = hoch), decay = Abbremsen je Frame,
+ // vx = Steuertempo zur Seite. Reichweite ca. 350 px hoch / ~170 px zur Seite -> reicht nur, wenn man nicht zu weit draussen ist.
+ rec:{start:5,frames:26,vy:-18,decay:.45,vx:4.2}};
 export const SPEED=1.5; // Standard-Spieltempo (Logik-Schritte pro 1/60 s); im Menü einstellbar
 export const COMBO_SCALE=[1,.95,.9,.85,.8,.7,.6,.5,.4,.3]; // Schadensskalierung je Treffer im Combo
 export const METER={max:300,bar:100};

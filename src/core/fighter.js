@@ -13,7 +13,7 @@ export class Fighter{
  reset(){Object.assign(this,{x:this.startX,y:GROUND,vx:0,vy:0,facing:this.startFacing,hp:this.maxHp,state:'idle',sf:0,mf:0,move:null,moveName:'',
   hitDone:false,contact:false,hitCd:0,stun:0,coyote:0,airJumps:this.maxAJ,airDashes:1,launched:false,chainLen:0,comboHits:0,comboDmg:0,juggle:0,pop:false,hard:false,landLag:0,dashDir:0,
   noGrav:false,kdFrames:0,blockCrouch:false,anim:'idle',animU:0,_mo:0,spam:{btn:'',n:0,t:999},
-  pct:0,stocks:0,dead:0,inv:0,hover:0,onStage:true,under:false});this.trail.length=0;this.comboShow={hits:0,dmg:0,t:0}}
+  pct:0,stocks:0,dead:0,inv:0,hover:0,onStage:true,under:false,recUsed:false});this.trail.length=0;this.comboShow={hits:0,dmg:0,t:0}}
  // Kämpfer wechseln (Menü): neue Stats + Moves, danach Zurücksetzen
  setChar(char,skin=0){this.char=char;this.skin=skin|0;this.moves=buildMoves(char);this.maxHp=char.hp;this.reset()}
  get grounded(){return this.y>=GROUND&&this.onStage&&!this.under}   // Melee: nur auf der Plattform (onStage), nicht darunter (under) -> sonst fällt man
@@ -58,17 +58,19 @@ export class Fighter{
   switch(this.state){
    case'attack':this.tickAttack(opp,game);break;
    case'hit':case'block':this.vx*=.84;if(--this.stun<=0){this.endCombo();this.blockCrouch=false;this.setState('idle')}break;
-   case'airhit':if(this.pop)this.vx*=BOUNCE.drag;if(--this.stun<=0){this.endCombo();this.pop=false;const M=!!game.melee;this.airJumps=M?this.maxAJ:0;this.airDashes=M?1:0;this.setState('air')}break;   // Melee: nach dem Hitstun darf man zurückspringen/dashen
+   case'airhit':if(this.pop)this.vx*=BOUNCE.drag;if(--this.stun<=0){this.endCombo();this.pop=false;const M=!!game.melee;this.airJumps=M?this.maxAJ:0;this.airDashes=M?1:0;if(M)this.recUsed=false;this.setState('air')}break;   // Melee: nach dem Hitstun darf man zurückspringen/dashen
    case'knockdown':if(this.sf>=this.kdFrames)this.setState('wakeup');break;
    case'wakeup':if(this.sf>=18)this.setState('idle');break;
    case'dash':this.tickDash(game);break;
    case'airdash':this.tickAirDash(game);break;
+   case'recover':this.tickRecover(game);break;
    case'tumble':case'ko':case'win':break;
    default:this.free(game)}
   this.physics(game)}
  // ---------- Freie Aktionen ----------
  free(game){const i=this.input;
   if(this.landLag>0)this.landLag--;
+  if(this.tryRecover(game))return;
   if(this.tryAttack(game))return;
   if(this.tryDash(game))return;
   this.tryJump(game);
@@ -93,6 +95,19 @@ export class Fighter{
   return false}
  tickDash(game){if(this.sf>4&&(this.tryAttack(game)))return;if(this.sf>3&&this.tryJump(game))return;
   if(this.sf>=PHYS.dashFrames){this.vx*=.3;this.setState('idle')}}
+ // Melee: Rettungssprung (Hoch + Special in der Luft). Einmal pro Luftphase (Landung, Treffer oder Respawn geben ihn zurück). Kurzes Verharren, dann steiler Aufstieg, seitlich steuerbar;
+ // danach ohne Doppelsprung/Air-Dash weiter (hilflos) -> reicht nur, wenn man nicht zu weit draussen ist.
+ tryRecover(game){const i=this.input;if(!game.melee||this.grounded||this.recUsed)return false;
+  if(!(i.dy<0&&i.pressed('S')))return false;
+  i.consume('S');i.consume('UP');this.recUsed=true;this.move=null;this.moveName='';this.vy=0;this.vx*=.3;this.noGrav=true;if(i.dx)this.facing=i.dx;this.setState('recover');
+  const gl=this.char.glow||'#fff';game.fx.ps.ring(this.x,this.y-70,gl,100);game.sfx('whoosh_heavy',{vol:.8,rate:1.15});return true}
+ tickRecover(game){const R=MELEE.rec,i=this.input;
+  if(this.grounded){this.land(game);return}                       // auf der Plattform angekommen
+  if(this.sf<=R.start){this.vy=0;this.vx*=.8;return}               // Ansprung: kurz in der Luft verharren
+  const t=this.sf-R.start;
+  if(t>R.frames){this.noGrav=false;this.airJumps=0;this.airDashes=0;this.setState('air');return}   // Aufstieg vorbei: hilflos weiterfallen
+  this.vy=R.vy+R.decay*t;this.vx+=(i.dx*R.vx-this.vx)*.25;if(i.dx)this.facing=i.dx;
+  if(t%3===1)game.fx.ps.ring(this.x,this.y-60,this.char.glow||'#fff',46)}
  tickAirDash(game){if(this.sf>5&&this.tryAttack(game)){this.noGrav=false;return}
   if(this.sf>=PHYS.airDashFrames){this.noGrav=false;this.vx*=.5;this.setState('air')}}
  // ---------- Moves ----------
@@ -172,7 +187,7 @@ export class Fighter{
   else if(this.y>=GROUND){const fall=this.vy>0;this.y=GROUND;if(fall)this.land(game);this.vy=0}}
  // Melee: nach einem Stock-Verlust zurück ins Spiel – schwebt über der Mitte, kurz unverwundbar, mit allen Sprüngen
  respawn(x,y,facing){Object.assign(this,{x,y,vx:0,vy:0,facing,state:'air',sf:0,mf:0,move:null,moveName:'',hitDone:false,contact:false,hitCd:0,stun:0,launched:false,hard:false,noGrav:true,
-  comboHits:0,comboDmg:0,juggle:0,pct:0,dead:0,hover:MELEE.hover,inv:MELEE.inv,onStage:true,under:false,airJumps:this.maxAJ,airDashes:1,landLag:0,blockCrouch:false,meter:Math.min(this.meter,100)});
+  comboHits:0,comboDmg:0,juggle:0,pct:0,dead:0,hover:MELEE.hover,inv:MELEE.inv,onStage:true,under:false,recUsed:false,airJumps:this.maxAJ,airDashes:1,landLag:0,blockCrouch:false,meter:Math.min(this.meter,100)});
   this.comboShow={hits:0,dmg:0,t:0};this.trail.length=0;this.input.clear()}
  // Decke im Gebäude: Kopf (Höhe der Luft-Hurtbox) darf die Unterkante der Decke nicht überschreiten. Vom Hof aus gilt die Decke als Türsturz:
  // Wer mit dem Kopf darüber liegt, kommt nicht durch die Bresche (wird an der Wandlinie gestoppt), statt in die Decke zu "ploppen".
@@ -187,13 +202,14 @@ export class Fighter{
   if(s==='ko'){this.vx=0;game.fx.land(this.x,GROUND,true);game.sfx('body_fall',{vol:.7});return}
   if(s==='attack'){const m=this.move;if(m&&m.air){this.move=null;this.landLag=m.land||4;this.setState('idle')}}
   else if(s==='airdash'){this.noGrav=false;this.setState('idle')}
+  else if(s==='recover'){this.noGrav=false;this.setState('idle');this.landLag=3}
   else if(s==='air'){this.setState('idle');this.landLag=3}
-  this.airJumps=this.maxAJ;this.airDashes=1;this.vx*=.3;game.fx.land(this.x,GROUND,false);game.sfx('land',{vol:.6})}
+  this.recUsed=false;this.airJumps=this.maxAJ;this.airDashes=1;this.vx*=.3;game.fx.land(this.x,GROUND,false);game.sfx('land',{vol:.6})}
  // ---------- Animation (für den Renderer) ----------
  updateAnim(){const s=this.state,m=this.move;this.animU=0;
   switch(s){
    case'idle':this.anim='idle';break;case'walk':this.anim='walk';break;case'crouch':this.anim='crouch';break;case'air':this.anim='air';this.animU=Math.max(0,Math.min(.999,(this.vy+18)/36));break;   // Sprung-Frames nach Flugbahn (steigen -> Scheitel -> fallen)
-   case'dash':this.anim='dash';break;case'airdash':this.anim='airdash';break;
+   case'dash':this.anim='dash';break;case'airdash':case'recover':this.anim='airdash';break;
    case'attack':this.anim=m?m.anim:'idle';this.animU=m?Math.min(1,this.mf/(m.su+m.ac+Math.max(m.rc,6))):0;break;
    case'hit':this.anim='hit';this.animU=Math.min(1,this.sf/12);break;
    case'block':this.anim=this.blockCrouch?'cblock':'block';break;
@@ -204,7 +220,7 @@ export class Fighter{
    case'wakeup':this.anim='wakeup';this.animU=Math.min(1,this.sf/18);break;
    case'ko':this.anim=this.grounded?(this.char.defeat?'defeat':'kd'):'airhit';this.animU=Math.min(1,this.sf/(this.grounded?16:34));break;
    case'win':this.anim='win';this.animU=Math.min(.999,this.sf/180);break;default:this.anim='idle'}
-  const fast=s==='dash'||s==='airdash'||(s==='attack'&&m&&m.lunge);
+  const fast=s==='dash'||s==='airdash'||s==='recover'||(s==='attack'&&m&&m.lunge);
   for(const t of this.trail)t.age++;this.trail=this.trail.filter(t=>t.age<14);
   if(fast&&this.sf%3===0)this.trail.push({x:this.x,y:this.y,facing:this.facing,anim:this.anim,animU:this.animU,sf:this.sf,state:s,char:this.char,move:null,age:0})}
 }

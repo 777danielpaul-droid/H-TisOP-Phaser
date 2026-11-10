@@ -17,11 +17,9 @@ Weiterentwickeln / Übergabe: siehe `HANDOVER.md` und `docs/ARCHITECTURE.md`. Ne
 **Gasse zwischen Hochhäusern (v16):** Der Kampf beginnt in einer engen Gasse. Wer einen Gegner in der Ecke weiter bearbeitet (oder ihn mit Wucht dagegen schleudert), bricht die Erdgeschoss-Wand des Hochhauses durch – links in eine Spielhalle, rechts in eine Lobby. Mit jedem Durchbruch wird die Arena breiter (voll geöffnet 2140 px). Werte: `BARRIER` in `src/core/config.js`.
 
 ## Credits
-
 Sound effects: "Hitstop – Punch, Kick & Hit Feedback SFX (FREE Lite)" by yetiancai (itch.io), siehe `sfx/LICENSE.txt`.
 
 ## KITSUNE (Neunschwanz-Fuchs) – dritte spielbare Figur
-
 - Assets: `assets/kitsune/` (16 Posenbögen in `sheets/`, `atlas.webp`, `meta.json`, `meta.js`, Referenzbild in `referenz/`).
 - Import: `python3 tools/import-kitsune-sheets.py` (entfernt Trennkreuz, Beschriftungen, Ziffern, aufgemaltes Schachbrett; Bericht in `assets/kitsune/sheets/_bericht.txt`, Kontrollbild `_vorschau.png`).
 - Animationen: `KITSUNE_ANIMS` in `src/render/sprites.js`; Werte in `src/core/characters.js`; Moves in `src/core/movesets.js`.
@@ -30,16 +28,14 @@ Sound effects: "Hitstop – Punch, Kick & Hit Feedback SFX (FREE Lite)" by yetia
 - Noch Behelfe: Duck-Schlag (`cpunch` nutzt den Ausfall), Feuer-Special (`special` nutzt Schlag-Frames), Heavy-Anfang teilt sich Frames mit dem Jab.
 
 ## Zweite Farbe (Skins)
-
 - Jede Figur hat 2 Farben: Tiger blau/**weiß**, ST3-G0 grün/**graublau**, Kitsune grau/**lila**. Definition + Farbtausch: `src/render/skins.js` (der Atlas wird beim ersten Gebrauch per HSV umgefärbt, keine zusätzlichen Bilddateien).
 - Auswahl: im Arcade-Menü **C** (wirkt auf die markierte Figur, gilt auch, wenn du gegen sie kämpfst); im 2-Spieler-Modus **C** (P1) / **L** (P2). Gleiche Figur + gleiche Farbe → P2 bekommt automatisch die andere. Die Wahl wird im Browser gespeichert.
 - Weitere Farbe: Eintrag in `SKINS` + Regel in `RULES` ergänzen.
 
 ## Melee-Modus (Smash-Stil)
-
-Im Startmenü mit **TAB** auf _MELEE_ schalten (oder Schalter anklicken). Kämpfer + Stage wählen wie bei 2 Spieler.
-
+Im Startmenü mit **TAB** auf *MELEE* schalten (oder Schalter anklicken). Kämpfer + Stage wählen wie bei 2 Spieler.
 - Schaden wird in **%** gezählt, je höher, desto weiter fliegt man. Raus aus dem Bild (Blast-Zone) = **Stock** weg, dann Respawn auf der schwebenden Scheibe.
 - Offene Plattform ohne Wände, Kanten runterlaufen = fallen. Zurückkommen mit Doppelsprung/Air-Dash.
+- **Rettungssprung (nur Melee):** in der Luft **Hoch + Special** (W/↑ + U bzw. T/I im 2-Spieler-Modus) – kurzes Verharren, dann steiler Aufstieg, seitlich steuerbar. Einmal pro Luftphase (Landung oder getroffen werden gibt ihn zurück), danach hilflos. Reicht nur, wenn man nicht zu weit draußen/tief hängt. Werte: `MELEE.rec` in `src/core/config.js`. Die KI nutzt ihn auch.
 - Menü: **T** = Stocks (1–5), **B** = Spieler 2 Mensch/CPU (Standard: CPU; alle drei Optionen auch per Klick), **▲▼** = CPU-Stärke.
 - Zeitlimit 8 min: mehr Stocks gewinnt, sonst weniger %.

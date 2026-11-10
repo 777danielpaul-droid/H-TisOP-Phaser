@@ -23,7 +23,7 @@ export function hitMode(lx,ly){const m=MODE_PILL;if(ly<m.y||ly>m.y+m.h||lx<m.x||
 // Stage-Karten (Versus): 4 Level + Zufall
 export const stageRect=(i,n=5)=>{const w=170,gap=14,tot=n*w+(n-1)*gap,x0=(960-tot)/2;return{x:x0+i*(w+gap),y:128,w,h:190}};
 export function hitStage(lx,ly,n=5){for(let i=0;i<n;i++){const r=stageRect(i,n);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
-const P1C='#00f3ff',P2C='#b98bff';
+const P1C='#6fe3ff',P2C='#b98bff';
 // 2-Spieler-Kämpferwahl: eigene Karten (4 Kämpfer + Platz für die eigene Figur), unabhängig von der Kämpferliste des Arcade-Menüs
 export const vsCardRect=(i,n=4)=>cardRect(i,n);   // gleiches Raster wie im Arcade-Menü
 export function hitVsCard(lx,ly,n=4){for(let i=0;i<n;i++){const r=vsCardRect(i,n);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
@@ -31,7 +31,7 @@ const DIFF=['LEICHT','NORMAL','HART'],DCOL=['#7fe8ff','#9b9bff','#d38bff'];
 const FIG={tiger:.9,st3g0:.88,kitsune:.86};   // Größenausgleich je Figur in der Liste
 const PX=508,PW=422;   // Profilbereich rechts (x, Breite)
 const VTEXT={tiger:['LET\'S GO','上吧！'],st3g0:['UNLIKELY','不太可能'],kitsune:['TRY!','试试吧！']};   // Schriftzug im Übergangsvideo + chinesische Übersetzung
-const DIM='#9d8fd0',TXT='#d6c8ff';
+const DIM='#8f95d8',TXT='#d6dcff';
 export class SelectScreen{
  constructor(hud){this.hud=hud;this.fakes={};this.ln=null;this.fw=null;this._lt=null;this.sfx=null;this.vids={};try{for(const id of ROSTER)this.vid(id)}catch(e){}}
  // Kurzvideo je Figur (WebM, vom Build als Data-URI in window.__VIDEOS__); wird beim ersten Zugriff angelegt und vorgeladen, ohne Video/Browser-Support bleibt alles beim Alten
@@ -58,9 +58,9 @@ export class SelectScreen{
    g.shadowBlur=0;g.globalAlpha=al*.5;g.strokeStyle=c;g.lineWidth=1.5;g.strokeText(txt,lx,yy)};
   row(T[0],y,size,col);row(T[1],y+size*.78,size*.58,col2);g.restore()}
  // Kurzvideo als Rahmen-Feld (16:9) zeichnen
- vidPanel(g,v,x,y,w,h,col,al,flash){g.save();g.globalAlpha=al;g.shadowColor=col;g.shadowBlur=24;g.fillStyle='#000';g.beginPath();g.roundRect(x,y,w,h,8);g.fill();g.shadowBlur=0;g.save();g.clip();
-  try{if(v)g.drawImage(v,x,y,w,h)}catch(e){}g.restore();g.strokeStyle=col;g.lineWidth=2;g.beginPath();g.roundRect(x,y,w,h,8);g.stroke();
-  if(flash>0){g.globalAlpha=al*Math.min(.92,flash*.55);g.fillStyle='#fff';g.beginPath();g.roundRect(x,y,w,h,8);g.fill()}g.restore()}
+ vidPanel(g,v,x,y,w,h,col,al,flash){g.save();g.globalAlpha=al;g.shadowColor=col;g.shadowBlur=24;g.fillStyle='#000';this.hud.kChamfer(g,x,y,w,h,12);g.fill();g.shadowBlur=0;g.save();g.clip();
+  try{if(v)g.drawImage(v,x,y,w,h)}catch(e){}g.restore();g.strokeStyle=col;g.lineWidth=1.4;this.hud.kChamfer(g,x,y,w,h,12);g.stroke();g.strokeStyle='#4a4c9a';g.lineWidth=1;this.hud.kChamfer(g,x-5,y-5,w+10,h+10,15);g.stroke();
+  if(flash>0){g.globalAlpha=al*Math.min(.92,flash*.55);g.fillStyle='#fff';this.hud.kChamfer(g,x,y,w,h,12);g.fill()}g.restore()}
  // Feuerwerk weiterlaufen lassen (Schritte in 60-Hz-Frames, unabhängig von der Monitorfrequenz)
  stepLaunch(t,cellCx){const ln=this.ln;if(!ln)return;const dt=this._lt==null?1:Math.min(3,Math.max(0,t-this._lt));ln.acc+=dt;
   const col=ln.col,col2=ln.col2,vid=!!(ln.vid||ln.vid2),V=ln.V||70,FIN=Math.max(1,V-50),fx=ln.fx,sp=ln.sp,fy=ln.fy;
@@ -92,10 +92,10 @@ export class SelectScreen{
  wrap(g,s,size,maxW){const out=[];let line='';for(const w of String(s).split(' ')){const tr=line?line+' '+w:w;if(line&&this.hud.mw(g,tr,size)>maxW){out.push(line);line=w}else line=tr}if(line)out.push(line);return out}
  draw(g,arcade,t,W,H){if(arcade.pvp)return this.drawVs(g,arcade,t,W,H);const hud=this.hud;this.modePill(g,arcade,t);
   // Titel (klein, links oben) + Unterzeile
-  hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#00f3ff','#00f3ff'],'center',null,t,false,true,900,4);g.restore();
+  hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#7fe8ff','#7fe8ff'],'center',null,t,false,true,900,4);g.restore();
    hud.fancy(g,'H!TisOP',W/2+2,64,40,['#b98bff','#b98bff'],'center',null,t,false,true,900,4);
    hud.fancy(g,'H!TisOP',W/2,64,40,['#ffffff','#bfb0ff'],'center','#8f6bff',t,false,false,900,4)});
-  hud.lab(g,'WÄHLE DEINEN KÄMPFER',W/2+2,88,13,'#9fe8ff','center',4,null,'700');
+  hud.kSub(g,'WÄHLE DEINEN KÄMPFER',W/2,88,13,'#9fe8ff',4,t);
   const slots=[...ROSTER,'custom'],N=slots.length,cur=arcade.cursor;
   // Kämpfer links: nur Figur + Name, kein Rahmen. Auswahl = Licht am Boden, voller Glanz, Name hell.
   slots.forEach((id,i)=>{const ch=CHARACTERS[id],r=cardRect(i,N),sel=i===cur,pulse=.5+.5*Math.sin(t*.1),cx=r.x+r.w/2,col=ch?ch.glow||'#fff':'#3fe0ff',base=r.y+r.h-50;
@@ -106,7 +106,7 @@ export class SelectScreen{
    else{g.strokeStyle=col;g.lineWidth=3;g.lineCap='round';g.globalAlpha=sel?.95:.5;g.beginPath();g.moveTo(cx-16,base-50);g.lineTo(cx+16,base-50);g.moveTo(cx,base-66);g.lineTo(cx,base-34);g.stroke();g.globalAlpha=sel?1:.55}
    hud.fam(F_DISP,()=>hud.fancy(g,ch?ch.name:'EIGENE FIGUR',cx,r.y+r.h-24,sel?19:17,sel?['#ffffff',col]:['#cfc6ee','#a79bd6'],'center',sel?col:null,t,false,false,400,1));
    if(ch)this.skinDots(g,ch,arcade.skinOf(id),cx,r.y+r.h-7,sel);
-   if(ch&&ch.custom){const e=editRect(r);g.globalAlpha=sel?1:.6;g.strokeStyle=col;g.lineWidth=1;g.beginPath();g.roundRect(e.x,e.y,e.w,e.h,5);g.stroke();hud.txt(g,'✎ EDIT',e.x+e.w/2,e.y+13,10,'#fff','center')}
+   if(ch&&ch.custom){const e=editRect(r);g.globalAlpha=sel?1:.6;hud.kPlate(g,e.x,e.y,e.w-6,e.h,{col,on:sel,sk:5,t});hud.txt(g,'✎ EDIT',e.x+e.w/2-1,e.y+13,10,'#fff','center')}
    g.restore()});
   this.profile(g,slots[cur],arcade,t,W);
   if(this.ln){const r=cardRect(cur,N),ln=this.ln;
@@ -124,14 +124,14 @@ export class SelectScreen{
   g.save();
   // zarte Fläche statt Rahmen
   const bg=g.createLinearGradient(PX-20,0,PX+PW+20,0);bg.addColorStop(0,'#0a061800');bg.addColorStop(.12,'#0a0618cc');bg.addColorStop(1,'#0a0618cc');g.fillStyle=bg;g.fillRect(PX-20,104,PW+50,396);
-  g.fillStyle=col+'88';g.fillRect(PX-1,112,2,380);
+  hud.kVRule(g,PX,112,492,col,.9);
   if(!ch){   // leerer Slot
    hud.fam(F_DISP,()=>hud.fancy(g,'EIGENE FIGUR',PX+16,162,40,['#ffffff',col],'left',col,t,false,false,400,2));
    this.wrap(g,'Lade deine Sprite-Sheets hoch, stelle Name, Moves und Werte ein und kämpfe mit deinem eigenen Charakter.',14,PW-30).forEach((l,k)=>hud.txt(g,l,PX+16,198+k*20,14,TXT,'left'));
    hud.txt(g,'Es reicht ein einziges Sheet (Idle); alles andere kannst du nach und nach ergänzen.',PX+16,262,12,DIM,'left');g.restore();return}
   // Porträt
   const py=116,ps=150,ph=170,pcx=PX+16+ps/2,pcy=py+ph/2;
-  const pg=g.createRadialGradient(pcx,pcy+30,6,pcx,pcy+30,ps*.8);pg.addColorStop(0,col+'55');pg.addColorStop(1,'#0000');g.fillStyle=pg;g.fillRect(PX+8,py-6,ps+16,ph+12);
+  const pg=g.createRadialGradient(pcx,pcy+30,6,pcx,pcy+30,ps*.8);pg.addColorStop(0,col+'55');pg.addColorStop(1,'#0000');g.fillStyle=pg;g.fillRect(PX+8,py-6,ps+16,ph+12);hud.kBrackets(g,PX+8,py-4,ps+16,ph+8,12,col,.85);
   g.save();
   if(!drawFullFrame(g,ch,PX+16,py,ps,ph,arcade.skinOf(id))){g.fillStyle=col;g.font=`900 90px ${F_TECH}`;g.textAlign='center';g.fillText(ch.name[0],pcx,pcy+30)}
   g.restore();
@@ -147,13 +147,12 @@ export class SelectScreen{
   const by=py+ph+16,bx=PX+16,lw=84,bw=PW-16-lw-70;
   bars.forEach(([lab,val,v],k)=>{const y=by+k*22;v=Math.max(.04,Math.min(1,v));
    hud.lab(g,lab,bx,y+4,11,DIM,'left',2,null,'700');
-   g.fillStyle='#ffffff18';g.fillRect(bx+lw,y-5,bw,8);
-   const fg=g.createLinearGradient(bx+lw,0,bx+lw+bw,0);fg.addColorStop(0,col+'88');fg.addColorStop(1,col);g.fillStyle=fg;g.fillRect(bx+lw,y-5,bw*v,8);
+   hud.kBar(g,bx+lw,y-5,bw,8,v,col,t,5);
    hud.lab(g,String(val),bx+lw+bw+10,y+4,12,'#fff','left',1,null,'700')});
   // Stärken / Schwächen
   let y=by+4*22+10;
   const block=(sign,txt,c)=>{if(!txt)return;const lines=this.wrap(g,txt,13,PW-16-30);hud.lab(g,sign,bx,y,14,c,'left',0,null,'800');lines.forEach((l,k)=>hud.txt(g,l,bx+22,y+k*17,13,c,'left'));y+=lines.length*17+6};
-  block('+',ch.pros,'#7dffc8');block('–',ch.cons,'#d9b8ff');
+  block('+',ch.pros,'#9fe8ff');block('–',ch.cons,'#c9b8ff');
   // Arcade-Gegner
   {const lad=Arcade.ladderFor(ch.id);y=Math.max(y+8,440);
    hud.lab(g,'ARCADE – DEINE GEGNER',bx,y,11,DIM,'left',2,null,'700');
@@ -171,14 +170,14 @@ export class SelectScreen{
   if(!this.ln&&Math.sin(t*.14)>-.4)hud.fam(F_DISP,()=>hud.fancy(g,label,34,496,24,['#ffffff','#9fe8ff'],'left','#8f7bff',t,false,false,400,2));
   hud.lab(g,'◀ ▶  KÄMPFER',34,516,11,DIM,'left',2,null,'700');hud.lab(g,'▲ ▼  SCHWIERIGKEIT',34,532,11,DIM,'left',2,null,'700');hud.lab(g,DIFF[d],190,532,11,DCOL[d],'left',2,DCOL[d],'800');
   if(hasCustom)hud.lab(g,'E = EIGENE FIGUR BEARBEITEN',W-24,532,10,'#7d6fb0','right',2,null,'600')}
- modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','versus','melee'].indexOf(A.mode),cols=[P1C,P2C,'#8f7bff'],col=cols[k],sw=m.w/3;g.save();g.fillStyle='#0a0618dd';g.strokeStyle='#7a5cff88';g.lineWidth=1.5;g.beginPath();g.roundRect(m.x,m.y,m.w,m.h,13);g.fill();g.stroke();
-  const hx=m.x+k*sw;g.fillStyle=col+'33';g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=10;g.beginPath();g.roundRect(hx+2,m.y+2,sw-4,m.h-4,11);g.fill();g.stroke();g.restore();
-  ['ARCADE','2 SPIELER','MELEE'].forEach((n,i)=>hud.txt(g,n,m.x+sw*(i+.5),m.y+18,13,i===k?'#fff':'#9d8fd0','center'));hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#7d6fb0','left')}
+ modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','versus','melee'].indexOf(A.mode),cols=[P1C,P2C,'#8f7bff'],sw=m.w/3;
+  ['ARCADE','2 SPIELER','MELEE'].forEach((n,i)=>{const on=i===k,x=m.x+i*sw+(i?3:0),w=sw-6;hud.kPlate(g,x,m.y,w,m.h,{col:cols[i],on,sk:9,t});hud.txt(g,n,x+w/2+4,m.y+18,13,on?'#ffffff':DIM,'center',on?cols[i]:null)});
+  hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#7d86c8','left')}
  title(g,t,W,sub,col='#9fe8ff'){const hud=this.hud;
-  hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#00f3ff','#00f3ff'],'center',null,t,false,true,900,4);g.restore();
+  hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#7fe8ff','#7fe8ff'],'center',null,t,false,true,900,4);g.restore();
    hud.fancy(g,'H!TisOP',W/2+2,64,40,['#b98bff','#b98bff'],'center',null,t,false,true,900,4);
    hud.fancy(g,'H!TisOP',W/2,64,40,['#ffffff','#bfb0ff'],'center','#8f6bff',t,false,false,900,4)});
-  hud.lab(g,sub,W/2+2,88,13,col,'center',4,null,'700')}
+  hud.kSub(g,sub,W/2,88,13,col,4,t)}
  // ---- 2-Spieler-Modus: Kämpferwahl (zwei Cursor) ----
  drawVs(g,A,t,W,H){const hud=this.hud,v=A.vs,M=A.mode==='melee';this.modePill(g,A,t);
   if(v.step===1)return this.drawStagePick(g,A,t,W,H);
@@ -198,8 +197,8 @@ export class SelectScreen{
    g.restore()});
   // Profil rechts wie im Arcade-Menü, je Spieler ein Block
   g.save();const bg=g.createLinearGradient(PX-20,0,PX+PW+20,0);bg.addColorStop(0,'#0a061800');bg.addColorStop(.12,'#0a0618cc');bg.addColorStop(1,'#0a0618cc');g.fillStyle=bg;g.fillRect(PX-20,104,PW+50,396);
-  g.fillStyle=P1C+'88';g.fillRect(PX-1,112,2,180);g.fillStyle=P2C+'88';g.fillRect(PX-1,312,2,180);
-  g.fillStyle='#ffffff14';g.fillRect(PX+8,302,PW-16,1);g.restore();
+  hud.kVRule(g,PX,112,292,P1C,.9);hud.kVRule(g,PX,312,492,P2C,.9);
+  hud.kRule(g,PX+8,PX+PW-8,302,'#4a4c9a','r',.9);g.restore();
   this.vsProfile(g,A,t,1,slots[v.c1],104,P1C,M);this.vsProfile(g,A,t,2,slots[v.c2],304,P2C,M);
   // Fuß: Wartehinweis + Steuerung
   const one=v.locked[0]!==v.locked[1];if(one&&Math.sin(t*.14)>-.4)hud.fam(F_DISP,()=>hud.fancy(g,`WARTE AUF SPIELER ${v.locked[0]?2:1}`,34,496,22,['#ffffff','#9fe8ff'],'left','#8f7bff',t,false,false,400,2));
@@ -214,22 +213,21 @@ export class SelectScreen{
   g.restore();
   const tx=px+ps+16,rw=PX+PW-8;
   hud.lab(g,(M&&A.cpu&&pl===2?'CPU':`SPIELER ${pl}`)+(skinCount(ch.sprites)>1?'  ·  '+skinName(ch.sprites,A.vsSkinOf(pl)).toUpperCase():''),tx,y0+20,11,pc,'left',2,pc,'800');
-  hud.txt(g,lk?'✔ BEREIT':'wählt …',rw,y0+20,12,lk?'#7dffc8':DIM,'right');
+  hud.txt(g,lk?'✔ BEREIT':'wählt …',rw,y0+20,12,lk?'#9fe8ff':DIM,'right');
   hud.fam(F_DISP,()=>hud.fancy(g,ch.name,tx,y0+54,32,['#ffffff',col],'left',col,t,false,false,400,2));
   const parts=ch.desc.split(' · ');hud.lab(g,parts[0].toUpperCase(),tx,y0+74,11,TXT,'left',2,null,'700');if(parts[1])hud.lab(g,parts[1].toUpperCase(),tx,y0+90,11,col,'left',2,null,'700');
   const all=[['LEBEN',ch.hp,(ch.hp-700)/(1500-700)],['TEMPO',Math.round(ch.walk*100)+'%',ch.walk/1.4],['SCHADEN',Math.round(ch.dmg*100)+'%',ch.dmg/1.3],['ABWEHR',Math.round(100/(ch.def||1))+'%',(1/(ch.def||1))/1.3]];
   const bars=M?all.slice(1):all,by=y0+(M?112:106),lw=72,bw=PW-(tx-PX)-lw-56,st=M?18:15;
   bars.forEach(([lab,val,vv],k)=>{const y=by+k*st;vv=Math.max(.04,Math.min(1,vv));
-   hud.lab(g,lab,tx,y+4,10,DIM,'left',2,null,'700');g.fillStyle='#ffffff18';g.fillRect(tx+lw,y-4,bw,7);
-   const fg=g.createLinearGradient(tx+lw,0,tx+lw+bw,0);fg.addColorStop(0,col+'88');fg.addColorStop(1,col);g.fillStyle=fg;g.fillRect(tx+lw,y-4,bw*vv,7);
+   hud.lab(g,lab,tx,y+4,10,DIM,'left',2,null,'700');hud.kBar(g,tx+lw,y-4,bw,7,vv,col,t,4);
    hud.lab(g,String(val),tx+lw+bw+8,y+4,11,'#fff','left',1,null,'700')});
   const fit=(txt)=>{let q=String(txt||'');while(q.length>3&&hud.mw(g,q,11)>PW-16-24)q=q.slice(0,-2);return q===String(txt||'')?q:q.trimEnd()+'…'};
   const sy=y0+174;
-  if(ch.pros){hud.lab(g,'+',px,sy,13,'#7dffc8','left',0,null,'800');hud.txt(g,fit(ch.pros),px+16,sy,11,'#7dffc8','left')}
-  if(ch.cons){hud.lab(g,'–',px,sy+15,13,'#d9b8ff','left',0,null,'800');hud.txt(g,fit(ch.cons),px+16,sy+15,11,'#d9b8ff','left')}}
+  if(ch.pros){hud.lab(g,'+',px,sy,13,'#9fe8ff','left',0,null,'800');hud.txt(g,fit(ch.pros),px+16,sy,11,'#9fe8ff','left')}
+  if(ch.cons){hud.lab(g,'–',px,sy+15,13,'#c9b8ff','left',0,null,'800');hud.txt(g,fit(ch.cons),px+16,sy+15,11,'#c9b8ff','left')}}
  // Melee-Optionen (rechts oben, klickbar): Spieler 2 = Mensch/CPU (B), CPU-Stärke (▲▼ bzw. Klick), Stocks (T)
- meleeOpts(g,A,t,W){const hud=this.hud,c='#bfe9ff',on='#7dffc8';
-  const row=(i,txt,col,hot)=>{const r=MELEE_OPTS[i];g.save();g.fillStyle=hot?col+'22':'#0a0618cc';g.strokeStyle=hot?col:'#7a5cff88';g.lineWidth=1.5;g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,9);g.fill();g.stroke();g.restore();hud.txt(g,txt,r.x+r.w/2,r.y+r.h-7,13,col,'center')};
+ meleeOpts(g,A,t,W){const hud=this.hud,c='#bfe9ff',on='#9fe8ff';
+  const row=(i,txt,col,hot)=>{const r=MELEE_OPTS[i],w=r.w-8;hud.kPlate(g,r.x,r.y,w,r.h,{col,on:hot,sk:8,t});hud.txt(g,txt,r.x+w/2+4,r.y+r.h-7,13,col,'center')};
   row(0,A.cpu?'GEGEN CPU  (klicken / B)':'2 SPIELER LOKAL  (klicken / B)',A.cpu?on:c,A.cpu);
   row(1,A.cpu?`CPU-STÄRKE: ${DIFF[A.difficulty]}  (klicken / ▲▼)`:'CPU-STÄRKE: –  (erst CPU wählen)',A.cpu?DCOL[A.difficulty]:'#6a5d96',A.cpu);
   row(2,`STOCKS: ${A.stocks}  (klicken / T)`,c,false);
@@ -241,10 +239,10 @@ export class SelectScreen{
   for(let i=0;i<N;i++){const r=stageRect(i,N),T=THEMES[i],sel=v.stage===i,pulse=.5+.5*Math.sin(t*.12),cx=r.x+r.w/2,col=T?T.lights[0]:'#9fe8ff';
    g.save();g.translate(cx,r.y+r.h/2);const sc=sel?1.06+.01*pulse:.96;g.scale(sc,sc);g.translate(-cx,-(r.y+r.h/2));g.globalAlpha=sel?1:.65;g.shadowColor=col;g.shadowBlur=sel?28:6;
    const gr=g.createLinearGradient(0,r.y,0,r.y+r.h);if(T){gr.addColorStop(0,T.sky[1]);gr.addColorStop(.55,T.sky[3]);gr.addColorStop(1,T.floor[0])}else{gr.addColorStop(0,'#1a1240');gr.addColorStop(1,'#0a0618')}
-   g.fillStyle=gr;g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,12);g.fill();g.shadowBlur=0;g.save();g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,12);g.clip();
+   g.fillStyle=gr;hud.kChamfer(g,r.x,r.y,r.w,r.h,14);g.fill();g.shadowBlur=0;g.save();hud.kChamfer(g,r.x,r.y,r.w,r.h,14);g.clip();
    if(T){g.fillStyle=T.moon[0]+'88';g.beginPath();g.arc(cx+30,r.y+70,26,0,7);g.fill();g.fillStyle='#00000066';for(let k=0;k<7;k++){const bh=26+((k*37)%34);g.fillRect(r.x+8+k*23,r.y+r.h-70-bh,19,bh+20)}g.fillStyle=T.floor[0];g.fillRect(r.x,r.y+r.h-58,r.w,58);g.strokeStyle=T.line;g.lineWidth=2;g.beginPath();g.moveTo(r.x,r.y+r.h-58);g.lineTo(r.x+r.w,r.y+r.h-58);g.stroke()}
    else hud.fancy(g,'?',cx,r.y+r.h/2+20,72,['#ffffff','#8f7bff'],'center','#8f7bff',t);
-   g.restore();g.strokeStyle=sel?'#fff':col;g.lineWidth=sel?4:2;g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,12);g.stroke();
+   g.restore();g.save();g.strokeStyle=sel?'#eaf6ff':col;g.globalAlpha*=sel?1:.7;g.lineWidth=1.2;hud.kChamfer(g,r.x,r.y,r.w,r.h,14);g.stroke();if(sel){g.lineWidth=1;g.strokeStyle='#4a4c9a';hud.kChamfer(g,r.x-5,r.y-5,r.w+10,r.h+10,17);g.stroke()}g.restore();
    hud.fancy(g,T?T.name:'ZUFALL',cx,r.y+r.h-30,T?17:20,['#ffffff',col],'center',col,t,true);hud.txt(g,T?T.desc:'neu bei jeder Revanche',cx,r.y+r.h-12,11,'#d6c8ff','center');g.restore()}
   hud.fancy(g,`${CHARACTERS[slots[v.c1]].name}`,W*.25,372,22,['#ffffff',P1C],'center',P1C,t);hud.fancy(g,'VS',W/2,372,26,['#ffffff','#9fe8ff'],'center','#8f7bff',t);hud.fancy(g,`${CHARACTERS[slots[v.c2]].name}`,W*.75,372,22,['#ffffff',P2C],'center',P2C,t);
   hud.txt(g,'SPIELER 1',W*.25,390,11,'#9fe8ff','center');hud.txt(g,'SPIELER 2',W*.75,390,11,'#c9a0ff','center');

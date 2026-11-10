@@ -55,4 +55,15 @@ const run=(g,n,a)=>{for(let i=0;i<n;i++){g.step();if(a)a.update()}};
  for(let pct=0;pct<=300&&killAt===null;pct+=5){const{a,g,p1:x,p2:y}=setup();a.setMode('melee');a.startMelee('tiger','st3g0',0);toFight(g);y.x=480;y.pct=pct;x.x=420;x.facing=1;y.facing=-1;y.state='idle';x.startMove('5H',g);
   for(let i=0;i<260;i++){g.step();if(y.stocks<3){killAt=pct;break}}}
  console.log('    Kill-Prozent 5H aus der Mitte ≈',killAt);assert.ok(killAt!==null&&killAt>=60&&killAt<=240,'Kill-% plausibel (war '+killAt+')');ok('Balance: 5H killt aus der Mitte bei ≈ '+killAt+' %')}
+// 11) Rettungssprung (Hoch + Special in der Luft): nah genug = zurück auf die Plattform, zu weit = Stock weg, nur 1x pro Luftphase, nur im Melee
+{const tryRec=(dx0,dy0)=>{const{a,g,p1}=setup();a.setMode('melee');a.startMelee('tiger','st3g0',0);toFight(g);p1.x=dx0;p1.y=dy0;p1.vy=3;p1.vx=0;p1.state='air';p1.under=true;p1.airJumps=0;p1.airDashes=0;
+  p1.input.dx=dx0<MELEE.pl?1:-1;p1.input.dy=-1;p1.input.buf.push({b:'S',age:0});g.step();const started=p1.state==='recover';
+  let back=false;for(let i=0;i<160&&!back;i++){g.step();if(p1.stocks<3)break;if(p1.grounded)back=true}return{g,p1,started,back}};
+ const near=tryRec(MELEE.pl-60,GROUND+150);assert.ok(near.started,'Hoch + Special startet den Rettungssprung');assert.ok(near.back,'nah an der Kante: zurück auf die Plattform');
+ const far=tryRec(MELEE.pl-320,GROUND+150);assert.ok(far.started&&!far.back,'zu weit draußen: reicht nicht');
+ const{a,g,p1}=setup();a.setMode('melee');a.startMelee('tiger','st3g0',0);toFight(g);p1.x=MELEE.pl-60;p1.y=GROUND+150;p1.vy=3;p1.state='air';p1.under=true;p1.airJumps=0;p1.input.dy=-1;p1.input.buf.push({b:'S',age:0});g.step();assert.equal(p1.state,'recover');
+ let n=0;while(p1.state==='recover'&&n++<80)g.step();assert.ok(p1.recUsed&&p1.airJumps===0&&p1.airDashes===0,'danach hilflos (nur 1x)');p1.y=GROUND-200;p1.vy=-1;p1.input.dy=-1;p1.input.buf.push({b:'S',age:0});g.step();assert.notEqual(p1.state,'recover','kein zweiter Rettungssprung in derselben Luftphase');
+ p1.input.dy=0;p1.input.buf.length=0;p1.x=300;p1.y=GROUND-5;p1.vy=4;p1.state='air';run(g,6);assert.ok(p1.grounded&&!p1.recUsed,'Landung gibt den Rettungssprung zurück');
+ const ar=setup();ar.a.setMode('arcade');ar.a.start('tiger');toFight(ar.g);ar.p1.y=GROUND-120;ar.p1.vy=-2;ar.p1.state='air';ar.p1.input.dy=-1;ar.p1.input.buf.push({b:'S',age:0});ar.g.step();assert.notEqual(ar.p1.state,'recover','Arcade/2 Spieler: Rettungssprung nur im Melee');
+ ok('Rettungssprung: nah = zurück, weit = Stock weg, 1x pro Luftphase, Landung/Treffer geben ihn zurück, nur Melee')}
 console.log('Melee-Tests bestanden');

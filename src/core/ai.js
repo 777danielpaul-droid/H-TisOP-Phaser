@@ -75,6 +75,7 @@ export class AIController extends InputBuffer{
    if(near&&me.grounded&&(this.keep.dx===near||R()<.5)){this.keep={dx:-near,dy:0,n:6};this.feed(-near,0,[],game.hitstop>0);return true}   // Kante: zurück nach innen
    return false}
   const toMid=mid>=me.x?1:-1,pr=[],dy=0;
+  if(me.state!=='recover'&&!me.recUsed&&me.airJumps===0&&me.vy>1&&me.y>GROUND-10&&me.y<GROUND+330&&R()<[.1,.2,.35][this.level]){this.feed(toMid,-1,['S'],game.hitstop>0);return true}   // Doppelsprung verbraucht: Rettungssprung (Hoch + Special)
   if(me.vy>1&&me.y>GROUND-60){if(me.airJumps>0)pr.push('UP');else if(me.airDashes>0&&Math.abs(me.x-mid)>150&&R()<.3)pr.push('DASH')}   // fällt unter Plattformhöhe: Doppelsprung, danach Air-Dash zur Mitte
   this.feed(toMid,dy,pr,game.hitstop>0);return true}
  // Wand-Taktik: Steht der Gegner vor der Wand, setzt die KI nach (Dash, Projektil, Normals, Launcher = 1,5× Wandschaden). Steht sie selbst
