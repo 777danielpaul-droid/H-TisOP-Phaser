@@ -1,17 +1,20 @@
-import{CHARACTERS,LADDER,ROSTER}from'./characters.js';
+import{CHARACTERS,LADDER,ROSTER,BOSS,unlockChar}from'./characters.js';
 import{ROUND,MELEE}from'./config.js';
 import{skinCount}from'../render/skins.js';
+import{AI_LEVELS}from'./ai.js';
+const MAX_DIFF=AI_LEVELS.length-1;   // höchste wählbare Schwierigkeit (aktuell ALPTRAUM)
 // Arcade-Modus: Charakterwahl -> nacheinander gegen alle anderen spielbaren Figuren (je 2 Runden-Siege = Stage geschafft).
 // Zustände: select | fight | clear | gameover | victory. Rein logisch (kein DOM) -> testbar.
 export class Arcade{
  constructor(game,p1,p2,ai){this.game=game;this.p1=p1;this.p2=p2;this.ai=ai;this.state='select';this.cursor=0;this.difficulty=0;
   this.opponents=[];this.stage=0;this.t=0;this.player=null;game.arcade=this;
-  this.skins={};this.mode='arcade';this.cpu=true;this.stocks=MELEE.stocks;   // mode: arcade | versus | melee; cpu = Spieler 2 ist die KI (nur Melee); stocks = Leben im Melee
+  this.skins={};this.newUnlock=null;this.mode='arcade';this.cpu=true;this.stocks=MELEE.stocks;   // mode: arcade | versus | melee; cpu = Spieler 2 ist die KI (nur Melee); stocks = Leben im Melee
   this.vs={c1:0,c2:1,s1:0,s2:0,locked:[false,false],step:0,stage:0};this.vsStage=0;this.stageCount=4}
  get total(){return this.opponents.length}
  get pvp(){return this.mode!=='arcade'}   // Versus und Melee teilen sich die Kämpfer-/Stage-Wahl
  opponentName(i=this.stage){const id=this.opponents[i];return id?CHARACTERS[id].name:''}
- static ladderFor(playerId){return LADDER.filter(x=>x!==playerId)}
+ static ladderFor(playerId){return[...LADDER.filter(x=>x!==playerId),...(playerId!==BOSS&&CHARACTERS[BOSS]?[BOSS]:[])]}   // alle anderen Kämpfer, zum Schluss der Endgegner
+ isBoss(i=this.stage){return this.mode==='arcade'&&this.opponents[i]===BOSS}
  // ---- Zweitfarbe (Skin): je Figur gemerkt (Arcade) bzw. je Spieler (2 Spieler) ----
  skinOf(id){return Math.min(this.skins[id]|0,Math.max(0,skinCount(CHARACTERS[id]&&CHARACTERS[id].sprites)-1))}
  cycleSkin(id){const n=skinCount(CHARACTERS[id]&&CHARACTERS[id].sprites);if(n<2)return false;this.skins[id]=(this.skinOf(id)+1)%n;return true}
@@ -21,12 +24,12 @@ export class Arcade{
   return s}
  vsCycleSkin(pl){const v=this.vs,ids=Arcade.slotIds(),id=ids[pl===1?v.c1:v.c2],n=skinCount(CHARACTERS[id]&&CHARACTERS[id].sprites);if(v.step!==0||v.locked[pl-1]||n<2)return false;
   const k=pl===1?'s1':'s2';v[k]=(this.vsSkinOf(pl)+1)%n;return true}
- start(playerId){this.player=playerId;this.opponents=Arcade.ladderFor(playerId);this.stage=0;this.p1.setChar(CHARACTERS[playerId],this.skinOf(playerId));this.beginStage()}
+ start(playerId){this.newUnlock=null;this.player=playerId;this.opponents=Arcade.ladderFor(playerId);this.stage=0;this.p1.setChar(CHARACTERS[playerId],this.skinOf(playerId));this.beginStage()}
  beginStage(){const g=this.game,oid=this.opponents[this.stage];this.p2.setChar(CHARACTERS[oid],this.skinOf(oid));this.applyDifficulty();
   g.stageIndex=this.stage%this.stageCount;   // Arenen der Reihe nach (bei mehr Gegnern als Arenen wiederholen sie sich)
   g.meleeOn=false;g.rematch();this.state='fight';this.t=0}
- applyDifficulty(){this.ai.setLevel(Math.min(2,this.difficulty))}
- setDifficulty(d){this.difficulty=Math.max(0,Math.min(2,d|0));if(this.state!=='select')this.applyDifficulty()}
+ applyDifficulty(){this.ai.setLevel(Math.min(MAX_DIFF,this.difficulty+(this.isBoss()?1:0)))}   // Endgegner: KI eine Stufe härter
+ setDifficulty(d){this.difficulty=Math.max(0,Math.min(MAX_DIFF,d|0));if(this.state!=='select')this.applyDifficulty()}
  retry(){this.game.rematch();this.state='fight';this.t=0}
  toSelect(){this.state='select';this.game.stageIndex=0;this.t=0;this.vsReset()}
  // ---- 2-Spieler-Modus (PvP): beide wählen einen Kämpfer, danach die Stage ----
@@ -55,7 +58,7 @@ export class Arcade{
  // nach jedem game.step(): Match-Ende auswerten
  update(){const g=this.game;
   if(this.state==='fight'&&g.phase==='match'&&g.pf>=70){
-   if(this.pvp)this.state='vsover';else if(this.p1.wins>=ROUND.wins)this.state=this.stage>=this.total-1?'victory':'clear';else this.state='gameover';this.t=0}
+   if(this.pvp)this.state='vsover';else if(this.p1.wins>=ROUND.wins)this.state=this.stage>=this.total-1?'victory':'clear';else this.state='gameover';this.t=0;if(this.state==='victory'&&this.player!==BOSS&&unlockChar(BOSS))this.newUnlock=BOSS}
   else if(this.state==='clear'){if(++this.t>=240)this.next()}   // automatisch weiter (Enter überspringt)
   else this.t++}
 }

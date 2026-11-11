@@ -7,7 +7,7 @@
 - Kampfsystem: Chains/Cancels, Launcher + Luft-Combos (Doppelsprung-/Air-Dash-Cancel), Block/Chip, Schadensskalierung, Hitstop, Super (Hyper-Beam), Meter, Combo-Zähler, harter Knockdown nach Launcher.
 - Bewegung: Doppelsprung, Coyote-Time, Jump-Buffer, Dash/Air-Dash, hohe Sprünge; Spieltempo einstellbar (Standard 1.5×).
 - Kamera mit echtem Zoom/Schwenk (alle Welt-Objekte skalieren, HUD nicht), Weltgrenzen.
-- KI mit 3 Schwierigkeitsstufen (Leicht/Normal/Hart); Endgegner +1 Stufe.
+- KI mit 4 Schwierigkeitsstufen (Leicht/Normal/Hart/Alptraum); Endgegner +1 Stufe (bei Alptraum bereits am Maximum).
 - **Arcade-Modus:** Startmenü mit Charakterwahl (Tastatur + Maus), Gegner-Leiter (alle anderen spielbaren Figuren, kein Endgegner mehr), je Stage 2 Runden-Siege, eigenes Level je Stage (4 Themes), Stage Clear / Game Over (Enter = nochmal) / Victory.
 - Figuren: **H!T** (`tiger`, Sprites) und **ST3-G0** (`st3g0`, Sprites) sowie die **Eigene Figur** (Upload im Startmenü). Der **Wolf** (Vektor) ist noch im Code (Test-Gegner), aber nicht im Roster. Master, Palm Master, Sorceress und Minotaurus (inkl. Endgegner-Logik, Sprites, Movesets, Aura/Partikel, Projektil-Looks, Spezial-Mechaniken Griff/Heilen/Falle/Durchdringen/Hörner-Stoß) wurden entfernt.
 - HUD (flashy), Pause-/Optionsmenü auf M, Vollbild auf F.
@@ -264,3 +264,11 @@
 ### Update v18: Kitsune größer, Totenköpfe als Rundensieg-Anzeige
 - Kitsune: `fightScale` in `SPRITE_CHARS` (`src/render/sprites.js`) .78 → .83. Nur die Darstellung; Hurt-/Hitboxen (`char.size`) unverändert. Bleibt die kleinste Figur (H!T .85, ST3-G0 .92).
 - HUD: Rundensiege unter dem Lebensbalken sind jetzt Totenköpfe (`Hud.skull()`): gewonnen = leuchtend in der Spielerfarbe, offen = dunkler Umriss. Der Edelstein am Portrait bleibt.
+
+
+## Update v21: Endgegner ANUBIS (freischaltbar)
+- **Ablauf:** Im Arcade-Modus kommt nach allen anderen Kämpfern als letzte Stufe **Anubis** (Anzeige „ENDGEGNER“ statt „STAGE n / m“, KI eine Stufe härter, 1150 HP). Wer das Arcade einmal durchspielt („ARCADE GESCHAFFT – NEUER KÄMPFER FREIGESCHALTET: ANUBIS“), hat ihn danach als spielbaren Kämpfer in der Auswahl (auch 2 Spieler/Melee). Gesperrt steht er in der Gegnerliste als „???“. Spielt man selbst Anubis, gibt es keinen Endgegner.
+- **Speicher:** `src/core/unlocks.js` (localStorage `hitisop.unlocks`). Zum Testen ohne Durchspielen: Seite mit **`?unlock=anubis`** öffnen. `characters.js`: `BOSS`, `unlockChar()`, `ROSTER` wächst zur Laufzeit; `arcade.js`: `ladderFor` (Endgegner am Ende), `isBoss()`, `newUnlock`.
+- **Sprites:** 6 Bögen in `assets/anubis/sheets/bogen_1-6.png` (1 Idle, 2 Kampfposen, 3 Kampfkombo, 4 Treffer/Sturz, 5 Lauf/Sprung/Ducken, 6 Block) -> `python3 tools/import-anubis-sheets.py` (Atlas + meta; Maßstab je Bogen in `SHEET_SC`, Bogen 1-3/5 haben echte Transparenz, 4+6 aufgemaltes Schachbrett). Zuordnung `ANUBIS_ANIMS` in `sprites.js`.
+- **Noch Behelfe (Bögen fehlen):** Laufen, Dash/Luft-Dash, Duck-Angriffe, Upper/Aufwärts-Special, Hyper, Aufstehen, Sieg-/Niederlagenpose; Luftangriffe teilen sich Frames mit den Bodenangriffen. Neue Bögen als `bogen_7.png` … ablegen, in `SHEETS` (Importer) eintragen, Skript laufen lassen und die Frame-Listen in `ANUBIS_ANIMS` tauschen.
+- Moveset `anubis` in `movesets.js` (Seelenwelle, Schakal-Sprung, Richterspruch, Schweifhieb, Sturzklaue, Doppelklaue, Anubis-Hieb, Hyper „Urteil der Maat“). Test: `tests/anubis.test.js`. Anubis hat noch keine Zweitfarbe (skins.js).

@@ -1,7 +1,7 @@
 // Bündelt src/ (ES-Module) zu dist/game.js (klassisches Script, läuft per Doppelklick) und dist/hitisop.html (alles in einer Datei).
 import fs from'node:fs';import path from'node:path';import{fileURLToPath}from'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const ORDER=['core/config','core/sfx','core/camera','core/barrier','core/hitbox','core/input','core/moves','core/movesets','core/characters','core/custom','core/particles','core/effects','core/projectile','core/fighter','core/melee','core/combat','core/ai','core/arcade','core/game','render/skins','render/sprites','render/audio','render/fonts','render/fx','render/gl','render/rig','render/stage','render/houses','render/hud','render/select','render/meleehud','render/customstudio','render/renderer','main'];
+const ORDER=['core/config','core/sfx','core/camera','core/barrier','core/hitbox','core/input','core/moves','core/movesets','core/unlocks','core/characters','core/custom','core/particles','core/effects','core/projectile','core/fighter','core/melee','core/combat','core/ai','core/arcade','core/game','render/skins','render/sprites','render/audio','render/fonts','render/fx','render/gl','render/rig','render/stage','render/houses','render/hud','render/select','render/meleehud','render/customstudio','render/renderer','main'];
 let out='';
 for(const m of ORDER){let s=fs.readFileSync(path.join(root,'src',m+'.js'),'utf8');
  s=s.replace(/^import\b.*$/gm,'').replace(/^export\s+/gm,'');out+=`\n// ===== ${m} =====\n`+s}

@@ -13,9 +13,11 @@ function trial(level,frames=3000){const i1=new InputBuffer(),ai=new AIController
 const avg=l=>{let d=0,h=0;const N=8;for(let i=0;i<N;i++){const t=trial(l);d+=t.dmg;h+=t.hits}return{dmg:d/N,hits:h/N}};
 const r=AI_LEVELS.map((_,l)=>avg(l));
 r.forEach((x,l)=>console.log(`  ${AI_LEVELS[l].name.padEnd(7)} Ø Schaden ${x.dmg.toFixed(0)} in ${x.hits.toFixed(1)} Treffern (3000 Frames, passiver Gegner)`));
-assert.ok(r[0].dmg<r[1].dmg&&r[1].dmg<r[2].dmg,'Schaden steigt mit der Stufe');
+assert.equal(AI_LEVELS.length,4);assert.equal(AI_LEVELS[3].name,'ALPTRAUM');
+assert.ok(r.every((x,l)=>l===0||r[l-1].dmg<x.dmg),'Schaden steigt mit der Stufe');
+assert.ok(r[3].dmg>r[2].dmg*1.3,'Alptraum deutlich härter als Hart ('+(r[3].dmg/r[2].dmg).toFixed(2)+'x)');
 assert.ok(r[0].dmg<r[2].dmg*.45,'Leicht < 45 % von Hart ('+(r[0].dmg/r[2].dmg*100).toFixed(0)+' %)');
-const a=new AIController(0);a.setLevel(2);assert.equal(a.P.name,'HART');a.setLevel(99);assert.equal(a.level,2);a.setLevel(-3);assert.equal(a.level,0);
+const a=new AIController(0);a.setLevel(2);assert.equal(a.P.name,'HART');a.setLevel(3);assert.equal(a.P.name,'ALPTRAUM');a.setLevel(99);assert.equal(a.level,3);a.setLevel(-3);assert.equal(a.level,0);
 // Ecken-Taktik: Passiver Gegner steht an der Wand -> KI (HART) macht mit corner > 0 mehr Schaden / bricht die Wand schneller als mit corner = 0
 function pin(corner,frames=2400){const i1=new InputBuffer(),ai=new AIController(2);ai.P={...ai.P,corner};
  const p1=new Fighter({char:CHARACTERS.tiger,x:800,facing:-1,input:i1}),p2=new Fighter({char:CHARACTERS.st3g0,x:600,facing:1,input:ai});
@@ -27,5 +29,6 @@ function pin(corner,frames=2400){const i1=new InputBuffer(),ai=new AIController(
 const pv=c=>{let d=0,b=0;const N=10;for(let n=0;n<N;n++){const t=pin(c);d+=t.dmg;b+=t.breaks}return{dmg:d/N,breaks:b/N}};
 const c0=pv(0),c1=pv(.85);console.log(`  Ecke: ohne Taktik Ø ${c0.dmg.toFixed(0)} Schaden / ${c0.breaks.toFixed(1)} Wandbrüche, mit Taktik Ø ${c1.dmg.toFixed(0)} / ${c1.breaks.toFixed(1)}`);
 assert.ok(c1.dmg>c0.dmg*1.05,'Ecken-Taktik macht mehr Schaden am Gegner in der Ecke');
-assert.ok(AI_LEVELS[0].corner<AI_LEVELS[1].corner&&AI_LEVELS[1].corner<AI_LEVELS[2].corner,'corner steigt mit der Stufe');
+assert.ok(AI_LEVELS.every((L,l)=>l===0||AI_LEVELS[l-1].corner<L.corner),'corner steigt mit der Stufe');
+assert.ok(AI_LEVELS.every((L,l)=>l===0||AI_LEVELS[l-1].react>L.react&&AI_LEVELS[l-1].block<L.block),'Reaktion schneller, Block häufiger je Stufe');
 console.log('KI-Tests bestanden');

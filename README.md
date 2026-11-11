@@ -39,3 +39,7 @@ Im Startmenü mit **TAB** auf *MELEE* schalten (oder Schalter anklicken). Kämpf
 - **Rettungssprung (nur Melee):** in der Luft **Hoch + Special** (W/↑ + U bzw. T/I im 2-Spieler-Modus) – kurzes Verharren, dann steiler Aufstieg, seitlich steuerbar. Einmal pro Luftphase (Landung oder getroffen werden gibt ihn zurück), danach hilflos. Reicht nur, wenn man nicht zu weit draußen/tief hängt. Werte: `MELEE.rec` in `src/core/config.js`. Die KI nutzt ihn auch.
 - Menü: **T** = Stocks (1–5), **B** = Spieler 2 Mensch/CPU (Standard: CPU; alle drei Optionen auch per Klick), **▲▼** = CPU-Stärke.
 - Zeitlimit 8 min: mehr Stocks gewinnt, sonst weniger %.
+
+
+## Endgegner Anubis
+Im Arcade-Modus wartet nach allen Kämpfern Anubis als Endgegner. Einmal durchspielen schaltet ihn als spielbaren Kämpfer frei (Browser-Speicher). Zum Testen: `dist/hitisop.html?unlock=anubis` öffnen.

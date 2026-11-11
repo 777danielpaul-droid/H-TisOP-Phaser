@@ -78,7 +78,7 @@ Zusatzfelder: `armor:[von,bis]` (Rüstung), `unb` (Griff), `dive`, `tp`, `heal`,
 - Zustände: `select → fight → clear | gameover | victory`. Die Charakterwahl ist ein Zustand, kein eigenes Spiel: Solange `state==='select'` läuft kein `game.step()`, der Renderer zeichnet `drawSelect()`.
 - Leiter: `Arcade.ladderFor(id)` = `LADDER` ohne die eigene Figur (kein Endgegner mehr). Je Stage `game.rematch()` mit neuem Gegner (`p2.setChar`) und `game.stageIndex` → Hintergrund-Theme (`THEMES[stage]`).
 - Eine Stage ist geschafft bei 2 Runden-Siegen (`ROUND.wins`). Danach `clear` (Banner, auto-weiter nach 240 Frames, Enter überspringt); bei Niederlage `gameover` (Enter = nochmal gegen denselben Gegner, Esc = Charakterwahl); nach dem letzten Gegner `victory`.
-- Schwierigkeit (Leicht/Normal/Hart) wird im Startmenü mit ↑/↓ gewählt (auch im Menü M).
+- Schwierigkeit (Leicht/Normal/Hart/Alptraum) wird im Startmenü mit ↑/↓ gewählt (auch im Menü M).
 - Spielbare Figuren/Reihenfolge: `ROSTER`, `LADDER` in `characters.js`. Der Wolf (Vektor-Figur) existiert noch, ist aber nicht im Roster.
 - `char.size` skaliert Hurtbox/Hitboxen/Kamera. `mods` eines Charakters darf je Move ein Objekt oder eine Funktion `base => patch` sein.
 

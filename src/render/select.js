@@ -1,4 +1,4 @@
-import{CHARACTERS,ROSTER}from'../core/characters.js';
+import{CHARACTERS,ROSTER,BOSS}from'../core/characters.js';
 import{Arcade}from'../core/arcade.js';
 import{drawFullFrame}from'./sprites.js';
 import{SKINS,skinCount,skinName}from'./skins.js';
@@ -27,7 +27,7 @@ const P1C='#6fe3ff',P2C='#b98bff';
 // 2-Spieler-Kämpferwahl: eigene Karten (4 Kämpfer + Platz für die eigene Figur), unabhängig von der Kämpferliste des Arcade-Menüs
 export const vsCardRect=(i,n=4)=>cardRect(i,n);   // gleiches Raster wie im Arcade-Menü
 export function hitVsCard(lx,ly,n=4){for(let i=0;i<n;i++){const r=vsCardRect(i,n);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
-const DIFF=['LEICHT','NORMAL','HART'],DCOL=['#7fe8ff','#9b9bff','#d38bff'];
+const DIFF=['LEICHT','NORMAL','HART','ALPTRAUM'],DCOL=['#7fe8ff','#9b9bff','#d38bff','#ff4d5e'];
 const FIG={tiger:.9,st3g0:.88,kitsune:.86};   // Größenausgleich je Figur in der Liste
 const PX=508,PW=422;   // Profilbereich rechts (x, Breite)
 const VTEXT={tiger:['LET\'S GO','上吧！'],st3g0:['UNLIKELY','不太可能'],kitsune:['TRY!','试试吧！']};   // Schriftzug im Übergangsvideo + chinesische Übersetzung
@@ -159,7 +159,7 @@ export class SelectScreen{
    const cw=(PW-16-6*(lad.length-1))/lad.length;
    lad.forEach((gid,k)=>{const gc=CHARACTERS[gid],x=bx+k*(cw+6);
     hud.lab(g,`${k+1}`,x,y+22,11,DIM,'left',0,null,'800');
-    hud.fam(F_DISP,()=>hud.fancy(g,gc.name,x+14,y+23,15,['#ffffff','#bfb0ff'],'left',null,t,false,true,400,.5))})}
+    hud.fam(F_DISP,()=>hud.fancy(g,gid===BOSS&&!ROSTER.includes(BOSS)?'???':gc.name,x+14,y+23,15,['#ffffff','#bfb0ff'],'left',null,t,false,true,400,.5))})}
   g.restore()}
 
  skinDots(g,ch,cur,cx,y,sel){const n=skinCount(ch.sprites);if(n<2)return;   // kleine Farbpunkte unter dem Namen, aktive Farbe mit Ring

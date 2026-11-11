@@ -1,4 +1,5 @@
 import{MODS}from'./movesets.js';
+import{loadUnlocks,saveUnlock}from'./unlocks.js';
 // Neue Kämpfer: einfach hier eintragen. Moves/Werte je Figur: movesets.js.
 // Werte: hp, walk (Lauftempo), dmg (Schadensfaktor), def (erlittener Schaden: <1 = zäher), jump/dash (Faktoren), airJumps (Luft-Sprünge), meter (Meter-Gewinn),
 // pros/cons = Stärken/Schwächen (Charakterwahl), ai = Werkzeuge der KI [{min,max,b,dx,dy,p}] (Abstand min..max, Taste, Richtung rel. zum Gegner, Chance). `mods` überschreibt Felder einzelner Moves (siehe moves.js).
@@ -13,7 +14,15 @@ export const CHARACTERS={
  kitsune:{id:'kitsune',name:'KITSUNE',desc:'Neunschwanz-Fuchs · Geisterfeuer & Kontertritte',hp:990,walk:1,dmg:1,def:.98,jump:1.05,dash:1,airJumps:1,meter:1,pal:'tiger',glow:'#b46bff',sprites:'kitsune',defeat:true,mods:MODS.kitsune,
   pros:'Ausgewogen, schneller Anti-Air-Kick, Schwanzpeitsche gegen Cross-ups, Geisterfeuer-Wellen',cons:'Keine Rüstung, kein Teleport, Wellen nur mittelschnell',
   ai:[{min:100,max:320,b:'S',dx:-1,p:.14},{min:90,max:250,b:'M',dx:1,p:.15},{min:90,max:250,b:'H',dx:1,p:.11},{min:140,max:320,b:'S',dx:0,dy:1,p:.1}]},
+ anubis:{id:'anubis',name:'ANUBIS',desc:'Wächter der Unterwelt · Endgegner',boss:true,hp:1150,walk:1.05,dmg:1.08,def:.93,jump:1,dash:1.1,airJumps:1,meter:1.15,pal:'tiger',glow:'#ffd45a',sprites:'anubis',defeat:true,mods:MODS.anubis,
+  pros:'Viel HP, harte Normals, Seelenwellen, Schweifhieb gegen Cross-ups, Richterspruch mit Launcher',cons:'Etwas langsamere Sprünge, Richterspruch auf Block bestrafbar, keine Rüstung',
+  ai:[{min:100,max:330,b:'S',dx:-1,p:.16},{min:90,max:260,b:'M',dx:1,p:.18},{min:90,max:270,b:'H',dx:1,p:.14},{min:140,max:320,b:'S',dx:0,dy:1,p:.12}]},
  wolf:{id:'wolf',name:'WOLF',desc:'(nicht im Arcade-Roster)',hp:1050,walk:.94,dmg:1.06,pal:'wolf',glow:'#ff3a55',mods:{'5H':{dmg:100}}}};
 // Arcade: spielbare Figuren (Reihenfolge der Auswahl), Gegner-Reihenfolge (ohne die eigene Figur)
 export const ROSTER=['tiger','st3g0','kitsune'];
 export const LADDER=['tiger','st3g0','kitsune'];
+// Endgegner: steht in jedem Arcade-Durchlauf als letzte Stufe (außer man spielt ihn selbst); wer das Arcade einmal schafft, schaltet ihn als spielbaren Kämpfer frei (Browser-Speicher, siehe unlocks.js).
+export const BOSS='anubis';
+for(const id of loadUnlocks())if(id===BOSS&&CHARACTERS[id]&&!ROSTER.includes(id))ROSTER.push(id);
+// true = gerade neu freigeschaltet
+export function unlockChar(id){if(!CHARACTERS[id]||ROSTER.includes(id))return false;ROSTER.push(id);saveUnlock(id);return true}

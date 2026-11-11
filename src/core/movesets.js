@@ -52,4 +52,19 @@ const kitsune={...norm({su:0,rc:-1,dmg:.98,reach:4}),
  '6H':{label:'Fuchssprung',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:13,ac:4,rc:19,dmg:84,lv:'high',lunge:7,box:[10,-160,116,66],hs:26,bs:16,glow:1},
  super:{label:'Neunschwanz-Inferno',info:'HYPER: Neun Geisterfeuer-Schwänze fegen nach vorn – 9 Treffer + Launcher',anim:'hyper',fx:'tails',beam:0,dmg:32,su:16,ac:54,rc:26,multi:6,minScale:.5,box:[-40,-200,500,220],launch:{vx:5,vy:-13},inv:[0,34],hstop:2,shake:5}};
 
-export const MODS={tiger,st3g0,kitsune};
+// ---------- ANUBIS: Endgegner – hart, viel HP, goldene Seelenwellen ----------
+// Stärke: viel HP, harte Normals mit Reichweite, Seelenwellen (J/L), Schweifhieb trifft auch hinter ihm, Richterspruch mit Launcher.
+// Schwäche: keine Rüstung, kein Teleport, Richterspruch ist auf Block bestrafbar, Wellen nur mittelschnell.
+const anubis={...norm({su:0,rc:0,dmg:1.05,reach:8}),
+ fireball:{label:'Seelenwelle',info:'Goldene Seelenwelle: J = schnell, L = stark',su:9,rc:16,proj:P({frame:9,y:-124,vx:10,w:100,h:66,dmg:50,hs:16,bs:9,life:80,look:'fire'}),
+  v:{L:{su:7,rc:13,proj:P({frame:7,y:-124,vx:11,w:84,h:54,dmg:40,hs:14,bs:8,life:62,look:'fire'})},
+     H:{su:13,rc:22,proj:P({frame:13,y:-124,vx:9,w:132,h:84,dmg:76,hs:20,bs:13,life:104,look:'fire'})}}},
+ rising:{label:'Schakal-Sprung',info:'Unverwundbarer Anti-Air, Launcher',su:5,ac:8,rc:24,dmg:90,inv:[1,10],launch:{vx:2,vy:-17}},
+ rush:{label:'Richterspruch',info:'3 harte Schläge + Launcher – auf Block bestrafbar',anim:'heavy',su:8,ac:12,rc:24,dmg:36,hs:18,bs:12,pb:3,multi:3,lunge:11,box:[10,-126,124,84],launch:{vx:3,vy:-13},hstop:4,shake:3,glow:1},
+ back:{label:'Schweifhieb',info:'Trifft auch hinter ihm (Anti-Cross-up)',anim:'kick',crouch:false,lv:'mid',su:8,ac:5,rc:19,dmg:66,hs:22,bs:13,pb:4,box:[-160,-100,300,100],hard:false,hstop:6,shake:3,glow:1},
+ airsp:{label:'Sturzklaue',info:'Steiler Sturzangriff, Knockdown',su:6,dmg:82,box:[-10,-70,104,100],dive:{vx:3.2,vy:16},hard:true,land:12,hstop:8,shake:5},
+ '6M':{label:'Doppelklaue',info:'Schneller Vorstoß-Poke',anim:'punch',su:7,ac:3,rc:13,dmg:54,lv:'mid',box:[10,-124,112,44],lunge:6,hs:21,bs:12},
+ '6H':{label:'Anubis-Hieb',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:13,ac:4,rc:19,dmg:88,lv:'high',lunge:7,box:[10,-160,120,66],hs:26,bs:16,glow:1},
+ super:{label:'Urteil der Maat',info:'HYPER: Ein goldener Seelenstrahl – 10 Treffer + Launcher',anim:'hyper',fx:'breath',beam:0,glow:0,dmg:30,su:20,ac:50,rc:26,multi:5,minScale:.5,box:[40,-200,540,210],launch:{vx:5,vy:-13},inv:[0,34],hstop:2,shake:6}};
+
+export const MODS={tiger,st3g0,kitsune,anubis};

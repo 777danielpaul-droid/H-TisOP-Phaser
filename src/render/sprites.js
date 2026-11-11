@@ -67,6 +67,26 @@ const KITSUNE_ANIMS={
  kd:{frames:['p_9_2','p_9_2','p_9_3']},wakeup:{frames:['p_11_0','p_11_1','p_11_2','p_11_3']},
  hyper:{frames:['p_6_0','p_14_2','p_14_3','p_14_3','p_14_3','p_14_3','p_14_3','p_14_2','p_6_0']},   // Neunschwanz-Inferno: Hocke -> Meditation mit Leuchten (Schwänze lodern) -> zurück
  win:{frames:['p_14_2','p_14_3'],loop:1,fps:2},defeat:{frames:['p_14_1']}};
+// ANUBIS (Endgegner, Schakal-Krieger): Frames p_<Bogen>_<Zelle> aus assets/anubis (6 Posen-Bögen, tools/import-anubis-sheets.py). 'a' = an der Körpermitte verankert (Luft).
+//  1: Idle-Zyklus (entspannt) | 2: Kampfposen/Guard | 3: Kampfkombo (Jab, Cross, Tritt, Schwung mit Goldspur) | 4: Treffer/Sturz/Liegen | 5: Lauf-Haltung, Sprung, Ducken | 6: Block
+// NOCH BEHELFE (Bögen fehlen noch): Laufen (Guard-Posen), Dash/Luft-Dash (Lauf-/Sprungpose), Duck-Angriffe (Duck-Pose), Aufwärts-Special/Upper, Hyper, Aufstehen (rückwärts abgespielte Sturzposen),
+// Sieg-/Niederlagenpose, Luft-Angriffe teilen sich Frames mit den Bodenangriffen. Neue Bögen: tools/import-anubis-sheets.py (SHEETS) + hier die Frame-Listen tauschen.
+const ANUBIS_ANIMS={
+ idle:{frames:['p_1_0','p_1_1','p_1_2','p_1_3'],loop:1,fps:4},
+ walk:{frames:['p_2_3','p_2_1','p_2_3','p_2_2'],loop:1,fps:7,bob:3},
+ crouch:{frames:['p_5_3']},cblock:{frames:['p_6_3'],squash:.88},
+ air:{frames:['p_5_1a','p_5_2a']},
+ dash:{frames:['p_5_0'],lean:.12},airdash:{frames:['p_5_2a'],lean:.2},
+ punch:{frames:['p_2_3','p_3_0','p_3_0','p_2_3']},cpunch:{frames:['p_5_3','p_3_0'],squash:.9},jpunch:{frames:['p_3_0','p_3_1']},
+ kick:{frames:['p_2_3','p_3_2','p_3_2','p_2_3']},ckick:{frames:['p_5_3','p_3_2'],squash:.9},jkick:{frames:['p_3_2','p_3_2']},
+ heavy:{frames:['p_2_1','p_3_1','p_3_3','p_3_3','p_2_3']},jheavy:{frames:['p_3_3','p_3_3']},
+ upper:{frames:['p_5_3','p_5_1a','p_5_1a','p_5_1a']},
+ special:{frames:['p_2_0','p_3_0','p_3_1','p_3_1','p_2_3']},   // Seelenwelle: Ausholen -> Stoß (Welle fliegt los) -> zurück
+ hit:{frames:['p_4_0'],lean:-.1,shiftX:-10},airhit:{frames:['p_4_0a','p_4_1a']},
+ block:{frames:['p_6_1']},
+ kd:{frames:['p_4_2','p_4_2','p_4_3']},wakeup:{frames:['p_4_3','p_4_2','p_5_3','p_2_3']},
+ hyper:{frames:['p_2_0','p_3_1','p_3_3','p_3_3','p_3_3','p_3_3','p_3_3','p_3_3','p_2_3']},   // Behelf bis Hyper-Bogen da ist
+ win:{frames:['p_1_1','p_1_2'],loop:1,fps:2},defeat:{frames:['p_4_3']}};
 // fist = Position der Faust/Hand für Leuchten + Hyper-Beam, height = Figurenhöhe in Spiel-Einheiten
 // lie = Frames, in denen die Figur auf dem Boden liegt -> dort gibt es keinen Schatten
 // pose = Feinabstimmung einzelner Animationen (Sieger-/Verlierer-Finale), unabhängig von den Anim-Listen (die Tiger-Anims kommen aus meta.json und würden Optionen dort überschreiben):
@@ -94,6 +114,7 @@ const POSE_KITSUNE={
 export const SPRITE_CHARS={
  tiger:{anims:TIGER_ANIMS,fist:[108,-122],height:190,fightScale:.85,fullAnims:['win','defeat'],profileAnim:'win',lie:['t_neu_treffer_103','t_neu_aufstehen_00']},
  st3g0:{anims:ST3G0_ANIMS,fist:[135,-150],height:190,fightScale:.92,lie:['p_3_1','p_3_2','p_3_3'],pose:POSE_ST3G0},
+ anubis:{anims:ANUBIS_ANIMS,fist:[113,-137],height:215,fightScale:1,lie:['p_4_2','p_4_3']},
  kitsune:{anims:KITSUNE_ANIMS,fist:[100,-121],height:190,fightScale:.83,lie:['p_9_3','p_11_0'],pose:POSE_KITSUNE,frameSc:KITSUNE_FRAME_SC}};   // fightScale: Kampfposen kleiner als die Sieg-/Niederlagen-Pose (fullAnims bleiben in voller Größe)
 // Eigene Figur (Upload im Startmenü): Sprite-Definition zur Laufzeit eintragen; Atlas liefert window.__SPRITES__[id]={meta,img}
 export function registerSpriteChar(id,def){SPRITE_CHARS[id]=def}

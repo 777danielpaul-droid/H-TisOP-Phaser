@@ -2,6 +2,7 @@ import { ROUND, METER, COMBO_SCALE, EFFECT, SPAM } from "../core/config.js";
 import { drawPortrait } from "./sprites.js";
 import { F_DISP, F_TECH, F_UI } from "./fonts.js";
 import { THEMES } from "./stage.js";
+import { CHARACTERS } from "../core/characters.js";
 // Kristall-HUD (Canvas 2D, 960x540 logisch): Eis-Blau, Violett und Lavendel, weiche Glanzkanten, Facetten statt Gold/Rot.
 //  - Keine Textumrandungen und keine Rahmen/Ringe um die Ausrufe (ROUND, FIGHT, K.O. ...), dafür dezenter Glow
 //  - Lebensbalken und Hyper-Meter mit Kristall-Facetten und wanderndem Glanzlicht
@@ -1216,7 +1217,7 @@ export class Hud {
       const th = THEMES[(game.stageIndex || 0) % THEMES.length];
       this.lab(g, "2 SPIELER · " + th.name, cx + 2, ry + 16, 9, "#b9c4ff", "center", 4);
     } else if (A && A.opponents.length) {
-      this.lab(g, `STAGE ${A.stage + 1} / ${A.total}`, cx + 2, ry + 16, 9, "#b9c4ff", "center", 4, null, "500");
+      this.lab(g, A.isBoss() ? "ENDGEGNER" : `STAGE ${A.stage + 1} / ${A.total}`, cx + 2, ry + 16, 9, "#b9c4ff", "center", 4, null, "500");
     }
   }
   // ---------- Hyper-Meter ----------
@@ -1682,9 +1683,9 @@ export class Hud {
                 : "GAME OVER",
         sub =
           st === "clear"
-            ? "NÄCHSTER GEGNER:  " + A.opponentName(A.stage + 1)
+            ? (A.isBoss(A.stage + 1) ? "ENDGEGNER:  " : "NÄCHSTER GEGNER:  ") + A.opponentName(A.stage + 1)
             : st === "victory"
-              ? "Du hast alle Gegner besiegt!"
+              ? (A.newUnlock ? "NEUER KÄMPFER FREIGESCHALTET:  " + CHARACTERS[A.newUnlock].name : "Du hast alle Gegner besiegt!")
               : st === "vsover"
                 ? (game.fighters[0].wins > game.fighters[1].wins ? game.fighters[0] : game.fighters[1]).char.name + " besiegt " + (game.fighters[0].wins > game.fighters[1].wins ? game.fighters[1] : game.fighters[0]).char.name + "   ·   " + game.fighters[0].wins + " : " + game.fighters[1].wins
                 : "Gegner:  " + A.opponentName(),

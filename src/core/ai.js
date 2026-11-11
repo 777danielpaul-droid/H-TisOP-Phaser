@@ -10,7 +10,9 @@ import{MELEE,GROUND}from'./config.js';
 export const AI_LEVELS=[
  {name:'LEICHT',wait:[75,140],idle:.4,react:24,block:.05,combo:.08,maxChain:1,special:.06,sup:0,dash:.03,jump:.004,antiair:.1,back:.3,aerial:.01,dmg:.7,corner:.12},
  {name:'NORMAL',wait:[42,85],idle:.2,react:13,block:.28,combo:.35,maxChain:2,special:.16,sup:.08,dash:.1,jump:.01,antiair:.35,back:.15,aerial:.03,dmg:.9,corner:.5},
- {name:'HART',wait:[24,50],idle:.06,react:7,block:.48,combo:.55,maxChain:4,special:.24,sup:.25,dash:.2,jump:.02,antiair:.6,back:.06,aerial:.06,dmg:1,corner:.85}];
+ {name:'HART',wait:[24,50],idle:.06,react:7,block:.48,combo:.55,maxChain:4,special:.24,sup:.25,dash:.2,jump:.02,antiair:.6,back:.06,aerial:.06,dmg:1,corner:.85},
+ // ALPTRAUM: kaum zu schlagen. Reaktion fast sofort (2 F), blockt ~92 % aller Angriffe, kaum Pausen, lange Combos, Hypers, volle Ecken-Taktik, +40 % Schaden.
+ {name:'ALPTRAUM',wait:[8,20],idle:0,react:2,block:.92,combo:.95,maxChain:6,special:.28,sup:.3,dash:.25,jump:.03,antiair:.92,back:.02,aerial:.12,dmg:1.4,corner:1}];
 // KI nutzt dieselbe Eingabe-Schnittstelle wie der Spieler (vereinfachte Special-Eingaben: Taste + Richtung).
 export class AIController extends InputBuffer{
  constructor(level=0){super();this.keep={dx:0,dy:0,n:0};this.cd=0;this.setLevel(level)}
@@ -75,7 +77,7 @@ export class AIController extends InputBuffer{
    if(near&&me.grounded&&(this.keep.dx===near||R()<.5)){this.keep={dx:-near,dy:0,n:6};this.feed(-near,0,[],game.hitstop>0);return true}   // Kante: zurück nach innen
    return false}
   const toMid=mid>=me.x?1:-1,pr=[],dy=0;
-  if(me.state!=='recover'&&!me.recUsed&&me.airJumps===0&&me.vy>1&&me.y>GROUND-10&&me.y<GROUND+330&&R()<[.1,.2,.35][this.level]){this.feed(toMid,-1,['S'],game.hitstop>0);return true}   // Doppelsprung verbraucht: Rettungssprung (Hoch + Special)
+  if(me.state!=='recover'&&!me.recUsed&&me.airJumps===0&&me.vy>1&&me.y>GROUND-10&&me.y<GROUND+330&&R()<[.1,.2,.35,.6][this.level]){this.feed(toMid,-1,['S'],game.hitstop>0);return true}   // Doppelsprung verbraucht: Rettungssprung (Hoch + Special)
   if(me.vy>1&&me.y>GROUND-60){if(me.airJumps>0)pr.push('UP');else if(me.airDashes>0&&Math.abs(me.x-mid)>150&&R()<.3)pr.push('DASH')}   // fällt unter Plattformhöhe: Doppelsprung, danach Air-Dash zur Mitte
   this.feed(toMid,dy,pr,game.hitstop>0);return true}
  // Wand-Taktik: Steht der Gegner vor der Wand, setzt die KI nach (Dash, Projektil, Normals, Launcher = 1,5× Wandschaden). Steht sie selbst
@@ -90,6 +92,6 @@ export class AIController extends InputBuffer{
   else{if(r<.25)go('L');else if(r<.4)go('L',0,1);else if(r<.65)go('M');else if(r<.85)go('H',0,1);else go('H')}
   return true}
  // Figurenspezifische Werkzeuge (Griff, Teleport, Falle ...): Liste char.ai = [{min,max,b,dx,dy,p}], Chance skaliert mit der Stufe
- tool(me,dist,fwd,go){const L=me.char.ai;if(!L)return false;const k=[.45,.8,1][this.level];
+ tool(me,dist,fwd,go){const L=me.char.ai;if(!L)return false;const k=[.45,.8,1,1][this.level];
   for(const t of L){if(dist<t.min||dist>=t.max)continue;if(Math.random()<t.p*k){go(t.b,(t.dx||0)*fwd,t.dy||0,4);return true}}return false}
 }

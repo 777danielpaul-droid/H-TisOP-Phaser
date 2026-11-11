@@ -1,7 +1,7 @@
 import{Game}from'./core/game.js';
 import{Fighter}from'./core/fighter.js';
 import{KeyboardInput,VS1_BUTTONS,VS1_DIRS,VS2_BUTTONS,VS2_DIRS}from'./core/input.js';
-import{AIController}from'./core/ai.js';
+import{AIController,AI_LEVELS}from'./core/ai.js';
 import{Arcade}from'./core/arcade.js';
 import{CHARACTERS,ROSTER}from'./core/characters.js';
 import{MOVE_LIST,charMoves}from'./core/moves.js';
@@ -15,7 +15,7 @@ import{studioOpen,studioIsOpen,studioLoadSaved}from'./render/customstudio.js';
 loadFonts();   // eingebettete Schriften registrieren (Canvas + Menü)
 const $=id=>document.getElementById(id);
 const load=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},save=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};   // Auswahl merken (falls Browser-Speicher verfügbar)
-let saved=+load('tf_difficulty',0);
+let saved=Math.max(0,Math.min(AI_LEVELS.length-1,+load('tf_difficulty',0)||0));
 const kb=new KeyboardInput(window),ai=new AIController(saved);
 const kbV1=new KeyboardInput(window,VS1_BUTTONS,VS1_DIRS),kbV2=new KeyboardInput(window,VS2_BUTTONS,VS2_DIRS);   // 2-Spieler-Modus: getrennte Tastaturhälften
 const clearInputs=()=>{for(const k of[kb,kbV1,kbV2]){k.keys.clear();k.pend.length=0;k.clear()}};
@@ -49,7 +49,7 @@ on('btn-debug',e=>{game.debug=!game.debug;e.textContent=game.debug?'An':'Aus';e.
 on('btn-meter',()=>{p1.meter=300});
 on('btn-restart',()=>{if(arcade.pvp&&arcade.state!=='select')arcade.rematchVs();else game.rematch();setMenu(false)});
 on('btn-select',()=>{arcade.toSelect();setMenu(false)});
-on('btn-studio',()=>{arcade.toSelect();setMenu(false);arcade.cursor=CUSTOM_I;openStudio()});
+on('btn-studio',()=>{arcade.toSelect();setMenu(false);arcade.cursor=CI();openStudio()});
 const diff=$('difficulty');const setDiff=d=>{arcade.setDifficulty(d);save('tf_difficulty',String(arcade.difficulty));if(diff)diff.value=String(arcade.difficulty)};
 if(diff){diff.value=String(arcade.difficulty);diff.onchange=()=>setDiff(+diff.value)}
 const vol=$('volume'),mute=$('btn-mute');
@@ -67,10 +67,10 @@ const sp=$('speed');if(sp)sp.oninput=()=>{speed=+sp.value;$('speedval').textCont
 if(sp){sp.value=speed;$('speedval').textContent=speed.toFixed(1)+'×'}
 // ---- Startmenü (Charakterwahl): Tastatur + Maus ----
 // 5. Slot = eigene Figur (Upload-Editor, gespeichert im Browser); leer => Klick/Enter öffnet den Editor
-const SLOTS=()=>[...ROSTER,'custom'],CUSTOM_I=ROSTER.length;
+const SLOTS=()=>[...ROSTER,'custom'],CI=()=>ROSTER.length;
 const openStudio=()=>{clearInputs();
  studioOpen(r=>{canvas.focus();clearInputs();
-  if(r&&r.saved){arcade.cursor=CUSTOM_I;if(r.fight)startFight(CUSTOM_I)}else if(r&&r.deleted)arcade.cursor=Math.min(arcade.cursor,CUSTOM_I)})};
+  if(r&&r.saved){arcade.cursor=CI();if(r.fight)startFight(CI())}else if(r&&r.deleted)arcade.cursor=Math.min(arcade.cursor,CI())})};
 const useInputs=(versus,cpu)=>{const two=versus&&!cpu;p1.input=two?kbV1:kb;p2.input=two?kbV2:ai;clearInputs()};   // Melee gegen CPU: Spieler 1 spielt mit der normalen Belegung wie im Arcade
 const startVersus=()=>{if(renderer.sel.launching)return;const v=arcade.vs,ids=Arcade.slotIds(),cpu=arcade.mode==='melee'&&arcade.cpu;
  renderer.sel.launch(ids[v.c1],()=>{useInputs(true,cpu);arcade.vsStart()},(n,o)=>game.sfx(n,o),ids[v.c2])};   // erst Videos + Feuerwerk, dann Kampf
@@ -87,10 +87,10 @@ canvas.addEventListener('mousemove',e=>{if(arcade.state!=='select'||menuOpen||st
  const i=hitCard(...logical(e),SLOTS().length);if(i>=0)arcade.cursor=i});
 canvas.addEventListener('click',e=>{if(arcade.state!=='select'||menuOpen||studioIsOpen()||renderer.sel.launching)return;const L=logical(e);
  const md=hitMode(...L);if(md>=0){arcade.setMode(['arcade','versus','melee'][md]);return}
- if(arcade.mode==='melee'&&arcade.vs.step===0&&!arcade.vs.locked[0]&&!arcade.vs.locked[1]){const mo=hitMeleeOpt(...L);if(mo>=0){if(mo===0)arcade.toggleCpu();else if(mo===1&&arcade.cpu)setDiff((arcade.difficulty+1)%3);else if(mo===2)arcade.cycleStocks();return}}
+ if(arcade.mode==='melee'&&arcade.vs.step===0&&!arcade.vs.locked[0]&&!arcade.vs.locked[1]){const mo=hitMeleeOpt(...L);if(mo>=0){if(mo===0)arcade.toggleCpu();else if(mo===1&&arcade.cpu)setDiff((arcade.difficulty+1)%AI_LEVELS.length);else if(mo===2)arcade.cycleStocks();return}}
  if(arcade.pvp){const v=arcade.vs;if(v.step===1){const j=hitStage(...L);if(j>=0){v.stage=j;startVersus()}}
   else{const i=hitVsCard(...L,Arcade.slotIds().length);if(i>=0){const pl=!v.locked[0]?1:!v.locked[1]?2:0;if(pl){arcade.vsSet(pl,i);arcade.vsConfirm(pl)}}}return}
- if(CHARACTERS.custom&&hitEdit(...L,SLOTS().length)){arcade.cursor=CUSTOM_I;openStudio();return}
+ if(CHARACTERS.custom&&hitEdit(...L,SLOTS().length)){arcade.cursor=CI();openStudio();return}
  const i=hitCard(...L,SLOTS().length);if(i>=0){arcade.cursor=i;startFight(i)}});
 addEventListener('keydown',e=>{
  if(studioIsOpen())return;   // Editor für die eigene Figur hat Vorrang (Tippen in Feldern)
@@ -118,7 +118,7 @@ addEventListener('keydown',e=>{
   else if(e.code==='ArrowDown'||e.code==='KeyS')setDiff(arcade.difficulty-1);
   else if(e.code==='Tab')arcade.cycleMode();
   else if(e.code==='KeyC'){if(arcade.cycleSkin(SLOTS()[arcade.cursor]))saveSkins()}
-  else if(e.code==='KeyE'&&CHARACTERS.custom){arcade.cursor=CUSTOM_I;openStudio()}
+  else if(e.code==='KeyE'&&CHARACTERS.custom){arcade.cursor=CI();openStudio()}
   else if(e.code==='Enter'||e.code==='Space'||e.code==='KeyJ')startFight(arcade.cursor);
   e.preventDefault();return}
  if(e.code==='F2'){game.debug=!game.debug;e.preventDefault()}
