@@ -32,6 +32,7 @@ let menuOpen=false,speed=SPEED;
 const bgUi=new BgPanel(renderer.bd,{blocked:()=>studioIsOpen()||musicUi.isOpen,onOpen:()=>clearInputs(),onClose:()=>{clearInputs();canvas.focus()}});bgUi.mount();renderer.bd.init();
 // ---- Intro-Video (Spielstart): erst Startknopf (Klick/Enter gibt den Ton frei), dann Video + Menümusik; Enter/Esc/Klick überspringt, danach Titelmenü. Währenddessen steht das Spiel still. ----
 const intro=new Intro(()=>{clearInputs();canvas.focus();if(start)start.classList.add('go')},()=>{sound.unlock();sound.music('menu');return new Promise(res=>{const t0=performance.now(),w=()=>{if(!sound.ctx||sound.mbuf.menu||sound.plActive('menu')||performance.now()-t0>3000)res();else setTimeout(w,40)};w()})});   // Intro vorbei/übersprungen -> H!TisOP-Schriftzug beginnt sich zu schreiben
+// Auto-Start: Intro-Video beginnt sofort (ohne Start-Knopf) nach dem Laden des Videos
 // ---- Eigene Musik: Playlist für Menü- und Kampfmusik (Panel: Knopf links unten / Taste N / Pausenmenü → Optionen). Dateien liegen in IndexedDB; Wiedergabe: Sound.setPlaylist ----
 const musicStore=new MusicStore();
 const applyPl=k=>sound.setPlaylist(k,musicStore.items(k),musicStore.on[k],musicStore.shuf[k]);
@@ -222,5 +223,7 @@ function loop(now){if(intro.active){last=now;sound.music('menu');requestAnimatio
  if(startOpen)renderer.drawDemo(demo.game);else renderer.draw(game);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 sound.unlock();sound.music('menu');   // Menümusik schon beim Intro: Audio sofort vorbereiten (Browser geben es frei, sobald sie dürfen, spätestens bei der ersten Taste/Klick)
-intro.start();   // als Letztes: alles ist eingerichtet, der Startknopf erscheint (Video + Musik starten nach dem Klick)
+intro.start();   // als Letztes: alles ist eingerichtet, Intro-Video startet sofort (ohne Start-Knopf)
+// Auto-Start: Video lädt → Intro sofort beginnen (kein Klick nötig)
+const iv=setTimeout(()=>{const i=window.__intro;if(i&&i.waiting){i.go();i.go=()=>{}}else{const v=document.querySelector('#intro video');if(v&&v.readyState>=2)v.play()}},500);
 window.__intro=intro;window.__music=musicUi;window.__bgui=bgUi;window.__reveal=lootReveal;window.__lootOpen=lootOpen;window.__renderer=renderer;window.__demo=demo;window.__game=game;window.__arcade=arcade;

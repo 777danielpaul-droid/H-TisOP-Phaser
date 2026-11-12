@@ -15,10 +15,7 @@ export class Intro{
   v.src=this.url;
   v.onended=()=>this.finish();v.onerror=()=>this.finish();
   const sk=this.root.querySelector('#intro-skip')||this.root.querySelector('button');if(sk)sk.onclick=()=>this.skip();
-  let go=this.root.querySelector('#intro-go');
-  if(!go){const w=d.createElement('div');w.id='intro-start';w.innerHTML='<button type="button" id="intro-go">▶ START</button>';this.root.appendChild(w);go=w.querySelector('#intro-go')}
   this.waiting=true;this.root.classList.add('wait');
-  go.onclick=()=>this.go();try{go.focus({preventScroll:true})}catch(e){}
   return true}
  go(){if(!this.active||!this.waiting)return;this.waiting=false;
   const go=this.root&&this.root.querySelector('#intro-go');if(go){go.disabled=true;go.textContent='…'}
