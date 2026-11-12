@@ -1,0 +1,7 @@
+# Render Blueprint: Static Site, die das Spiel bei jedem Deploy selbst baut (dist/ liegt NICHT mehr im Repository).
+services:
+  - type: web
+    name: hitisop
+    runtime: static
+    buildCommand: node tools/build.mjs
+    staticPublishPath: dist

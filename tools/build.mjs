@@ -14,6 +14,9 @@ const sd=path.join(root,'sfx'),sx=[];   // Sounds (sfx/<name>.ogg) als Data-URI 
 for(const f of fs.existsSync(sd)?fs.readdirSync(sd).sort():[])if(f.endsWith('.ogg'))sx.push(`${JSON.stringify(f.slice(0,-4))}:"data:audio/ogg;base64,${fs.readFileSync(path.join(sd,f)).toString('base64')}"`);
 const md=path.join(root,'music'),mu=[];   // Musik (music/<name>.ogg) als Data-URI einbetten
 for(const f of fs.existsSync(md)?fs.readdirSync(md).sort():[])if(f.endsWith('.ogg'))mu.push(`${JSON.stringify(f.slice(0,-4))}:"data:audio/ogg;base64,${fs.readFileSync(path.join(md,f)).toString('base64')}"`);
+// Sicherheitsnetz: fehlt Musik, lieber laut abbrechen als still ohne Menü-/Kampfmusik zu deployen (passiert z. B. wenn *.ogg in .gitignore steht)
+const missing=['menu','fight'].filter(n=>!fs.existsSync(path.join(md,n+'.ogg')));
+if(missing.length){console.error('FEHLER: music/'+missing.join('.ogg, music/')+'.ogg fehlt (nicht im Repository?). Bitte hinzufügen: git add music/*.ogg');if(process.env.RENDER||process.env.CI)process.exit(1)}
 const fd=path.join(root,'assets/fonts'),fo=[];   // Schriften (assets/fonts/<name>.woff2) als Data-URI einbetten (Canvas + Menü, offline)
 for(const f of fs.existsSync(fd)?fs.readdirSync(fd).sort():[])if(f.endsWith('.woff2'))fo.push(`${JSON.stringify(f.slice(0,-6))}:"data:font/woff2;base64,${fs.readFileSync(path.join(fd,f)).toString('base64')}"`);
 const ud=path.join(root,'assets/aura'),au=[];   // Sieger-Auren (assets/aura/<id>.webp + .json) als Data-URI einbetten
@@ -21,9 +24,10 @@ for(const f of fs.existsSync(ud)?fs.readdirSync(ud).sort():[])if(f.endsWith('.we
 const vd=path.join(root,'assets/video'),vi=[];   // Auswahl-Kurzvideos (assets/video/<id>.webm) als Data-URI einbetten
 for(const f of fs.existsSync(vd)?fs.readdirSync(vd).sort():[])if(f.endsWith('.webm'))vi.push(`${JSON.stringify(f.slice(0,-5))}:\"data:video/webm;base64,${fs.readFileSync(path.join(vd,f)).toString('base64')}\"`);
 const ip=path.join(root,'assets/intro/intro.mp4');   // Intro-Video (assets/intro/intro.mp4) als Data-URI einbetten
+const pp=path.join(root,'assets/intro/poster.jpg');   // Standbild fürs Intro (erster Frame), optional
 const cdir=path.join(root,'assets/cards'),ca=[];   // Sammelkarten-Bilder (assets/cards/<karten-id>.png|webp|jpg) als Data-URI einbetten
 for(const f of fs.existsSync(cdir)?fs.readdirSync(cdir).sort():[]){const m=/^(.+)\.(png|webp|jpe?g)$/i.exec(f);if(m)ca.push(`${JSON.stringify(m[1])}:"data:image/${m[2].toLowerCase().replace('jpg','jpeg')};base64,${fs.readFileSync(path.join(cdir,f)).toString('base64')}"`)}
-const pre=(fs.existsSync(ip)?`window.__INTRO__="data:video/mp4;base64,${fs.readFileSync(ip).toString('base64')}";\n`:'')+(ca.length?`window.__CARDS__={${ca.join(',')}};\n`:'')+(vi.length?`window.__VIDEOS__={${vi.join(',')}};\n`:'')+(au.length?`window.__AURA__={${au.join(',')}};\n`:'')+(fo.length?`window.__FONTS__={${fo.join(',')}};\n`:'')+(sp.length?`window.__SPRITES__={${sp.join(',')}};\n`:'')+(sx.length?`window.__SFX__={${sx.join(',')}};\n`:'')+(mu.length?`window.__MUSIC__={${mu.join(',')}};\n`:'');
+const pre=(fs.existsSync(pp)?`window.__INTRO_POSTER__="data:image/jpeg;base64,${fs.readFileSync(pp).toString('base64')}";\n`:'')+(fs.existsSync(ip)?`window.__INTRO__="data:video/mp4;base64,${fs.readFileSync(ip).toString('base64')}";\n`:'')+(ca.length?`window.__CARDS__={${ca.join(',')}};\n`:'')+(vi.length?`window.__VIDEOS__={${vi.join(',')}};\n`:'')+(au.length?`window.__AURA__={${au.join(',')}};\n`:'')+(fo.length?`window.__FONTS__={${fo.join(',')}};\n`:'')+(sp.length?`window.__SPRITES__={${sp.join(',')}};\n`:'')+(sx.length?`window.__SFX__={${sx.join(',')}};\n`:'')+(mu.length?`window.__MUSIC__={${mu.join(',')}};\n`:'');
 const js=`${pre}(()=>{'use strict';${out}\n})();`;
 fs.mkdirSync(path.join(root,'dist'),{recursive:true});fs.writeFileSync(path.join(root,'dist/game.js'),js);
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');const css=fs.readFileSync(path.join(root,'styles/main.css'),'utf8');

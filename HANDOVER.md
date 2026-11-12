@@ -52,6 +52,12 @@
 - **Tests:** neu `tests/playlist.test.js` (in `npm test`). Im echten Chromium geprüft: Intro läuft/Skip/Ende, Panel, Upload (WAV/MP3/OGG), Reihenfolge, Persistenz nach Reload, Menü- und Kampf-Playlist. Nicht geprüft: Safari/Firefox (FLAC/Opus je nach Browser nicht abspielbar → wird beim Hinzufügen abgelehnt), sehr große Playlists.
 - Bekannt (schon vorher): `tests/hyper.test.js` schlägt für `mantis` fehl („Hyper gestartet“), `tests/smoke-melee.cjs` meldet OK, beendet sich aber nicht von selbst.
 
+## Deploy auf Render / Git (wichtig)
+- **Keine Musik auf Render – Ursache:** `.gitignore` enthielt `*.ogg` (auch `*.png/*.jpg/*.webp/*.woff2`). Dadurch wurde `music/menu.ogg` + `music/fight.ogg` nie committet (menu.ogg sogar aus dem Repo gelöscht), Sounds (`sfx/`) waren nur wegen früherer Commits drin. Der Build bettet Musik nur ein, wenn die Dateien existieren → Render hatte Effekte, aber keine Musik. Jetzt: Ignore-Regeln entfernt, `music/*.ogg` müssen im Repo liegen; `tools/build.mjs` bricht auf Render/CI mit Fehler ab, wenn `music/menu.ogg` oder `music/fight.ogg` fehlt.
+- **Repo wird ständig größer – Ursache:** `dist/` (3 × ~25 MB, Base64 von Video/Sprites/Musik) war committet; jeder Commit legte ~40 MB neu in `.git` ab (159 MB). Das Spiel selbst wächst beim Öffnen nicht (geprüft: localStorage/IndexedDB bleiben gleich). Jetzt: `dist/` ist nicht mehr im Repo (steht in `.gitignore`), Render baut selbst.
+- **Render-Einstellungen:** Build Command `node tools/build.mjs`, Publish Directory `dist` (oder `render.yaml` als Blueprint).
+- `assets/intro/poster.jpg` (Standbild fürs Intro) wird – falls vorhanden – eingebettet.
+
 ## HUD (v10): Gold-/Tusche-Design
 - `src/render/hud.js` ist das Martial-Arts-HUD (Tusche-Platten, Klingen-Lebensbalken, Portraits im Goldring mit Hanko-Siegel, Ring-Uhr, Pinsel-Combo-Zähler, Ensō-Banner). Serifenschrift mit CJK-Fallback (Kanji 武 闘 勝 壱 弐 参 brauchen eine Systemschrift mit CJK, sonst Kästchen).
 - Eigene Ergänzungen über das gelieferte HUD hinaus: Stage-Anzeige unter dem Timer (`STAGE n / total`) und Arcade-Banner (Stage Clear / Game Over / Arcade geschafft) im selben Stil.
