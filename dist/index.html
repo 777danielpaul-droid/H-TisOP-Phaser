@@ -109,16 +109,16 @@ input[type=range]{accent-color:var(--cy)}
 #start h1{margin:0;font:900 34px Impact,"Arial Black",sans-serif;letter-spacing:.16em;color:#fff;filter:drop-shadow(0 0 12px rgba(143,123,255,.6));pointer-events:auto}
 #start h1 span{color:var(--cy)}
 #start .modes{display:flex;flex-direction:column;gap:14px;pointer-events:auto}
-#start button{width:260px;text-align:left;position:relative;padding:14px 20px 14px 18px;font:700 17px system-ui;overflow:hidden;background:rgba(18,20,58,.55);border:1px solid var(--ice);color:#fff;border-radius:0;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);box-shadow:inset 0 0 0 1px rgba(185,196,255,.35),0 0 20px rgba(0,0,0,.45)}
-#start button .mname{display:block;color:#fff;font-size:18px;letter-spacing:.05em}
+#start button{width:340px;text-align:center;position:relative;padding:18px 26px 18px 22px;font:700 21px system-ui;overflow:hidden;background:rgba(18,20,58,.55);border:1px solid var(--ice);color:#fff;border-radius:0;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);box-shadow:inset 0 0 0 1px rgba(185,196,255,.35),0 0 20px rgba(0,0,0,.45)}
+#start button .mname{display:block;color:#fff;font-size:22px;letter-spacing:.05em}
 #start button:hover{background:rgba(127,232,255,.18);border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy),0 0 24px rgba(127,232,255,.35)}
 #start button:focus{outline:2px solid var(--cy);outline-offset:2px}
 #start button.on{background:rgba(127,232,255,.28);border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy),0 0 20px rgba(127,232,255,.45)}
 #start .help{margin:0;color:#8f95d8;font-size:12px;pointer-events:auto;opacity:.8}
 /* Buttons rechts unten schwebend, nicht im Kampf zentriert */
-#start{align-items:flex-start}
-#start .modes{align-self:flex-end;margin-bottom:60px}
-#start .help{align-self:flex-end;margin-bottom:30px;text-align:right}
+#start{align-items:center}
+#start .modes{align-self:center;margin-bottom:60px}
+#start .help{align-self:center;margin-bottom:30px;text-align:center}
 
 /* ---- Eigener Hintergrund (Drag & Drop / Upload): Panel, Knopf, Drop-Overlay, Hinweis ---- */
 #bgpanel{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(3,1,10,.8);backdrop-filter:blur(8px);outline:none}
@@ -141,7 +141,7 @@ input[type=range]{accent-color:var(--cy)}
 #bgpanel .bgopts input[type=range]{width:100%;accent-color:var(--cy)}#bgpanel .bgopts select{background:#0b0718;color:#fff;border:1px solid #6a5cc8;padding:6px}
 #bgpanel .bgdimv{color:var(--cy);margin-left:6px}
 #bgpanel .bgfoot{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;color:#ffb347;font-size:12px}
-#bgbtn{position:fixed;left:16px;bottom:62px;z-index:35;font:700 13px system-ui;letter-spacing:.05em;color:#fff;background:rgba(18,20,58,.62);border:1px solid var(--ice,#7fe8ff);padding:9px 16px 9px 14px;cursor:pointer;border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);backdrop-filter:blur(3px)}
+#bgbtn{position:fixed;left:16px;bottom:62px;z-index:35;font:700 13px system-ui;letter-spacing:.05em;color:#fff;background:rgba(18,20,58,.62);border:1px solid var(--ice,#7fe8ff);padding:9px 16px 9px 14px;cursor:pointer;border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);backdrop-filter:blur(3px);display:none!important}
 #bgbtn:hover{background:rgba(127,232,255,.22);border-color:var(--cy)}#bgbtn kbd{margin-left:6px;padding:0 5px;border:1px solid #8f95d8;font-size:11px;color:#cfd8ff}
 #bgdrop{position:fixed;inset:10px;z-index:70;display:flex;align-items:center;justify-content:center;pointer-events:none;border:3px dashed var(--cy);background:rgba(10,6,30,.62);box-shadow:inset 0 0 60px rgba(63,224,255,.25)}
 #bgdrop div{display:flex;flex-direction:column;align-items:center;gap:6px;color:#fff;text-align:center}#bgdrop b{font:900 30px Impact,"Arial Black",sans-serif;letter-spacing:.08em;text-transform:uppercase}#bgdrop span{color:#9fe8ff;font-size:15px}
@@ -199,20 +199,20 @@ input[type=range]{accent-color:var(--cy);height:8px}
 #intro.out{opacity:0;pointer-events:none}
 #intro video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
 #intro-skip{position:absolute;right:22px;bottom:22px;font:700 14px system-ui;letter-spacing:.06em;color:#fff;background:rgba(18,20,58,.55);border:1px solid rgba(255,255,255,.45);padding:9px 16px;cursor:pointer;border-radius:0;backdrop-filter:blur(3px);opacity:.85;animation:introHint .6s ease .8s both}
-#intro-snd{position:absolute;left:22px;bottom:22px;font:700 14px system-ui;letter-spacing:.06em;color:#fff;background:rgba(18,20,58,.55);border:1px solid rgba(255,255,255,.45);padding:9px 16px;pointer-events:none;animation:introHint .6s ease both}
+#intro-snd{position:absolute;left:22px;bottom:22px;font:700 14px system-ui;letter-spacing:.06em;color:#fff;background:rgba(18,20,58,.55);border:1px solid rgba(255,255,255,.45);padding:9px 16px;pointer-events:none;animation:introHint .6s ease both;display:none!important}
 #intro-skip:hover{opacity:1;background:rgba(127,232,255,.25);border-color:var(--cy)}
 #intro-skip kbd{margin-right:6px;padding:1px 6px;border:1px solid #8f95d8;font-size:12px;color:#cfd8ff}
 /* Startknopf auf dem Standbild (erster Video-Frame) vor dem Intro: der Klick schaltet den Ton frei (Browser-Regel) */
 #intro.wait #intro-skip{display:none}
-#intro-start{position:absolute;left:0;right:0;bottom:9vh;display:flex;justify-content:center;pointer-events:none}
+#intro-start{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;justify-content:center;pointer-events:none}
 #intro:not(.wait) #intro-start{display:none}
-#intro-go{pointer-events:auto;font:700 15px system-ui;letter-spacing:.14em;color:#fff;padding:11px 30px 11px 26px;cursor:pointer;border:0;border-radius:0;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);background:rgba(18,20,58,.55);box-shadow:inset 0 0 0 1px var(--ice,#7fe8ff);backdrop-filter:blur(3px);opacity:.9}
-#intro-go:hover,#intro-go:focus{opacity:1;outline:none;background:rgba(127,232,255,.22);box-shadow:inset 0 0 0 1px var(--cy,#3fe0ff),inset 0 0 14px rgba(127,232,255,.35)}
+#intro-go{pointer-events:auto;width:340px;text-align:center;font:700 21px system-ui;letter-spacing:.14em;color:#fff;padding:18px 26px 18px 22px;cursor:pointer;border:1px solid var(--ice);border-radius:0;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);background:rgba(18,20,58,.55);box-shadow:inset 0 0 0 1px rgba(185,196,255,.35),0 0 20px rgba(0,0,0,.45);backdrop-filter:blur(3px);opacity:.9}
+#intro-go:hover,#intro-go:focus{opacity:1;outline:none;background:rgba(127,232,255,.18);border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy),0 0 24px rgba(127,232,255,.35)}
 #intro-go:disabled{opacity:.6;cursor:default}
 @keyframes introHint{from{opacity:0;transform:translateY(6px)}to{opacity:.85;transform:none}}
 
 /* ---- Eigene Musik / Playlists ---- */
-#musicbtn{position:fixed;left:16px;bottom:108px;z-index:35;font:700 13px system-ui;letter-spacing:.05em;color:#fff;background:rgba(18,20,58,.62);border:1px solid var(--ice,#7fe8ff);padding:9px 16px 9px 14px;cursor:pointer;border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);backdrop-filter:blur(3px)}
+#musicbtn{position:fixed;left:16px;bottom:108px;z-index:35;font:700 13px system-ui;letter-spacing:.05em;color:#fff;background:rgba(18,20,58,.62);border:1px solid var(--ice,#7fe8ff);padding:9px 16px 9px 14px;cursor:pointer;border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);backdrop-filter:blur(3px);display:none!important}
 #musicbtn:hover{background:rgba(127,232,255,.22);border-color:var(--cy)}#musicbtn kbd{margin-left:6px;padding:0 5px;border:1px solid #8f95d8;font-size:11px;color:#cfd8ff}
 #musicpanel{position:fixed;inset:0;z-index:62;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 35%,rgba(70,62,190,.45),rgba(2,3,14,.82) 72%);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);outline:none}
 #musicpanel .mpbox{width:min(980px,95vw);max-height:94vh;overflow:auto;padding:22px 26px 18px;background:linear-gradient(180deg,#120c26,#07040f);border:1px solid var(--line);box-shadow:0 0 40px rgba(122,76,255,.35),inset 0 0 0 1px rgba(255,255,255,.04)}
@@ -265,8 +265,6 @@ input[type=range]{accent-color:var(--cy);height:8px}
   <tr><td>Menü / Pause</td><td class="key"><kbd>M</kbd></td></tr>
   <tr><td>Vollbild</td><td class="key"><kbd>F</kbd> &nbsp;oder Doppelklick</td></tr>
   <tr><td>Hitboxen anzeigen</td><td class="key"><kbd>F2</kbd></td></tr>
-  <tr><td>Eigener Hintergrund (Titelmenü / Auswahl)</td><td class="key"><kbd>H</kbd> &nbsp;oder Bild/Video ins Fenster ziehen</td></tr>
-  <tr><td>Eigene Musik-Playlists (Titelmenü / Auswahl)</td><td class="key"><kbd>N</kbd></td></tr>
   <tr><td>Intro überspringen</td><td class="key"><kbd>Enter</kbd></td></tr>
   <tr><td>Alternative Tasten</td><td class="key"><kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> <kbd>B</kbd> <kbd>N</kbd> = J K L U I O</td></tr>
   <tr><td colspan="2" class="mv">2-Spieler-Modus (Startmenü: <kbd>TAB</kbd> oder oben links anklicken)</td></tr>
@@ -292,8 +290,9 @@ input[type=range]{accent-color:var(--cy);height:8px}
   <div class="row"><span>Stage neu starten</span><button id="btn-restart">Neustart</button></div>
   <div class="row"><span>Zurück zur Charakterwahl (Arcade neu)</span><button id="btn-select">Charakterwahl</button></div>
   <div class="row"><span>Eigene Figur erstellen / bearbeiten (Sprite-Sheets hochladen)</span><button id="btn-studio">Editor öffnen</button></div>
-  <div class="row"><span>Eigener Hintergrund (Bild/Video, auch per Drag &amp; Drop ins Fenster)</span><button id="btn-bg">Verwalten</button></div>
-  <div class="row"><span>Eigene Musik: Playlist für Menü- und Kampfmusik (Taste N im Titelmenü)</span><button id="btn-playlist">Verwalten</button></div>
+  <div class="row"><span>Eigener Hintergrund</span><button id="btn-bg">Verwalten</button></div>
+  <div class="row"><span>Eigene Musik</span><button id="btn-playlist">Verwalten</button></div>
+
  </section>
  <div class="foot"><button id="btn-resume">Weiter (M)</button><span>← / → Reiter wechseln · M oder Esc schließt das Menü</span></div>
 </div></div>
