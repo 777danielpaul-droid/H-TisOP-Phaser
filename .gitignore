@@ -1,0 +1,26 @@
+# Generierte Build-Dateien (werden via `npm run build` erzeugt)
+dist/
+
+# Datenbanken, Logs, temporäre Dateien usw.
+*.log
+*.sqlite
+*.db
+
+# Datenbanken von Tests
+*.sqlite
+*.db
+
+# Vom Editor erzeugte Dateien
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Vom Webserver erzeugte Dateien
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.ogg
+*.woff2
+.DS_Store
