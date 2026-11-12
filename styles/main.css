@@ -101,3 +101,137 @@ input[type=range]{accent-color:var(--cy)}
 .st-h,.st-more>summary,.st-help summary{color:var(--cy)}
 .st-sm code,.st-help code{background:#0d1040;border-radius:0;color:#eaf6ff}
 .st-lead,.st-help,.st-form label,.st-status{color:#b3bbf0}
+
+/* ---- Startseite: Spielmodus wählen (Overlay über dem Demokampf) ---- */
+#start{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:40px 60px;pointer-events:none;z-index:40}
+#start.hidden{display:none!important}
+#start h1{margin:0;font:900 34px Impact,"Arial Black",sans-serif;letter-spacing:.16em;color:#fff;filter:drop-shadow(0 0 12px rgba(143,123,255,.6));pointer-events:auto}
+#start h1 span{color:var(--cy)}
+#start .modes{display:flex;flex-direction:column;gap:14px;pointer-events:auto}
+#start button{width:260px;text-align:left;position:relative;padding:14px 20px 14px 18px;font:700 17px system-ui;overflow:hidden;background:rgba(18,20,58,.55);border:1px solid var(--ice);color:#fff;border-radius:0;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);box-shadow:inset 0 0 0 1px rgba(185,196,255,.35),0 0 20px rgba(0,0,0,.45)}
+#start button .mname{display:block;color:#fff;font-size:18px;letter-spacing:.05em}
+#start button:hover{background:rgba(127,232,255,.18);border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy),0 0 24px rgba(127,232,255,.35)}
+#start button:focus{outline:2px solid var(--cy);outline-offset:2px}
+#start button.on{background:rgba(127,232,255,.28);border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy),0 0 20px rgba(127,232,255,.45)}
+#start .help{margin:0;color:#8f95d8;font-size:12px;pointer-events:auto;opacity:.8}
+/* Buttons rechts unten schwebend, nicht im Kampf zentriert */
+#start{align-items:flex-start}
+#start .modes{align-self:flex-end;margin-bottom:60px}
+#start .help{align-self:flex-end;margin-bottom:30px;text-align:right}
+
+/* ---- Eigener Hintergrund (Drag & Drop / Upload): Panel, Knopf, Drop-Overlay, Hinweis ---- */
+#bgpanel{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(3,1,10,.8);backdrop-filter:blur(8px);outline:none}
+#bgpanel .bgbox{width:min(780px,94vw);max-height:94vh;overflow:auto;padding:22px 26px 18px;background:linear-gradient(180deg,#120c26,#07040f);border:1px solid var(--line);box-shadow:0 0 40px rgba(122,76,255,.35),inset 0 0 0 1px rgba(255,255,255,.04)}
+#bgpanel h2{margin:0 0 4px;font:900 22px Impact,"Arial Black",sans-serif;letter-spacing:.14em;color:#fff;text-transform:uppercase}
+#bgpanel .bgsub{margin:0 0 14px;color:#a9a2d8;font-size:13px;line-height:1.5}#bgpanel .bgsub b{color:var(--cy)}
+#bgpanel .bgdrop{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 14px;padding:14px 12px;border:2px dashed #5a4a9a;background:rgba(122,76,255,.08);text-align:center;color:#fff;transition:.15s}
+#bgpanel .bgdrop b{font-size:17px;letter-spacing:.04em}#bgpanel .bgdrop span{color:#8f95d8;font-size:12px}#bgpanel .bgdrop small{flex-basis:100%;color:#7d7aa8;font-size:11px}
+#bgpanel .over{border-color:var(--cy)!important;background:rgba(63,224,255,.16)!important;box-shadow:0 0 22px rgba(63,224,255,.35)}
+#bgpanel button{font:700 13px system-ui;color:#fff;background:rgba(18,20,58,.7);border:1px solid #6a5cc8;padding:7px 14px;cursor:pointer;border-radius:0}
+#bgpanel button:hover:not(:disabled){background:rgba(127,232,255,.2);border-color:var(--cy)}#bgpanel button:disabled{opacity:.35;cursor:default}
+#bgpanel .bgrows{margin:12px 0 4px;display:flex;flex-direction:column;gap:6px}
+#bgpanel .bgrow{display:flex;align-items:center;gap:12px;padding:6px 8px;border:1px solid #2c2358;background:rgba(10,6,28,.7);transition:.15s}
+#bgpanel .bgrow canvas{position:static;left:auto;top:auto;transform:none;aspect-ratio:auto;cursor:default;width:96px;height:54px;flex:none;border:1px solid #3a2a6b;background:#000;display:block}
+#bgpanel .bgtxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}#bgpanel .bgtxt b{color:#fff;font-size:15px;letter-spacing:.04em}
+#bgpanel .bgst{color:var(--cy);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#bgpanel .bgtxt small{color:#7d7aa8;font-size:11px}
+#bgpanel .bgbtns{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;gap:5px;flex:none;max-width:350px}#bgpanel .bgbtns button{padding:5px 10px;font-size:12px}
+#bgpanel .bgopts{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin:12px 0 4px;padding-top:12px;border-top:1px solid #241945}
+#bgpanel .bgopts label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:#d6c8ff}#bgpanel .bgopts label.bgck{flex-direction:row;align-items:center;gap:8px}
+#bgpanel .bgopts input[type=range]{width:100%;accent-color:var(--cy)}#bgpanel .bgopts select{background:#0b0718;color:#fff;border:1px solid #6a5cc8;padding:6px}
+#bgpanel .bgdimv{color:var(--cy);margin-left:6px}
+#bgpanel .bgfoot{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;color:#ffb347;font-size:12px}
+#bgbtn{position:fixed;left:16px;bottom:62px;z-index:35;font:700 13px system-ui;letter-spacing:.05em;color:#fff;background:rgba(18,20,58,.62);border:1px solid var(--ice,#7fe8ff);padding:9px 16px 9px 14px;cursor:pointer;border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);backdrop-filter:blur(3px)}
+#bgbtn:hover{background:rgba(127,232,255,.22);border-color:var(--cy)}#bgbtn kbd{margin-left:6px;padding:0 5px;border:1px solid #8f95d8;font-size:11px;color:#cfd8ff}
+#bgdrop{position:fixed;inset:10px;z-index:70;display:flex;align-items:center;justify-content:center;pointer-events:none;border:3px dashed var(--cy);background:rgba(10,6,30,.62);box-shadow:inset 0 0 60px rgba(63,224,255,.25)}
+#bgdrop div{display:flex;flex-direction:column;align-items:center;gap:6px;color:#fff;text-align:center}#bgdrop b{font:900 30px Impact,"Arial Black",sans-serif;letter-spacing:.08em;text-transform:uppercase}#bgdrop span{color:#9fe8ff;font-size:15px}
+#bgtoast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:80;max-width:90vw;padding:10px 20px;font:700 14px system-ui;color:#fff;pointer-events:none;box-shadow:0 0 24px rgba(0,0,0,.6)}
+#bgtoast.ok{background:linear-gradient(90deg,#0b3a2a,#0f4a3a);border:1px solid #52ffa8}#bgtoast.err{background:linear-gradient(90deg,#4a0f1a,#3a0b18);border:1px solid #ff5a6e}
+@media (max-width:640px){#bgpanel .bgopts{grid-template-columns:1fr}#bgpanel .bgrow canvas{width:88px;height:50px}}
+
+/* ---- Glas-Look (v20): haptische Glas-Knöpfe, Milchglas-Panels, Glanzkanten – überschreibt den Kristall-Look oben ---- */
+:root{--glass:rgba(150,165,255,.10);--glass-hi:rgba(255,255,255,.5);--glass-edge:rgba(255,255,255,.32);--glass-low:rgba(8,10,40,.55);--rad:0px;
+ --gl-btn:linear-gradient(180deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.08) 48%,rgba(150,160,255,.10) 52%,rgba(190,200,255,.20) 100%)}
+#menu,#studio,#bgpanel{background:radial-gradient(ellipse at 50% 35%,rgba(70,62,190,.45),rgba(2,3,14,.82) 72%);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5)}
+/* Panels: Milchglas mit Glanzkante oben */
+.panel,#bgpanel .bgbox{border:1px solid var(--glass-edge);
+ background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(120,130,255,.07) 40%,rgba(10,12,50,.55));
+ backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6);
+ box-shadow:inset 0 1.5px 0 var(--glass-hi),inset 0 -1px 0 rgba(0,0,0,.35),inset 0 0 40px rgba(160,170,255,.08),0 24px 60px rgba(0,0,12,.6),0 0 40px rgba(127,232,255,.12)}
+.panel::before{left:26px;right:0;top:0;height:46%;
+ background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0));opacity:1;pointer-events:none}
+.panel::after{display:none}
+/* Eingaben: eingelassene Glasmulde */
+select,input[type=text],input:not([type]),textarea,.st-form input[type=text],.st-form input:not([type]),.st-form select,.st-desc textarea,#bgpanel .bgopts select{
+ border:1px solid rgba(255,255,255,.26);background:rgba(4,6,30,.55);color:#f2f7ff;box-shadow:inset 0 2px 6px rgba(0,0,20,.55),inset 0 -1px 0 rgba(255,255,255,.14)}
+/* Karten / Zeilen / Drop-Flächen */
+.st-row,#bgpanel .bgrow,.st-drop,#bgpanel .bgdrop,#st-prev,#bgpanel .bgrow canvas{border:1px solid rgba(255,255,255,.2);background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 12px rgba(0,0,16,.35)}
+.st-row.has{background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(127,232,255,.07));border-color:rgba(190,235,255,.5)}
+#bgpanel .bgrow canvas,#st-prev{background:#04051a}
+.st-drop.over,#bgpanel .over{box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 26px rgba(127,232,255,.5)}
+code,.st-sm code,.st-help code,.st-help summary{}
+/* Hinweise, Toast, Schalter oben */
+#hint,#bgtoast,#bgdrop{border:1px solid var(--glass-edge);background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.05)),rgba(8,10,44,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 10px 26px rgba(0,0,16,.5)}
+#bgtoast.ok{border-color:#7dffc0;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 24px rgba(82,255,168,.35)}#bgtoast.err{border-color:#ff7a90;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 24px rgba(255,90,110,.35)}
+#bgdrop{border:3px dashed rgba(127,232,255,.8);}
+input[type=range]{accent-color:var(--cy);height:8px}
+.row,td{background-image:linear-gradient(90deg,transparent,rgba(255,255,255,.2) 10%,rgba(255,255,255,.2) 90%,transparent)}
+
+/* ---- Titelbildschirm: Graffiti-Tag „H!TisOP“ schreibt sich beim Laden selbst hin (nur die Schrift, kein Künstler) ---- */
+#start h1.tag{margin:0;font-size:0;line-height:0;width:min(430px,38vw);pointer-events:none;filter:drop-shadow(0 0 8px rgba(127,232,255,.45)) drop-shadow(0 0 22px rgba(143,123,255,.35));transform:rotate(-4deg);transform-origin:left center}
+#start h1.tag svg{display:block;width:100%;height:auto;overflow:visible}
+#start h1.tag path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+#start h1.tag .sh{stroke:#04051a;stroke-width:29;stroke-opacity:.85;transform:translate(3px,4px)}
+#start h1.tag .ma{stroke:url(#tagG);stroke-width:18}
+#start h1.tag .hi{stroke:#fff;stroke-width:3.2;stroke-opacity:.85;transform:translate(-1.5px,-2px)}
+#start h1.tag .sh,#start h1.tag .ma,#start h1.tag .hi{stroke-dasharray:1 1.001;stroke-dashoffset:1;animation:tagw var(--l) cubic-bezier(.45,.05,.4,1) var(--d) forwards}
+@keyframes tagw{to{stroke-dashoffset:0}}
+#start h1.tag .drip{stroke:#c3ecff;stroke-width:3.4;stroke-dasharray:1 1.001;stroke-dashoffset:1;animation:tagw 1.3s ease-in var(--d) forwards}
+#start h1.tag .gl{opacity:0;animation:tagt var(--r) ease-in-out var(--d) infinite}
+#start h1.tag .gl path{stroke:#eaf8ff;stroke-width:1.1}#start h1.tag .gl rect{fill:#fff}
+@keyframes tagt{0%,100%{opacity:0;transform-box:fill-box}45%{opacity:1}55%{opacity:.9}}
+/* Schriftzug schreibt sich erst, wenn das Intro vorbei/übersprungen ist (main.js setzt #start.go) */
+#start:not(.go) h1.tag *{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){#start h1.tag .sh,#start h1.tag .ma,#start h1.tag .hi,#start h1.tag .drip{animation:none;stroke-dashoffset:0}}
+
+/* ---- Intro-Video (Spielstart) ---- */
+#intro{position:fixed;inset:0;z-index:300;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .35s ease}
+#intro.out{opacity:0;pointer-events:none}
+#intro video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+#intro-skip{position:absolute;right:22px;bottom:22px;font:700 14px system-ui;letter-spacing:.06em;color:#fff;background:rgba(18,20,58,.55);border:1px solid rgba(255,255,255,.45);padding:9px 16px;cursor:pointer;border-radius:0;backdrop-filter:blur(3px);opacity:.85;animation:introHint .6s ease .8s both}
+#intro-snd{position:absolute;left:22px;bottom:22px;font:700 14px system-ui;letter-spacing:.06em;color:#fff;background:rgba(18,20,58,.55);border:1px solid rgba(255,255,255,.45);padding:9px 16px;pointer-events:none;animation:introHint .6s ease both}
+#intro-skip:hover{opacity:1;background:rgba(127,232,255,.25);border-color:var(--cy)}
+#intro-skip kbd{margin-right:6px;padding:1px 6px;border:1px solid #8f95d8;font-size:12px;color:#cfd8ff}
+/* Startknopf auf dem Standbild (erster Video-Frame) vor dem Intro: der Klick schaltet den Ton frei (Browser-Regel) */
+#intro.wait #intro-skip{display:none}
+#intro-start{position:absolute;left:0;right:0;bottom:9vh;display:flex;justify-content:center;pointer-events:none}
+#intro:not(.wait) #intro-start{display:none}
+#intro-go{pointer-events:auto;font:700 15px system-ui;letter-spacing:.14em;color:#fff;padding:11px 30px 11px 26px;cursor:pointer;border:0;border-radius:0;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);background:rgba(18,20,58,.55);box-shadow:inset 0 0 0 1px var(--ice,#7fe8ff);backdrop-filter:blur(3px);opacity:.9}
+#intro-go:hover,#intro-go:focus{opacity:1;outline:none;background:rgba(127,232,255,.22);box-shadow:inset 0 0 0 1px var(--cy,#3fe0ff),inset 0 0 14px rgba(127,232,255,.35)}
+#intro-go:disabled{opacity:.6;cursor:default}
+@keyframes introHint{from{opacity:0;transform:translateY(6px)}to{opacity:.85;transform:none}}
+
+/* ---- Eigene Musik / Playlists ---- */
+#musicbtn{position:fixed;left:16px;bottom:108px;z-index:35;font:700 13px system-ui;letter-spacing:.05em;color:#fff;background:rgba(18,20,58,.62);border:1px solid var(--ice,#7fe8ff);padding:9px 16px 9px 14px;cursor:pointer;border-radius:0;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);backdrop-filter:blur(3px)}
+#musicbtn:hover{background:rgba(127,232,255,.22);border-color:var(--cy)}#musicbtn kbd{margin-left:6px;padding:0 5px;border:1px solid #8f95d8;font-size:11px;color:#cfd8ff}
+#musicpanel{position:fixed;inset:0;z-index:62;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 35%,rgba(70,62,190,.45),rgba(2,3,14,.82) 72%);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);outline:none}
+#musicpanel .mpbox{width:min(980px,95vw);max-height:94vh;overflow:auto;padding:22px 26px 18px;background:linear-gradient(180deg,#120c26,#07040f);border:1px solid var(--line);box-shadow:0 0 40px rgba(122,76,255,.35),inset 0 0 0 1px rgba(255,255,255,.04)}
+#musicpanel h2{margin:0 0 4px;font:900 22px Impact,"Arial Black",sans-serif;letter-spacing:.14em;color:#fff;text-transform:uppercase}
+#musicpanel .mpsub{margin:0 0 14px;color:#a9a2d8;font-size:13px;line-height:1.5}#musicpanel .mpsub b{color:var(--cy)}
+#musicpanel .mpcols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+#musicpanel .mpcol{display:flex;flex-direction:column;gap:8px;min-width:0;padding:12px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02))}
+#musicpanel .mpcol h3{margin:0;font:900 17px Impact,"Arial Black",sans-serif;letter-spacing:.1em;color:#fff;text-transform:uppercase}#musicpanel .mpcol h3 small{display:block;margin-top:2px;font:400 11px system-ui;letter-spacing:0;text-transform:none;color:#7d7aa8}
+#musicpanel .mpdrop{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 12px;padding:12px 10px;border:2px dashed #5a4a9a;background:rgba(122,76,255,.08);text-align:center;color:#fff;transition:.15s}
+#musicpanel .mpdrop b{font-size:14px}#musicpanel .mpdrop small{flex-basis:100%;color:#7d7aa8;font-size:11px}
+#musicpanel .over{border-color:var(--cy)!important;background:rgba(63,224,255,.16)!important;box-shadow:0 0 22px rgba(63,224,255,.35)}
+#musicpanel button{font:700 12px system-ui;color:#fff;background:rgba(18,20,58,.7);border:1px solid #6a5cc8;padding:6px 12px;cursor:pointer;border-radius:0}
+#musicpanel button:hover:not(:disabled){background:rgba(127,232,255,.2);border-color:var(--cy)}#musicpanel button:disabled{opacity:.35;cursor:default}
+#musicpanel .mplist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;min-height:60px;max-height:300px;overflow:auto}
+#musicpanel .mplist li{display:flex;align-items:center;gap:8px;padding:4px 6px;border:1px solid #2c2358;background:rgba(10,6,28,.7);font-size:13px;color:#d6c8ff}
+#musicpanel .mplist li.now{border-color:var(--cy);box-shadow:inset 3px 0 0 var(--cy);color:#fff}
+#musicpanel .mplist .mpn{flex:none;width:22px;text-align:right;color:#7d7aa8;font-size:11px}#musicpanel .mplist .mpt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#musicpanel .mplist .mpd{flex:none;color:#7d7aa8;font-size:11px}#musicpanel .mplist li button{padding:2px 7px;font-size:11px}
+#musicpanel .mplist .mpempty{justify-content:center;color:#7d7aa8;border-style:dashed;padding:14px 6px}
+#musicpanel .mpopts{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;font-size:13px;color:#d6c8ff}#musicpanel .mpopts label{display:flex;align-items:center;gap:6px}
+#musicpanel .mpopts .mpclr{margin-left:auto}
+#musicpanel .mpfoot{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;font-size:12px;color:#ffb347}#musicpanel .mpnote.ok{color:#7dffb0}#musicpanel .mpnote.err{color:#ff8a8a}
+@media (max-width:760px){#musicpanel .mpcols{grid-template-columns:1fr}}

@@ -1,5 +1,6 @@
 // Zweitfarben: Auswahl (Arcade + 2 Spieler), Weitergabe an die Kämpfer, Farbtausch der Pixel. node tests/skins.test.js
 import assert from'node:assert/strict';
+import{LOOT}from'../src/core/loot.js';LOOT.skins={tiger:[1],st3g0:[1],kitsune:[1]};   // Farbwahl-Test: Farbe 1 gilt als freigeschaltet, 2/3 bleiben gesperrt (Start-Zustand und Booster: tests/loot.test.js)
 import{Game}from'../src/core/game.js';
 import{Fighter}from'../src/core/fighter.js';
 import{InputBuffer}from'../src/core/input.js';
@@ -10,8 +11,8 @@ import{SKINS,skinCount,skinName,recolor}from'../src/render/skins.js';
 const ok=n=>console.log('  ✓',n);
 function setup(){const ai=new AIController(0),p1=new Fighter({char:CHARACTERS.st3g0,x:340,facing:1,input:new InputBuffer()}),p2=new Fighter({char:CHARACTERS.tiger,x:620,facing:-1,input:ai});
  const g=new Game(p1,p2);return{a:new Arcade(g,p1,p2,ai),p1,p2}}
-for(const id of ROSTER){assert.equal(skinCount(CHARACTERS[id].sprites),2,id+' hat 2 Farben');assert.ok(SKINS[CHARACTERS[id].sprites].every(s=>s.name&&/^#[0-9a-f]{6}$/i.test(s.col)))}
-ok('Alle spielbaren Figuren haben 2 Farben (Name + Farbpunkt)');
+for(const id of ROSTER){assert.equal(skinCount(CHARACTERS[id].sprites),4,id+' hat 4 Farben (2 frei + 2 aus Boostern)');assert.ok(SKINS[CHARACTERS[id].sprites].every(s=>s.name&&/^#[0-9a-f]{6}$/i.test(s.col)))}
+ok('Alle spielbaren Figuren haben 4 Farben (Name + Farbpunkt)');
 assert.equal(skinName('tiger',1),'WEISS');assert.equal(skinName('st3g0',1),'GRAUBLAU');assert.equal(skinName('kitsune',1),'LILA');ok('Farben: Tiger weiß, ST3-G0 graublau, Kitsune lila');
 {const{a,p1,p2}=setup();assert.equal(a.skinOf('tiger'),0);assert.ok(a.cycleSkin('tiger'));assert.equal(a.skinOf('tiger'),1);assert.ok(a.cycleSkin('tiger'));assert.equal(a.skinOf('tiger'),0);
  a.cycleSkin('kitsune');a.start('kitsune');assert.equal(p1.skin,1,'Spieler: gewählte Farbe');assert.equal(p2.skin,0,'Gegner: eigene gemerkte Farbe');

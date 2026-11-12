@@ -10,8 +10,9 @@ eval(fs.readFileSync('dist/game.js','utf8'));
 // Melee-Smoke: Menü (3er-Schalter, CPU/Stocks), Kampf mit Tasten-Mashing + Rendering im Melee (Plattform, HUD, Respawn, Spielende), danach Arcade wieder normal.
 const fire=(t,code)=>(L[t]||[]).forEach(f=>f({code,repeat:false,shiftKey:false,preventDefault(){}}));
 const frame=n=>{for(let i=0;i<n;i++){T+=16.7;cb(T)}};
-frame(5);fire('keydown','Tab');frame(3);if(__arcade.mode!=='versus')throw new Error('Tab 1 -> versus, ist '+__arcade.mode);
-fire('keydown','Tab');frame(3);if(__arcade.mode!=='melee')throw new Error('Tab 2 -> melee, ist '+__arcade.mode);
+frame(5);fire('keydown','Tab');frame(3);if(__arcade.mode!=='story')throw new Error('Tab 1 -> story, ist '+__arcade.mode);
+fire('keydown','Tab');frame(3);if(__arcade.mode!=='versus')throw new Error('Tab 2 -> versus, ist '+__arcade.mode);
+fire('keydown','Tab');frame(3);if(__arcade.mode!=='melee')throw new Error('Tab 3 -> melee, ist '+__arcade.mode);
 fire('keydown','KeyT');fire('keydown','KeyT');if(__arcade.stocks!==5)throw new Error('Stocks '+__arcade.stocks);
 if(!__arcade.cpu)throw new Error('Melee startet gegen CPU');fire('keydown','KeyB');if(__arcade.cpu)throw new Error('CPU aus');fire('keydown','KeyB');if(!__arcade.cpu)throw new Error('CPU an');fire('keydown','ArrowUp');frame(3);
 fire('keydown','KeyG');fire('keydown','Enter');frame(5);if(__arcade.vs.step!==1)throw new Error('Stage-Wahl erwartet');frame(3);fire('keydown','Enter');frame(5);

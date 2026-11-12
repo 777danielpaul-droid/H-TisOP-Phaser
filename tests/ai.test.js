@@ -26,7 +26,8 @@ function pin(corner,frames=2400){const i1=new InputBuffer(),ai=new AIController(
    if((['idle','hit','knockdown','wakeup'].includes(p1.state)&&p1.grounded)||p1.pop)p1.x=Math.min(p1.x,g.arena.r); // Gegner bleibt an der rechten Wand
    if(g.arena.R.step>0){breaks++;g.arena.reset();p1.x=g.arena.r}}}
  return{dmg,breaks}}
-const pv=c=>{let d=0,b=0;const N=10;for(let n=0;n<N;n++){const t=pin(c);d+=t.dmg;b+=t.breaks}return{dmg:d/N,breaks:b/N}};
+const pv=c=>{let d=0,b=0;const N=40;   // viele Läufe: der Vergleich ist zufallsabhängig, bei N=10 schlug er gelegentlich fälschlich an
+ for(let n=0;n<N;n++){const t=pin(c);d+=t.dmg;b+=t.breaks}return{dmg:d/N,breaks:b/N}};
 const c0=pv(0),c1=pv(.85);console.log(`  Ecke: ohne Taktik Ø ${c0.dmg.toFixed(0)} Schaden / ${c0.breaks.toFixed(1)} Wandbrüche, mit Taktik Ø ${c1.dmg.toFixed(0)} / ${c1.breaks.toFixed(1)}`);
 assert.ok(c1.dmg>c0.dmg*1.05,'Ecken-Taktik macht mehr Schaden am Gegner in der Ecke');
 assert.ok(AI_LEVELS.every((L,l)=>l===0||AI_LEVELS[l-1].corner<L.corner),'corner steigt mit der Stufe');

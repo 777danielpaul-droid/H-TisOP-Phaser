@@ -14,7 +14,7 @@ function setup(){const ai=new AIController(2),p1=new Fighter({char:CHARACTERS.ti
 const toFight=(g)=>{for(let i=0;i<200&&g.phase!=='fight';i++)g.step()};
 const run=(g,n,a)=>{for(let i=0;i<n;i++){g.step();if(a)a.update()}};
 // 1) Modus-Zyklus und Melee-Optionen
-{const{a}=setup();assert.equal(a.mode,'arcade');a.cycleMode();assert.equal(a.mode,'versus');a.cycleMode();assert.equal(a.mode,'melee');a.cycleMode();assert.equal(a.mode,'arcade');
+{const{a}=setup();assert.equal(a.mode,'arcade');a.cycleMode();assert.equal(a.mode,'story');a.cycleMode();assert.equal(a.mode,'versus');a.cycleMode();assert.equal(a.mode,'melee');a.cycleMode();assert.equal(a.mode,'arcade');
  assert.equal(a.toggleCpu(),false,'CPU/Stocks nur im Melee');a.setMode('melee');assert.ok(a.pvp);assert.equal(a.cpu,true,'Melee startet standardmäßig gegen die CPU');a.toggleCpu();assert.equal(a.cpu,false);a.toggleCpu();assert.equal(a.cpu,true);
  assert.equal(a.stocks,MELEE.stocks);const seen=new Set();for(let i=0;i<6;i++){a.cycleStocks();seen.add(a.stocks)}assert.ok([...seen].every(n=>n>=1&&n<=5)&&seen.size===5);ok('Modus: Arcade → 2 Spieler → Melee; CPU + Stocks nur im Melee')}
 // 2) Start: Regeln gesetzt, offene Arena, danach Arcade wieder normal

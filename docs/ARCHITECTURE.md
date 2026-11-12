@@ -93,3 +93,6 @@ Zusatzfelder: `armor:[von,bis]` (Rüstung), `unb` (Griff), `dive`, `tp`, `heal`,
 ## Sound (v16)
 `core/sfx.js` ordnet Ereignisse Sounds zu (`strike`, `hitSounds`, `swingSound`, `comboStep`), `Game.sfx(name,{vol,rate})` leitet an `game.audio.play()` weiter (`render/audio.js`, `main.js` setzt `game.audio`; headless/Tests = `null`). Samples: `sfx/<name>.ogg`, Build bettet sie als `window.__SFX__` ein. Neuer Sound: Datei in `sfx/` legen, in `core/sfx.js` oder per `game.sfx('name')` am Ereignis verwenden, Mindestabstand ggf. in `GAP` (audio.js).
 
+## Eigener Hintergrund (render/backdrop.js, render/bgpanel.js)
+`Backdrop` (`renderer.bd`) hält je Bereich (`all`, `title`, `select`, `fight`) ein Medium (Video-Element, Bitmap-Frames oder verkleinertes Canvas); `resolveSlot()` wählt Einzel-Bereich > `all` > Original. `Backdrop.draw(g,W,H,bereich,{cam,dimAdd})` zeichnet im Bildschirmraum (cover/contain, Abdunkeln, Parallaxe zur Kamera) und liefert `false`, wenn nichts gilt oder das Medium noch lädt – dann zeichnet der Renderer das Original. Der Renderer ruft es in `drawDemo` (Titelmenü), `drawSelect` und `draw` (Kampf, vor `cam.apply`) auf. `BgPanel` ist reine DOM-Oberfläche (Panel, Knopf, globales Drag & Drop, Toast) und kennt nur `Backdrop` und die Hooks `blocked/onOpen/onClose` aus `main.js`.
+

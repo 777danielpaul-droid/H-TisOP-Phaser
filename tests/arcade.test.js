@@ -1,5 +1,6 @@
 // Arcade-Ablauf: Gegner-Reihenfolge, Stages, Game Over/Retry. node tests/arcade.test.js
 import assert from'node:assert/strict';
+import{unlockAll}from'../src/core/loot.js';unlockAll();   // diese Tests prüfen Ablauf/Auswahl mit allen Farben und Stages (Start-Zustand: tests/loot.test.js)
 import{Game}from'../src/core/game.js';
 import{Fighter}from'../src/core/fighter.js';
 import{InputBuffer}from'../src/core/input.js';

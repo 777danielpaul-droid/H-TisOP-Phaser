@@ -43,3 +43,25 @@ Im Startmenü mit **TAB** auf *MELEE* schalten (oder Schalter anklicken). Kämpf
 
 ## Endgegner Anubis
 Im Arcade-Modus wartet nach allen Kämpfern Anubis als Endgegner. Einmal durchspielen schaltet ihn als spielbaren Kämpfer frei (Browser-Speicher). Zum Testen: `dist/hitisop.html?unlock=anubis` öffnen.
+
+## Story-Modus (Insektenkrieger)
+Im Startmenü mit **TAB** (oder Klick) auf *STORY* schalten, Kämpfer wählen. Du läufst durch ein Level (nach rechts); an fünf Stellen sperrt die Kamera, und **Mantis-Krieger springen in Gruppen von beiden Seiten herein** (3 → 4 → 5 → 6 → Alpha-Mantis mit Gefolge). Nur 2–3 greifen gleichzeitig an, der Rest kreist. Nach jeder Welle: Checkpoint, 30 % Leben zurück, Meter-Bonus. Bei Niederlage **Enter** = weiter ab Checkpoint, **Esc** = Menü.
+- Logik: `src/core/story.js` (`ENC` = Wellen, `LV` = Level/Kampffeld), HUD/Welt: `src/render/storyhud.js`, Gegner: `mantis`/`mantisAlpha` in `src/core/characters.js`.
+- Sprites: `assets/mantis/` (4 Posenbögen in `sheets/`), Import: `python3 tools/import-mantis-sheets.py`, Animationen: `MANTIS_ANIMS` in `src/render/sprites.js`.
+- Test: `node tests/story.test.js`. Schwierigkeit (↑↓ im Menü) bestimmt KI-Stärke und Mantis-HP.
+
+## Booster, Karten, Skins, Coins
+- Besiegte Mantis lassen **Heilung (grüne Kapsel) oder einen Booster (goldene Karte)** fallen; bei wenig Leben immer Heilung. Drüberlaufen zum Einsammeln. Wellen-Ende: Heilung (35 %).
+- **B** im Startmenü (Arcade/Story) oder nach Story-Ende öffnet das Booster-Overlay: Sammlung ansehen, mit Enter Booster öffnen. Jeder Booster = 3 Belohnungen: Coins (50 %), Sammelkarte (35 %), neuer Skin (15 %).
+- Neue Skins (je 2 für H!T, ST3-G0, KITSUNE) erscheinen danach im Menü bei **C**. Coins sind für den späteren Shop gespeichert.
+- Alles im Browser gespeichert (`hitisop.loot`). Logik: `src/core/loot.js` (`CARDS`, `SKIN_POOL`, Drop-Chancen in `rollOne`), UI: `src/render/lootui.js`. Test: `node tests/loot.test.js`.
+
+## Eigener Hintergrund (Bild / Video, Drag & Drop)
+- **Einfach ins Fenster ziehen:** Bild oder Video (JPG, PNG, WebP, GIF, MP4, WebM …) irgendwo in das Spielfenster ziehen und loslassen – es wird sofort der Hintergrund im Titelmenü, in allen Auswahlbildschirmen und im Kampf (Arcade, Story, 2 Spieler, Melee).
+- **Oder hochladen:** Knopf **🖼 HINTERGRUND** (links unten im Titelmenü und in der Auswahl) oder Taste **H**; im Kampf über **M → Optionen → Eigener Hintergrund → Verwalten**.
+- **Verwalten:** Im Panel kann man je Bereich (Überall / Titelmenü / Auswahl / Kampf) eine andere Datei setzen, einen Bereich auf den **Original**-Hintergrund zurückstellen oder alles entfernen. Außerdem: Abdunkeln, Füllen/Einpassen, leichte Kamerabewegung, Hochhaus-Wände im Kampf zeigen.
+- Videos laufen stumm in Dauerschleife. Die Dateien bleiben im Browser (IndexedDB), nichts wird hochgeladen; sie sind nach dem Neuladen noch da.
+
+## Booster aufreißen (Animation)
+Im Booster-Overlay (**B**) mit **ENTER** (oder Klick) einen Booster öffnen: Das Päckchen schwebt ein, du **reißt es auf**, die drei Preise springen heraus und werden **einzeln groß aufgedeckt** – mit Titel (NICE / STARK / WOW / JACKPOT) und **Feuerwerk, das mit dem Wert wächst**. Für eine epische Karte gibt es die große Feuerwerksbombe, für neue Farben/Stages ein Finale-Feuerwerk. **ENTER** = weiter (überspringt auch die Spannung), **ESC** = alles überspringen.
+
