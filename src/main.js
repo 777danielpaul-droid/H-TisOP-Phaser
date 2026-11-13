@@ -2,6 +2,7 @@ import{Game}from'./core/game.js';
 import{Fighter}from'./core/fighter.js';
 import{KeyboardInput,VS1_BUTTONS,VS1_DIRS,VS2_BUTTONS,VS2_DIRS}from'./core/input.js';
 import{AIController,AI_LEVELS}from'./core/ai.js';
+import{PadNav,menuKey,padLabel}from'./core/gamepad.js';
 import{Arcade}from'./core/arcade.js';
 import{CHARACTERS,ROSTER}from'./core/characters.js';
 import{MOVE_LIST,charMoves}from'./core/moves.js';
@@ -31,7 +32,7 @@ const load=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},sav
 let saved=Math.max(0,Math.min(AI_LEVELS.length-1,+load('tf_difficulty',0)||0));
 const kb=new KeyboardInput(window),ai=new AIController(saved);
 const kbV1=new KeyboardInput(window,VS1_BUTTONS,VS1_DIRS),kbV2=new KeyboardInput(window,VS2_BUTTONS,VS2_DIRS);   // 2-Spieler-Modus: getrennte Tastaturhälften
-const clearInputs=()=>{for(const k of[kb,kbV1,kbV2]){k.keys.clear();k.pend.length=0;k.clear()}};
+const clearInputs=()=>{for(const k of[kb,kbV1,kbV2]){k.keys.clear();k.pend.length=0;k.clear();k.syncPad()}};   // syncPad: gehaltene Controller-Tasten (z. B. ✕ zum Bestätigen) lösen nach dem Menü keinen Schlag aus
 const p1=new Fighter({char:CHARACTERS[ROSTER[0]],x:340,facing:1,input:kb}),p2=new Fighter({char:CHARACTERS.tiger,x:620,facing:-1,input:ai});
 const game=new Game(p1,p2),canvas=$('screen'),renderer=new Renderer(canvas),arcade=new Arcade(game,p1,p2,ai);arcade.difficulty=saved;
 let menuOpen=false,speed=SPEED;
@@ -62,7 +63,8 @@ const ml=$('movelist');const row=r=>`<tr><td class="mv">${r[0]}</td><td class="k
 const fillMoves=()=>{if(!ml)return;const c=p1.char;ml.innerHTML=`<tr><td colspan="3" class="mv">${c.name} – Stärken: ${c.pros||''} · Schwächen: ${c.cons||''}</td></tr>`+charMoves(c).map(row).join('')+MOVE_LIST.map(row).join('')};fillMoves();
 function showTab(i){tab=(i+names.length)%names.length;names.forEach((n,k)=>{const s=$('tab-'+n);if(s)s.classList.toggle('hidden',k!==tab);if(tabs[k])tabs[k].classList.toggle('on',k===tab)})}
 tabs.forEach((b,i)=>b.onclick=()=>showTab(i));showTab(0);
-function setMenu(open){if(open)fillMoves();menuOpen=open;menu.classList.toggle('hidden',!open);clearInputs();if(!open)canvas.focus()}
+let padFocus=null;   // vom Controller markiertes Element im Pausenmenü
+function setMenu(open){if(padFocus){padFocus.classList.remove('padfocus');padFocus=null}if(open)fillMoves();menuOpen=open;menu.classList.toggle('hidden',!open);clearInputs();if(!open)canvas.focus()}
 const fs=()=>{if(document.fullscreenElement)document.exitFullscreen();else if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen()};
 canvas.addEventListener('dblclick',fs);
 const on=(id,fn)=>{const e=$(id);if(e)e.onclick=()=>fn(e)};
@@ -331,8 +333,39 @@ addEventListener('blur',()=>{if(!menuOpen&&!studioIsOpen()&&!bgUi.busy()&&!music
 let last=performance.now(),acc=0,slowAcc=0,autoT=0;
 function assignPads(){const l=navigator.getGamepads?[...navigator.getGamepads()]:[],pads=l.map((g,i)=>g&&g.connected?i:-1).filter(i=>i>=0);
  kb.padIndex=pads.length?pads[0]:-1;kbV1.padIndex=pads.length>1?pads[0]:-1;kbV2.padIndex=pads.length>1?pads[1]:(pads.length?pads[0]:-1)}   // 1 Pad = Spieler 2 (Spieler 1 nutzt Tastatur), 2 Pads = je Spieler eins
-function loop(now){if(intro.active){last=now;sound.music('menu');requestAnimationFrame(loop);return}   // Intro: Spiel steht still, aber die Menümusik läuft schon
- assignPads();const dt=now-last;
+// ---- Controller (PS4 / PS5 / Xbox): im Kampf liest KeyboardInput.pollPad den Controller direkt; hier: Verbindungs-Hinweis + Bedienung aller Menüs (Belegung: core/gamepad.js menuKey) ----
+const padToast=(txt,ok)=>{let t=$('padtoast');if(!t){t=document.createElement('div');t.id='padtoast';document.body.appendChild(t)}t.textContent=txt;t.className=ok?'ok':'err';clearTimeout(padToast.t);padToast.t=setTimeout(()=>t.classList.add('hidden'),3500)};
+addEventListener('gamepadconnected',e=>padToast('🎮 '+padLabel(e.gamepad)+' verbunden',true));
+addEventListener('gamepaddisconnected',e=>{padToast('🎮 '+padLabel(e.gamepad)+' getrennt',false);
+ if(arcade.state==='fight'&&!menuOpen&&!netMatch&&!intro.active&&!startOpen&&[p1.input,p2.input].some(k=>k&&k.padIndex===e.gamepad.index))setMenu(true)});   // Controller des laufenden Kampfs weg -> Pause
+const padNav=new PadNav();
+function padPause(n){   // Pausenmenü: ↑↓ Eintrag, ←→ Wert/Reiter, ✕ auslösen, ○ / Options schließen, L1/R1 Reiter
+ const sec=[...menu.querySelectorAll('section')].find(x=>!x.classList.contains('hidden')),items=[...(sec?sec.querySelectorAll('button,select,input'):[]),$('btn-resume')].filter(Boolean);
+ const mark=el=>{if(padFocus)padFocus.classList.remove('padfocus');padFocus=el;if(el){el.classList.add('padfocus');if(el.scrollIntoView)el.scrollIntoView({block:'nearest'})}};
+ const fire=(el,t)=>el.dispatchEvent(new Event(t,{bubbles:true})),i=items.indexOf(padFocus),el=padFocus;
+ if(n==='options'||n==='circle'){mark(null);setMenu(false)}
+ else if(n==='l1'){mark(null);showTab(tab-1)}else if(n==='r1'){mark(null);showTab(tab+1)}
+ else if(n==='down'||n==='up'){const d=n==='down'?1:-1;mark(items[i<0?(d>0?0:items.length-1):(i+d+items.length)%items.length])}
+ else if(n==='left'||n==='right'){const d=n==='right'?1:-1;
+  if(el&&el.tagName==='INPUT'&&el.type==='range'){el.value=String(Math.min(+el.max,Math.max(+el.min,+el.value+d*(+el.step||1))));fire(el,'input')}
+  else if(el&&el.tagName==='SELECT'){const j=Math.min(el.options.length-1,Math.max(0,el.selectedIndex+d));if(j!==el.selectedIndex){el.selectedIndex=j;fire(el,'change')}}
+  else{mark(null);showTab(tab+d)}}
+ else if(n==='cross'&&el){if(el.tagName==='SELECT'){el.selectedIndex=(el.selectedIndex+1)%el.options.length;fire(el,'change')}else if(el.tagName!=='INPUT')el.click()}}
+function padMenu(now){
+ const pads=navigator.getGamepads?[...navigator.getGamepads()].filter(g=>g&&g.connected):[];if(!pads.length&&!padNav.prev.size)return;
+ let screen;
+ if(intro.active)screen='intro';else if(panelsOpen())screen=null;else if(menuOpen)screen='pause';
+ else if(netMatch&&netMatch.phase!=='pick')screen='online';else if(startOpen)screen='start';else if(arcade.state==='fight')screen='fight';
+ else if(arcade.state==='select'&&renderer.sel.launching)screen=null;else if(arcade.state==='select'&&arcade.pvp&&!renderer.lootUi.open)screen='versus';else screen='menu';
+ const over=['clear','gameover','victory','vsover'].includes(arcade.state);
+ for(const e of padNav.poll(now,pads,screen!==null)){
+  if(screen==='pause'){padPause(e.name);continue}
+  if(e.name==='cross'&&over&&arcade.t<45)continue;   // wildes ✕-Hämmern am Kampfende überspringt den End-Bildschirm nicht
+  const v=arcade.vs,who=pads.length>1?(e.slot===0?1:2):(v&&v.step===0&&v.locked[0]&&!v.locked[1]?2:1);   // 2 Controller = je Spieler einer; 1 Controller wählt erst für Spieler 1, dann für Spieler 2
+  const k=menuKey(e.name,{screen,who,ask:netLeaveAsk||arcade.state==='vsover'});
+  if(k)for(const t of['keydown','keyup'])dispatchEvent(new KeyboardEvent(t,{code:k,key:k,bubbles:true,cancelable:true}))}}
+function loop(now){if(intro.active){last=now;padMenu(now);sound.music('menu');requestAnimationFrame(loop);return}   // Intro: Spiel steht still, aber die Menümusik läuft schon
+ assignPads();padMenu(now);const dt=now-last;
  {const showBtns=(startOpen||arcade.state==='select')&&!menuOpen&&!studioIsOpen()&&!bgUi.isOpen&&!musicUi.isOpen&&!renderer.sel.launching&&!renderer.lootUi.open;bgUi.setBtn(showBtns);musicUi.setBtn(showBtns)}   // Hintergrund-Knopf nur im Titelmenü + in den Auswahlbildschirmen
  {const mn=menuish();if(mn&&!curWas)curShow();curWas=mn;   // Menü betreten: Zeiger zeigen, nach 2 s Ruhe weg
   if(mn){const hr=hoverTarget();renderer.hov.want=hr;canvas.style.cursor=hr?'pointer':'';renderer.endBtns=arcade.state!=='select'?endBtns():null;renderer.endHot=endHot}

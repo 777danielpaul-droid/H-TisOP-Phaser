@@ -312,3 +312,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 /* Titelmenü: Mauszeiger nach 2 s ohne Bewegung ausblenden */
 body.nocur,body.nocur *{cursor:none!important}
 body.curon canvas{cursor:default}   /* im Titelmenü ist der Zeiger sichtbar (Canvas sonst cursor:none), nach 2 s Ruhe blendet .nocur ihn aus */
+
+/* Controller: Hinweis bei Verbindung + Markierung im Pausenmenü */
+#padtoast{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:90;padding:8px 22px;font:700 14px var(--f-ui,system-ui);letter-spacing:.06em;color:#fff;pointer-events:none;background:linear-gradient(90deg,rgba(11,12,42,.8),rgba(36,24,90,.85),rgba(11,12,42,.8));clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);box-shadow:0 0 0 1px rgba(127,232,255,.5)}
+#padtoast.ok{color:#9dffcb}#padtoast.err{color:#ffb4c0}
+#menu .padfocus{outline:2px solid #7fe8ff;outline-offset:3px;box-shadow:0 0 16px rgba(127,232,255,.75)}

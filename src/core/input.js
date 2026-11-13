@@ -1,4 +1,5 @@
 import{PHYS}from'./config.js';
+import{readPad}from'./gamepad.js';
 // Numpad-Notation relativ zur Blickrichtung: 2=unten, 3=unten-vorwärts, 6=vorwärts ...
 const MOTIONS={qcf:[2,3,6],qcb:[2,1,4],dp:[6,2,3]};
 // Gemeinsame Basis für Tastatur und KI: Richtungs-Historie, Button-Puffer, Doppeltipp-Erkennung.
@@ -35,8 +36,8 @@ export const VS1_BUTTONS={KeyG:'L',KeyH:'M',KeyJ:'H',KeyT:'S',KeyY:'SUP',KeyB:'D
 export const VS1_DIRS={left:['KeyA'],right:['KeyD'],up:['KeyW'],down:['KeyS']};
 export const VS2_BUTTONS={KeyK:'L',KeyL:'M',Semicolon:'H',KeyI:'S',KeyO:'SUP',KeyP:'DASH',Numpad1:'L',Numpad2:'M',Numpad3:'H',Numpad4:'S',Numpad5:'SUP',Numpad0:'DASH'};
 export const VS2_DIRS={left:['ArrowLeft'],right:['ArrowRight'],up:['ArrowUp'],down:['ArrowDown']};
-// Gamepad (Standard-Layout): Stick/Steuerkreuz = Bewegung, A=L, X=M, Y=H, B=Special, RB=Hyper, LB/RT=Dash
-const PAD_BUTTONS={0:'L',2:'M',3:'H',1:'S',5:'SUP',4:'DASH',7:'DASH'};
+// Controller (PS4/PS5/Xbox, Namen siehe core/gamepad.js): Stick/Steuerkreuz = Bewegung, ✕(A)=L, ▢(X)=M, △(Y)=H, ○(B)=Special, R1=Hyper, L1/R2=Dash
+const PAD_ACTIONS={cross:'L',square:'M',triangle:'H',circle:'S',r1:'SUP',l1:'DASH',r2:'DASH'};
 export class KeyboardInput extends InputBuffer{
  constructor(target=(typeof window!=='undefined'?window:null),buttons=BUTTON_KEYS,dirs=DIR_KEYS){
   super();this.keys=new Set();this.pend=[];this.padIndex=-1;this.padPrev=new Set();this.buttons=buttons;this.dirs=dirs;
@@ -49,8 +50,10 @@ export class KeyboardInput extends InputBuffer{
  any(list){return list.some(c=>this.keys.has(c))}
  // Gamepad abfragen (padIndex >= 0): liefert Richtung + frisch gedrückte Buttons
  pollPad(){const gp=this.padIndex>=0&&typeof navigator!=='undefined'&&navigator.getGamepads?navigator.getGamepads()[this.padIndex]:null;if(!gp){this.padPrev.clear();return{dx:0,dy:0,pressed:[]}}
-  const a=gp.axes,b=gp.buttons,pr=i=>!!(b[i]&&b[i].pressed),dx=(a[0]>.5||pr(15)?1:0)-(a[0]<-.5||pr(14)?1:0),dy=(a[1]>.5||pr(13)?1:0)-(a[1]<-.5||pr(12)?1:0),pressed=[],now=new Set();
-  for(const i in PAD_BUTTONS)if(pr(+i)){now.add(+i);if(!this.padPrev.has(+i))pressed.push(PAD_BUTTONS[i])}this.padPrev=now;return{dx,dy,pressed}}
+  const r=readPad(gp),pressed=[],now=new Set();
+  for(const n in PAD_ACTIONS)if(r.down.has(n)){now.add(n);if(!this.padPrev.has(n))pressed.push(PAD_ACTIONS[n])}this.padPrev=now;return{dx:r.dx,dy:r.dy,pressed}}
+ // Gehaltene Pad-Tasten als "schon gedrückt" merken (nach Menü / Kampfstart), damit sie keinen Schlag auslösen
+ syncPad(){const gp=this.padIndex>=0&&typeof navigator!=='undefined'&&navigator.getGamepads?navigator.getGamepads()[this.padIndex]:null;this.padPrev.clear();if(!gp)return;const r=readPad(gp);for(const n in PAD_ACTIONS)if(r.down.has(n))this.padPrev.add(n)}
  // Aktuellen Eingabezustand lesen (Richtung + seit dem letzten Aufruf gedrückte Buttons), ohne ihn in den Puffer zu schreiben -> Online-Modus (core/netplay.js) verschickt ihn erst
  sample(){const d=this.dirs;
   const dx=(this.any(d.right)?1:0)-(this.any(d.left)?1:0),dy=(this.any(d.down)?1:0)-(this.any(d.up)?1:0);

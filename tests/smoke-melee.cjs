@@ -2,15 +2,17 @@
 const fs=require('fs');const L={};
 const P=()=>new Proxy(function(){},{get:(t,k)=>k==='classList'?{toggle(){},add(){},remove(){}}:k==='clientWidth'?1920:k in t?t[k]:()=>{},set:(t,k,v)=>{t[k]=v;return true},apply:()=>{}});
 const mkctx=()=>new Proxy({},{get:(t,k)=>k in t?t[k]:(k==='createLinearGradient'||k==='createRadialGradient'?()=>({addColorStop(){}}):k==='createPattern'?()=>({}):()=>{}),set:(t,k,v)=>{t[k]=v;return true}});
-const cvs=()=>({width:1920,height:1080,clientWidth:1920,getContext:mkctx,focus(){},addEventListener(){}});
-global.document={getElementById:id=>id==='screen'?cvs():P(),createElement:()=>cvs(),querySelectorAll:()=>[],documentElement:{},hidden:false,addEventListener(){}};
+const cvs=()=>({querySelector:()=>P(),querySelectorAll:()=>[],appendChild(){},width:1920,height:1080,clientWidth:1920,getContext:mkctx,focus(){},addEventListener(){}});
+const E=()=>new Proxy({width:1920,height:1080,getContext:mkctx,focus(){}},{get:(t,k)=>k in t?t[k]:k==='dataset'||k==='style'?(t[k]={}):k==='classList'?{toggle(){},add(){},remove(){},contains:c=>c==='hidden'}:k==='children'||k==='childNodes'?[]:k==='clientWidth'?1920:()=>E(),set:(t,k,v)=>{t[k]=v;return true}});
+global.document={body:P(),querySelector:()=>null,getElementById:id=>E(),createElement:()=>E(),querySelectorAll:()=>[],documentElement:{},hidden:false,addEventListener(){}};
 global.Image=class{set src(v){this.complete=false}};global.window=global;global.addEventListener=(e,f)=>{(L[e]=L[e]||[]).push(f)};global.performance={now:()=>T};
 let T=0,cb=null;global.requestAnimationFrame=f=>{cb=f};
 eval(fs.readFileSync('dist/game.js','utf8'));
 // Melee-Smoke: Menü (3er-Schalter, CPU/Stocks), Kampf mit Tasten-Mashing + Rendering im Melee (Plattform, HUD, Respawn, Spielende), danach Arcade wieder normal.
 const fire=(t,code)=>(L[t]||[]).forEach(f=>f({code,repeat:false,shiftKey:false,preventDefault(){}}));
 const frame=n=>{for(let i=0;i<n;i++){T+=16.7;cb(T)}};
-frame(5);fire('keydown','Tab');frame(3);if(__arcade.mode!=='story')throw new Error('Tab 1 -> story, ist '+__arcade.mode);
+frame(5);__intro.skip();frame(40);   // Intro überspringen (im Stub gibt es kein Titelmenü)
+fire('keydown','Tab');frame(3);if(__arcade.mode!=='story')throw new Error('Tab 1 -> story, ist '+__arcade.mode);
 fire('keydown','Tab');frame(3);if(__arcade.mode!=='versus')throw new Error('Tab 2 -> versus, ist '+__arcade.mode);
 fire('keydown','Tab');frame(3);if(__arcade.mode!=='melee')throw new Error('Tab 3 -> melee, ist '+__arcade.mode);
 fire('keydown','KeyT');fire('keydown','KeyT');if(__arcade.stocks!==5)throw new Error('Stocks '+__arcade.stocks);

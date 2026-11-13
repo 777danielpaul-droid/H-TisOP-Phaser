@@ -10,6 +10,7 @@ for(const key of Object.keys(CHARACTERS).filter(k=>CHARACTERS[k].name&&k!=='cust
  const p1=new Fighter({char:CHARACTERS[key],x:400,facing:1,input:i1}),p2=new Fighter({char:CHARACTERS.wolf,x:700,facing:-1,input:i2});
  const g=new Game(p1,p2);while(g.phase!=='fight'){i1.feed(0,0,[]);i2.feed(0,0,[]);g.step()}
  for(let k=0;k<60;k++){i1.feed(0,0,[]);i2.feed(0,0,[]);g.step()}
+ if(!Object.values(p1.moves).some(m=>m.super&&(m.cost||0)<=300)){console.log('  – ',key,'hat keinen nutzbaren Hyper (Gegner-Figur, Kosten gesperrt), übersprungen');continue}   // Gegner wie MANTIS haben ihren Hyper absichtlich gesperrt (cost 9999)
  const base=g.camera.zoom;p1.meter=300;
  i1.feed(0,0,['SUP']);i2.feed(0,0,[]);g.step();
  assert.ok(g.superFlash>0,key+': Hyper gestartet');assert.ok(g.superName,key+': Move-Name gemerkt');
