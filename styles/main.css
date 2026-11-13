@@ -198,16 +198,10 @@ input[type=range]{accent-color:var(--cy);height:8px}
 #intro.out{opacity:0;pointer-events:none}
 #intro video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
 #intro-skip{position:absolute;right:22px;bottom:22px;font:700 14px system-ui;letter-spacing:.06em;color:#fff;background:rgba(18,20,58,.55);border:1px solid rgba(255,255,255,.45);padding:9px 16px;cursor:pointer;border-radius:0;backdrop-filter:blur(3px);opacity:.85;animation:introHint .6s ease .8s both}
-#intro-snd{position:absolute;left:22px;bottom:22px;font:700 14px system-ui;letter-spacing:.06em;color:#fff;background:rgba(18,20,58,.55);border:1px solid rgba(255,255,255,.45);padding:9px 16px;pointer-events:none;animation:introHint .6s ease both;display:none!important}
+#intro-snd{position:absolute;left:22px;bottom:22px;font:700 14px system-ui;letter-spacing:.06em;color:#fff;background:rgba(18,20,58,.55);border:1px solid rgba(255,255,255,.45);padding:9px 16px;pointer-events:none;animation:introHint .6s ease both}
 #intro-skip:hover{opacity:1;background:rgba(127,232,255,.25);border-color:var(--cy)}
 #intro-skip kbd{margin-right:6px;padding:1px 6px;border:1px solid #8f95d8;font-size:12px;color:#cfd8ff}
 /* Startknopf auf dem Standbild (erster Video-Frame) vor dem Intro: der Klick schaltet den Ton frei (Browser-Regel) */
-#intro.wait #intro-skip{display:none}
-#intro-start{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;justify-content:center;pointer-events:none}
-#intro:not(.wait) #intro-start{display:none}
-#intro-go{pointer-events:auto;width:340px;text-align:center;font:700 21px system-ui;letter-spacing:.14em;color:#fff;padding:18px 26px 18px 22px;cursor:pointer;border:1px solid var(--ice);border-radius:0;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);background:rgba(18,20,58,.55);box-shadow:inset 0 0 0 1px rgba(185,196,255,.35),0 0 20px rgba(0,0,0,.45);backdrop-filter:blur(3px);opacity:.9}
-#intro-go:hover,#intro-go:focus{opacity:1;outline:none;background:rgba(127,232,255,.18);border-color:var(--cy);box-shadow:inset 0 0 0 1px var(--cy),0 0 24px rgba(127,232,255,.35)}
-#intro-go:disabled{opacity:.6;cursor:default}
 @keyframes introHint{from{opacity:0;transform:translateY(6px)}to{opacity:.85;transform:none}}
 
 /* ---- Eigene Musik / Playlists ---- */
@@ -235,3 +229,39 @@ input[type=range]{accent-color:var(--cy);height:8px}
 #musicpanel .mpopts .mpclr{margin-left:auto}
 #musicpanel .mpfoot{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;font-size:12px;color:#ffb347}#musicpanel .mpnote.ok{color:#7dffb0}#musicpanel .mpnote.err{color:#ff8a8a}
 @media (max-width:760px){#musicpanel .mpcols{grid-template-columns:1fr}}
+
+/* ---- Online-Lobby (Kristall-Look wie die übrigen Panels: Schrägplatten, eckig, Eis-Blau) ---- */
+#net{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 38%,rgba(34,30,100,.7),rgba(2,3,14,.93) 72%);backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2)}
+#net .nt{width:min(780px,94vw);max-height:94vh;overflow:auto;text-align:center}
+#net h1{margin:0 0 6px}
+.nt-sub{margin:6px auto 14px;max-width:560px;color:#aab2f0;font-size:15px}
+.nt-menu{display:grid;grid-template-columns:1fr;gap:6px;max-width:420px;margin:0 auto}
+.nt-menu button{width:100%;padding:14px 20px;font-size:19px}.nt-menu small{color:#7d86c8;font-size:12px;margin:-2px 0 10px;letter-spacing:.04em}
+.nt-join{display:flex;gap:8px;align-items:stretch;margin-top:4px}
+.nt-join input{width:120px;text-align:center;font:700 26px var(--f-tech,Orbitron,sans-serif);letter-spacing:.3em;text-transform:uppercase;padding:6px 4px 6px 14px;background:#07082a;color:#eaf6ff;border:1px solid var(--ice-dim);border-radius:0}
+.nt-join button{flex:1;margin:0}
+.nt-wait{margin:18px 0 4px;font:700 20px var(--f-ui);letter-spacing:.14em;text-transform:uppercase;color:#eaf6ff;text-shadow:0 0 12px var(--cy)}
+.dots::after{content:"";animation:ntdots 1.4s steps(4,end) infinite}@keyframes ntdots{0%{content:""}25%{content:"."}50%{content:".."}75%,100%{content:"..."}}
+.nt-code{margin:6px auto 12px;font:900 76px var(--f-tech,Orbitron,sans-serif);letter-spacing:.28em;padding-left:.28em;color:#fff;text-shadow:0 0 18px var(--cy),0 0 40px var(--crys,#7b6bff)}
+.nt-linkrow{display:flex;gap:8px;justify-content:center;align-items:stretch;margin:0 auto 6px;max-width:560px}
+.nt-linkrow input{flex:1;min-width:0;background:#07082a;color:#bfe9ff;border:1px solid var(--ice-dim);border-radius:0;padding:6px 10px;font:600 14px var(--f-ui)}
+.nt-msg{min-height:22px;margin:12px 0 0;color:#9fe8ff;font-size:14px}.nt-msg.bad{color:#ff9fb4}
+.nt-foot{margin-top:14px;display:flex;justify-content:center;gap:10px}
+.nt-top{margin:4px 0 12px;padding:6px 12px;background:linear-gradient(90deg,transparent,rgba(127,232,255,.14),transparent);color:#bfe9ff;font:700 13px var(--f-ui);letter-spacing:.12em;text-transform:uppercase}.nt-top b{color:#fff}
+.nt-cols{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;text-align:left}
+.nt-col h2,.nt-stage h2{margin:0 0 8px;font:700 13px var(--f-ui);letter-spacing:.2em;color:var(--cy)}
+.nt-chars{display:flex;flex-wrap:wrap;gap:8px}.nt-chars button{padding:12px 22px;font-size:18px}
+.nt-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.nt-them{min-height:74px;padding:12px 16px;display:flex;flex-direction:column;gap:4px;background:rgba(10,12,44,.7);box-shadow:inset 0 0 0 1px var(--ice-dim);clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+.nt-them b{font:400 30px var(--f-disp);letter-spacing:.1em;color:#fff}.nt-them span{color:#8f95d8;font:700 14px var(--f-ui);letter-spacing:.14em;text-transform:uppercase}.nt-them.rdy{box-shadow:inset 0 0 0 1px var(--cy),0 0 16px rgba(127,232,255,.3)}.nt-them.rdy span{color:#9fe8ff}
+.nt-stage{margin-top:16px;text-align:center}.nt-stages{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px}.nt-stages button:disabled{opacity:.4;cursor:not-allowed}
+.nt-go{padding:14px 40px;font-size:20px}
+button:disabled{opacity:.45;cursor:not-allowed}
+@media (max-width:640px){.nt-cols{grid-template-columns:1fr}.nt-code{font-size:56px}}
+/* Statusleiste im Online-Kampf */
+#netbar{position:fixed;left:50%;bottom:10px;transform:translateX(-50%);z-index:30;pointer-events:none;text-align:center;font-family:var(--f-ui)}
+#netbar.hidden{display:none}
+#netbar .nb-top{display:inline-block;padding:3px 16px;font:700 12px var(--f-ui);letter-spacing:.16em;text-transform:uppercase;color:#bfe9ff;background:linear-gradient(90deg,rgba(11,12,42,.55),rgba(36,24,90,.7),rgba(11,12,42,.55));box-shadow:0 0 0 1px rgba(127,232,255,.35);clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+#netbar.warn .nb-top{color:#ffd9a0;box-shadow:0 0 0 1px #ffb347}#netbar.bad .nb-top{color:#ff9fb4}
+#netbar .nb-mid{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);padding:14px 38px;font:400 38px var(--f-disp);letter-spacing:.14em;text-transform:uppercase;color:#fff;text-shadow:0 0 14px var(--cy),0 0 30px var(--crys,#7b6bff);background:linear-gradient(90deg,transparent,rgba(5,6,26,.78) 18%,rgba(5,6,26,.78) 82%,transparent);white-space:nowrap}
+#netbar .nb-mid small{display:block;margin-top:4px;font:700 15px var(--f-ui);letter-spacing:.16em;color:#9fe8ff;text-shadow:none}

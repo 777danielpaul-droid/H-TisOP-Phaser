@@ -51,7 +51,9 @@ export class KeyboardInput extends InputBuffer{
  pollPad(){const gp=this.padIndex>=0&&typeof navigator!=='undefined'&&navigator.getGamepads?navigator.getGamepads()[this.padIndex]:null;if(!gp){this.padPrev.clear();return{dx:0,dy:0,pressed:[]}}
   const a=gp.axes,b=gp.buttons,pr=i=>!!(b[i]&&b[i].pressed),dx=(a[0]>.5||pr(15)?1:0)-(a[0]<-.5||pr(14)?1:0),dy=(a[1]>.5||pr(13)?1:0)-(a[1]<-.5||pr(12)?1:0),pressed=[],now=new Set();
   for(const i in PAD_BUTTONS)if(pr(+i)){now.add(+i);if(!this.padPrev.has(+i))pressed.push(PAD_BUTTONS[i])}this.padPrev=now;return{dx,dy,pressed}}
- tick(me,opp,game){const d=this.dirs;
+ // Aktuellen Eingabezustand lesen (Richtung + seit dem letzten Aufruf gedrückte Buttons), ohne ihn in den Puffer zu schreiben -> Online-Modus (core/netplay.js) verschickt ihn erst
+ sample(){const d=this.dirs;
   const dx=(this.any(d.right)?1:0)-(this.any(d.left)?1:0),dy=(this.any(d.down)?1:0)-(this.any(d.up)?1:0);
-  const pd=this.pollPad();this.feed(Math.max(-1,Math.min(1,dx+pd.dx)),Math.max(-1,Math.min(1,dy+pd.dy)),[...this.pend.splice(0),...pd.pressed],!!game&&(game.hitstop>0||game.superFlash>0))}
+  const pd=this.pollPad();return{dx:Math.max(-1,Math.min(1,dx+pd.dx)),dy:Math.max(-1,Math.min(1,dy+pd.dy)),pressed:[...this.pend.splice(0),...pd.pressed]}}
+ tick(me,opp,game){const s=this.sample();this.feed(s.dx,s.dy,s.pressed,!!game&&(game.hitstop>0||game.superFlash>0))}
 }

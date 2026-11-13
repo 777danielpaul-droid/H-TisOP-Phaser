@@ -1,8 +1,9 @@
-// Intro-Video mit Startknopf (Klick/Enter schaltet den Ton frei)
+// Intro-Video beim Spielstart (assets/intro/intro.mp4, vom Build als Data-URI in window.__INTRO__ eingebettet, läuft also per Doppelklick und online).
+// KEIN Startknopf: das (stumme) Video läuft sofort los, Enter / Esc / Klick auf „Überspringen“ beendet es. Die Menümusik wird gleichzeitig angefordert;
+// Browser geben Ton erst nach der ersten Eingabe frei -> bis dahin zeigt ein kleiner Hinweis „Beliebige Taste = Ton an“, danach setzt die Musik sofort ein.
 export class Intro{
- constructor(onDone,beforePlay){this.onDone=onDone||(()=>{});this.beforePlay=beforePlay||null;this.active=false;this.waiting=false;this.endedAt=-1e9;this.root=null;this.v=null;this.url=null;this._wd=0}
- start(){try{return this._start()}catch(e){this.active=false;this.waiting=false;this.finish();return false}}   // jeder Fehler (kein DOM, kein Codec …) = ohne Intro weiter
- // Zeigt zuerst den Startknopf. Erst der Klick/Enter (= Nutzer-Geste) gibt dem Browser den Ton frei und startet Video + Musik gemeinsam.
+ constructor(onDone,beforePlay,audioOn){this.onDone=onDone||(()=>{});this.beforePlay=beforePlay||null;this.audioOn=audioOn||(()=>true);this.active=false;this.endedAt=-1e9;this.root=null;this.v=null;this.url=null;this._wd=0;this._hint=0}
+ start(){try{return this._start()}catch(e){this.active=false;this.finish();return false}}   // jeder Fehler (kein DOM, kein Codec …) = ohne Intro weiter
  _start(){const d=typeof document!=='undefined'?document:null,src=typeof window!=='undefined'?window.__INTRO__:null;
   this.root=d&&d.getElementById('intro');
   if(!this.root||!src){this.finish();return false}
@@ -10,25 +11,20 @@ export class Intro{
   this.active=true;this.root.classList.remove('hidden');
   try{const b64=src.split(',')[1],bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);this.url=URL.createObjectURL(new Blob([u],{type:'video/mp4'}))}catch(e){this.url=src}   // Blob-URL: zuverlässiger als eine riesige Data-URI
   v.muted=true;v.playsInline=true;v.controls=false;v.loop=false;v.preload='auto';
-  const ps=typeof window!=='undefined'&&window.__INTRO_POSTER__;   // Standbild = erster Frame; ohne Poster springt das Video selbst auf Frame 1
-  if(ps)v.poster=ps;else v.addEventListener('loadeddata',()=>{if(this.waiting&&v.currentTime<.01){try{v.currentTime=.01}catch(e){}}},{once:true});
-  v.src=this.url;
-  v.onended=()=>this.finish();v.onerror=()=>this.finish();
-  const sk=this.root.querySelector('#intro-skip')||this.root.querySelector('button');if(sk)sk.onclick=()=>this.skip();
-  this.waiting=true;this.root.classList.add('wait');
+  const ps=typeof window!=='undefined'&&window.__INTRO_POSTER__;if(ps)v.poster=ps;
+  v.src=this.url;v.onended=()=>this.finish();v.onerror=()=>this.finish();
+  const sk=this.root.querySelector('#intro-skip');if(sk)sk.onclick=()=>this.skip();
+  try{if(this.beforePlay)this.beforePlay()}catch(e){}   // Audio vorbereiten + Menümusik anfordern (startet, sobald der Browser Ton erlaubt)
+  const hint=this.root.querySelector('#intro-snd');
+  if(hint){const upd=()=>{if(!this.active)return;const off=!this.audioOn();hint.classList.toggle('hidden',!off);if(off)this._hint=setTimeout(upd,250)};upd()}
+  const p=v.play();if(p&&p.catch)p.catch(()=>this.finish());
+  this._wd=setTimeout(()=>{if(this.active&&(!this.v||this.v.currentTime<=0))this.finish()},5000);   // Video startet nicht -> nicht hängen bleiben
   return true}
- go(){if(!this.active||!this.waiting)return;this.waiting=false;
-  const go=this.root&&this.root.querySelector('#intro-go');if(go){go.disabled=true;go.textContent='…'}
-  let r;try{r=this.beforePlay&&this.beforePlay()}catch(e){}   // läuft synchron im Klick: Audio freischalten
-  Promise.resolve(r).catch(()=>{}).then(()=>{if(!this.active)return;this.root.classList.remove('wait');this._play()})}
- _play(){const v=this.v;const p=v.play();if(p&&p.catch)p.catch(()=>this.finish());
-  this._wd=setTimeout(()=>{if(this.active&&(!this.v||this.v.currentTime<=0))this.finish()},5000)}   // Video startet nicht -> nicht hängen bleiben
- skip(){if(this.active&&!this.waiting)this.finish()}
- // Taste: Startbildschirm = Enter/Leertaste/Esc starten das Intro; während des Videos überspringt Enter/Esc. true = Taste wurde hier verarbeitet.
+ skip(){if(this.active)this.finish()}
+ // Taste: während des Videos überspringt Enter/Esc, alles andere wird verschluckt. true = Taste wurde hier verarbeitet.
  key(e){if(!this.active){if(typeof performance!=='undefined'&&performance.now()-this.endedAt<450&&(e.code==='Enter'||e.code==='NumpadEnter')){return true}return false}   // kurz nach dem Skip: gehaltenes Enter startet nicht gleich das Spiel
-  if(this.waiting){if(e.code==='Enter'||e.code==='NumpadEnter'||e.code==='Space'||e.code==='Escape')this.go();return true}
   if(e.code==='Enter'||e.code==='NumpadEnter'||e.code==='Escape')this.skip();return true}
- finish(){const was=this.active;this.active=false;this.waiting=false;if(was)this.endedAt=typeof performance!=='undefined'?performance.now():-1e9;clearTimeout(this._wd);
+ finish(){const was=this.active;this.active=false;if(was)this.endedAt=typeof performance!=='undefined'?performance.now():-1e9;clearTimeout(this._wd);clearTimeout(this._hint);
   if(this.v){try{this.v.pause();this.v.removeAttribute('src');this.v.load()}catch(e){}}
   if(this.url&&this.url.startsWith('blob:')){try{URL.revokeObjectURL(this.url)}catch(e){}}this.url=null;
   if(this.root){try{this.root.classList.add('out');const r=this.root;setTimeout(()=>{try{r.classList.add('hidden')}catch(e){}},350)}catch(e){}}   // kurzes Ausblenden

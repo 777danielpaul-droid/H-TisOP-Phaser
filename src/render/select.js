@@ -4,7 +4,7 @@ import{H,MELEE,W}from'../core/config.js';
 import{ownsSkin}from'../core/loot.js';
 
 import{ParticleSystem}from'../core/particles.js';
-import{Story}from'../core/story.js';
+import{CHAPTERS,Story}from'../core/story.js';
 
 import{F_DISP,F_TECH}from'./fonts.js';
 
@@ -31,6 +31,7 @@ export function hitCard(lx,ly,n=4){for(let i=0;i<n;i++){const r=cardRect(i,n);if
 export const MELEE_OPTS=[0,1,2].map(i=>({x:690,y:10+i*30,w:262,h:24}));
 export function hitMeleeOpt(lx,ly){for(let i=0;i<3;i++){const r=MELEE_OPTS[i];if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
 export const MODE_PILL={x:14,y:12,w:318,h:26};
+export function hitChapter(lx,ly){return lx>=W-300&&lx<=W-16&&ly>=478&&ly<=506}   // Kapitel-Zeile im Story-Menü (rechts unten)
 export function hitMode(lx,ly){const m=MODE_PILL;if(ly<m.y||ly>m.y+m.h||lx<m.x||lx>m.x+m.w)return -1;return Math.min(3,Math.floor((lx-m.x)/(m.w/4)))}
 // Stage-Karten (Versus): 4 Level + Zufall
 export const stageRect=(i,n=5)=>{const w=170,gap=14,tot=n*w+(n-1)*gap,x0=(960-tot)/2;return{x:x0+i*(w+gap),y:128,w,h:190}};
@@ -190,7 +191,10 @@ export class SelectScreen{
   const block=(sign,txt,c)=>{if(!txt)return;const lines=this.wrap(g,txt,13,PW-16-30);hud.lab(g,sign,bx,y,14,c,'left',0,null,'800');lines.forEach((l,k)=>hud.txt(g,l,bx+22,y+k*17,13,c,'left'));y+=lines.length*17+6};
   block('+',ch.pros,'#9fe8ff');block('–',ch.cons,'#c9b8ff');
   // Arcade-Gegner
-  {const lad=Arcade.ladderFor(ch.id);y=Math.max(y+8,440);
+  if(arcade.mode==='story'){y=Math.max(y+8,440);const c=CHAPTERS[arcade.chapter-1];   // Story: Kapitelinfo statt Arcade-Gegnerliste
+   hud.lab(g,'STORY – KAPITEL '+c.id,bx,y,11,DIM,'left',2,null,'700');hud.txt(g,c.name,bx,y+24,16,'#ffffff','left',c.look.acc);
+   hud.txt(g,c.enc.length-1+' Wellen · Boss: '+CHARACTERS[c.enc[c.enc.length-1].boss===1?'mantisAlpha':c.enc[c.enc.length-1].boss].name,bx,y+44,12,'#c9d0ff','left')}
+  else{const lad=Arcade.ladderFor(ch.id);y=Math.max(y+8,440);
    hud.lab(g,'ARCADE – DEINE GEGNER',bx,y,11,DIM,'left',2,null,'700');
    const cw=(PW-16-6*(lad.length-1))/lad.length;
    lad.forEach((gid,k)=>{const gc=CHARACTERS[gid],x=bx+k*(cw+6);
@@ -205,7 +209,10 @@ export class SelectScreen{
   {const id=[...ROSTER,'custom'][arcade.cursor],ch=CHARACTERS[id];if(ch&&skinCount(ch.sprites)>1)hud.lab(g,'C = FARBE: '+skinName(ch.sprites,arcade.skinOf(id)),W-24,516,10,'#d6c8ff','right',2,null,'700')}
   if(!this.ln&&Math.sin(t*.14)>-.4)hud.fam(F_DISP,()=>hud.fancy(g,label,34,496,24,['#ffffff','#9fe8ff'],'left','#8f7bff',t,false,false,400,2));
   hud.lab(g,'◀ ▶  KÄMPFER',34,516,11,DIM,'left',2,null,'700');hud.lab(g,'▲ ▼  SCHWIERIGKEIT',34,532,11,DIM,'left',2,null,'700');hud.lab(g,DIFF[d],190,532,11,DCOL[d],'left',2,DCOL[d],'800');
-  if(hasCustom)hud.lab(g,'E = EIGENE FIGUR BEARBEITEN',W-24,532,10,'#7d6fb0','right',2,null,'600')}
+  if(hasCustom)hud.lab(g,'E = EIGENE FIGUR BEARBEITEN',W-24,532,10,'#7d6fb0','right',2,null,'600');
+  if(arcade.mode==='story'){const c=CHAPTERS[arcade.chapter-1],nx=CHAPTERS[arcade.chapter],lock=nx&&!arcade.chapterOpen(arcade.chapter+1);   // Kapitelwahl (K / Klick): Kapitel 2+ erst nach Abschluss des Vorgängers
+   hud.lab(g,'K = KAPITEL '+arcade.chapter+':  '+c.name,W-24,500,12,'#7dff9a','right',2,'#7dff9a','800');
+   if(lock)hud.lab(g,'KAPITEL '+(arcade.chapter+1)+' GESPERRT – schließe Kapitel '+arcade.chapter+' ab',W-24,480,10,'#7d6fb0','right',2,null,'600')}}
  modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','story','versus','melee'].indexOf(A.mode),cols=[P1C,'#7dff9a',P2C,'#8f7bff'],sw=m.w/4;
   ['ARCADE','STORY','2 SPIELER','MELEE'].forEach((n,i)=>{const on=i===k,x=m.x+i*sw+(i?3:0),w=sw-6;hud.kPlate(g,x,m.y,w,m.h,{col:cols[i],on,sk:9,t});hud.txt(g,n,x+w/2+4,m.y+18,13,on?'#ffffff':DIM,'center',on?cols[i]:null)});
   hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#7d86c8','left')}

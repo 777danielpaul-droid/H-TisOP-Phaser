@@ -1,7 +1,11 @@
-# Render Blueprint: Static Site, die das Spiel bei jedem Deploy selbst baut (dist/ liegt NICHT mehr im Repository).
+# Render-Blueprint: ein Web Service liefert das Spiel UND den Online-Server (WebSocket). Render -> New -> Blueprint -> dieses Repo wählen, fertig.
 services:
   - type: web
     name: hitisop
-    runtime: static
-    buildCommand: node tools/build.mjs
-    staticPublishPath: dist
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install --omit=dev && node tools/build.mjs
+    startCommand: node server/server.js
+    healthCheckPath: /healthz
+    autoDeploy: true

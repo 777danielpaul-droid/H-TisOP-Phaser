@@ -67,4 +67,19 @@ const anubis={...norm({su:0,rc:0,dmg:1.05,reach:8}),
  '6H':{label:'Anubis-Hieb',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:13,ac:4,rc:19,dmg:88,lv:'high',lunge:7,box:[10,-160,120,66],hs:26,bs:16,glow:1},
  super:{label:'Urteil der Maat',info:'HYPER: Ein goldener Seelenstrahl – 10 Treffer + Launcher',anim:'hyper',fx:'breath',beam:0,glow:0,dmg:30,su:20,ac:50,rc:26,multi:5,minScale:.5,box:[40,-200,540,210],launch:{vx:5,vy:-13},inv:[0,34],hstop:2,shake:6}};
 
-export const MODS={tiger,st3g0,kitsune,anubis};
+// ---------- CYBERDÄMON: Story-Boss Kapitel 2 – riesig, zäh, rote Schlagwellen ----------
+// Stärke: sehr viel HP, harte Normals mit großer Reichweite, Klauenwellen (J/L), Rüstungs-Ansturm, Stachelschlag trifft auch hinter ihm, Blutrausch (Hyper).
+// Schwäche: langsam (Sprung, Dash), Startup der schweren Moves ist lang und auf Block bestrafbar, keine Luft-Sprünge.
+const cyberdemon={...norm({su:1,rc:1,dmg:1.15,reach:16}),
+ fireball:{label:'Klauenwelle',info:'Rote Schlagwelle: J = schnell, L = stark',su:10,rc:18,proj:P({frame:10,y:-120,vx:9.5,w:120,h:84,dmg:62,hs:18,bs:10,life:84,look:'claw'}),
+  v:{L:{su:8,rc:14,proj:P({frame:8,y:-120,vx:10.5,w:100,h:70,dmg:46,hs:14,bs:8,life:66,look:'claw'})},
+     H:{su:13,rc:24,proj:P({frame:13,y:-120,vx:8.5,w:150,h:100,dmg:84,hs:22,bs:14,life:110,look:'claw'})}}},
+ rising:{label:'Höllenfahrt',info:'Unverwundbarer Anti-Air-Schlag, Launcher',su:6,ac:8,rc:26,dmg:95,inv:[1,10],launch:{vx:2,vy:-17}},
+ rush:{label:'Kern-Ansturm',info:'RÜSTUNG: stürmt vor, Knockdown',anim:'heavy',su:10,ac:12,rc:26,dmg:100,lunge:10,armor:[3,12],hard:true,pb:6,box:[10,-140,150,110],hstop:8,shake:5,glow:1},
+ back:{label:'Stachelschlag',info:'Trifft auch hinter ihm (Anti-Cross-up)',anim:'kick',crouch:false,lv:'mid',su:9,ac:5,rc:20,dmg:72,hs:22,bs:14,pb:5,box:[-190,-110,380,110],hard:false,hstop:7,shake:4,glow:1},
+ airsp:{label:'Sturzklaue',info:'Steiler Sturzangriff, Knockdown',su:8,dmg:90,box:[-10,-80,120,110],dive:{vx:3,vy:16},hard:true,land:16,hstop:9,shake:6},
+ '6M':{label:'Doppelhieb',info:'Weiter Vorstoß-Poke',anim:'punch',su:8,ac:3,rc:14,dmg:64,lv:'mid',box:[10,-130,140,50],lunge:6,hs:22,bs:12},
+ '6H':{label:'Dämonenhieb',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:15,ac:4,rc:20,dmg:92,lv:'high',lunge:7,box:[10,-190,140,80],hs:26,bs:16,glow:1},
+ super:{label:'Blutrausch',info:'HYPER: Klauenhagel mit beiden Händen – 8 Treffer + Launcher',anim:'hyper',beam:0,glow:1,dmg:26,su:22,ac:46,rc:28,multi:5,minScale:.5,box:[20,-190,330,170],launch:{vx:5,vy:-13},inv:[0,30],hstop:2,shake:6,cost:100}};
+
+export const MODS={tiger,st3g0,kitsune,anubis,cyberdemon};

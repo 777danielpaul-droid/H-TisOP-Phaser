@@ -133,7 +133,28 @@ export const MANTIS_ANIMS={
  block:{frames:['p_3_0']},
  kd:{frames:['p_4_0','p_4_1']},wakeup:{frames:['p_4_2','p_4_3']},
  win:{frames:['p_3_0','p_3_3'],loop:1,fps:2},defeat:{frames:['p_4_1']}};
+// CYBERDÄMON (Story-Boss Kapitel 2): Frames aus assets/cyberdemon (tools/import-cyberdemon-sheets.py), alle nach rechts schauend. 'a' = an der Körpermitte verankert (Luft).
+//  i_0 - i_5: Atem-Idle (aufrecht, Kiefer wandert) | a_0: Ausfall/geduckte Haltung | a_1: Aushol-Haltung (Arm hinten) | a_2: Schlag mit roter Spur | a_3: voller Schlag
+//  a_4/a_5: Aushol-Haltungen der Gegenhand (Geister-Frames, Alpha repariert) | a_6/a_7: Gegenhand-Schlag mit Spur / voll gestreckt
+// NOCH BEHELFE (Bögen fehlen noch): Laufen (Idle-Frames + Wippen), Tritte (Klauenhiebe), Ducken (a_0), Treffer/Knockdown/Aufstehen (gedrehte Pose), Block (a_4), Sprung (Idle in der Luft), Sieg (Idle-Atem).
+export const CYBERDEMON_ANIMS={
+ idle:{frames:['i_0','i_1','i_2','i_3','i_4','i_5','i_4','i_3','i_2','i_1'],loop:1,fps:7},
+ walk:{frames:['i_0','i_2','i_3','i_5'],loop:1,fps:6,bob:4,lean:.03},
+ crouch:{frames:['a_0']},cblock:{frames:['a_4'],squash:.94},
+ air:{frames:['i_2a'],lean:.05},
+ dash:{frames:['a_5'],lean:.1},airdash:{frames:['a_6a'],lean:.14},
+ punch:{frames:['a_1','a_2','a_3','a_3','a_1']},cpunch:{frames:['a_0','a_2','a_2'],squash:.92},jpunch:{frames:['a_2a','a_3']},
+ kick:{frames:['a_5','a_6','a_7','a_7','a_5']},ckick:{frames:['a_0','a_6'],squash:.92},jkick:{frames:['a_6a','a_7']},
+ heavy:{frames:['a_4','a_5','a_6','a_7','a_7','a_5']},jheavy:{frames:['a_7','a_7']},
+ upper:{frames:['a_0','a_1','a_2','a_2','a_3']},
+ special:{frames:['a_1','a_2','a_3','a_3','a_1']},   // Klauenwelle: Ausholen -> Schlag (Welle fliegt los) -> zurück
+ hyper:{frames:['a_4','a_5','a_6','a_7','a_6','a_7','a_6','a_7','a_6','a_7','a_6','a_7','a_5','i_0']},   // Blutrausch: Gegenhand-/Haupthand-Hiebe im Wechsel
+ hit:{frames:['a_0'],lean:-.16,shiftX:-12},airhit:{frames:['a_0a','a_1a']},
+ block:{frames:['a_4']},
+ kd:{frames:['i_3'],lying:1},wakeup:{frames:['i_3'],lying:1,rise:1},
+ win:{frames:['i_0','i_1','i_2','i_3','i_4','i_5'],loop:1,fps:5},defeat:{frames:['i_3'],lying:1}};
 export const SPRITE_CHARS={
+ cyberdemon:{anims:CYBERDEMON_ANIMS,fist:[200,-125],height:215,fightScale:1,lie:['i_3']},
  mantis:{anims:MANTIS_ANIMS,fist:[120,-130],height:190,fightScale:.88,lie:['p_4_1']},
  tiger:{anims:TIGER_ANIMS,fist:[108,-122],height:190,fightScale:.85,fullAnims:['win','defeat'],profileAnim:'win',lie:['t_neu_treffer_103','t_neu_aufstehen_00']},
  st3g0:{anims:ST3G0_ANIMS,fist:[135,-150],height:190,fightScale:.92,lie:['p_3_1','p_3_2','p_3_3'],pose:POSE_ST3G0},
