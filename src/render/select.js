@@ -31,7 +31,6 @@ export function hitCard(lx,ly,n=4){for(let i=0;i<n;i++){const r=cardRect(i,n);if
 export const MELEE_OPTS=[0,1,2].map(i=>({x:690,y:10+i*30,w:262,h:24}));
 export function hitMeleeOpt(lx,ly){for(let i=0;i<3;i++){const r=MELEE_OPTS[i];if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
 export const MODE_PILL={x:14,y:12,w:318,h:26};
-export const CHAPTER_RECT={x:W-300,y:478,w:284,h:28};   // gleiche Fläche wie hitChapter
 export function hitChapter(lx,ly){return lx>=W-300&&lx<=W-16&&ly>=478&&ly<=506}   // Kapitel-Zeile im Story-Menü (rechts unten)
 export function hitMode(lx,ly){const m=MODE_PILL;if(ly<m.y||ly>m.y+m.h||lx<m.x||lx>m.x+m.w)return -1;return Math.min(3,Math.floor((lx-m.x)/(m.w/4)))}
 // Stage-Karten (Versus): 4 Level + Zufall
