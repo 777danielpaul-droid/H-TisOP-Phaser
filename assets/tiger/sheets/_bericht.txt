@@ -1,0 +1,13 @@
+Gefundene Sheets: neu_aufstehen, neu_bewegung, neu_blitz, neu_posen, neu_schlag, neu_sieg, neu_treffer, neu_tritt
+- neu_aufstehen: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+- neu_bewegung: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+- neu_blitz: 1264x843 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+  ! Zelle 4: Figur berührt den Zellrand (evtl. abgeschnitten)
+- neu_posen: 1536x1024 px, Hintergrund: Hintergrundfarbe der Ecken, 4 Posen als einzelne Figuren erkannt
+- neu_schlag: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+- neu_sieg: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+- neu_treffer: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+  ! Zelle 1: Figur berührt den Zellrand (evtl. abgeschnitten)
+- neu_tritt: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+Neue Animationen aktiv: idle, walk, dash, airdash, air, crouch, cblock, block, punch, heavy, kick, cpunch, ckick, jpunch, jkick, jheavy, upper, special, hit, airhit, kd, win, defeat, wakeup, hyper
+Atlas 4096x1103, 1432 KB, 32 Frames

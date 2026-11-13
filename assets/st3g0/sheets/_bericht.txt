@@ -1,0 +1,16 @@
+- Bogen 1: 1264x848 px, Hintergrund: Hintergrundfarbe der Ecken, 4 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 2: 1264x848 px, Hintergrund: Hintergrundfarbe der Ecken, 4 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 3: 1264x848 px, Hintergrund: Hintergrundfarbe der Ecken, 2 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 4: 1264x848 px, Hintergrund: Hintergrundfarbe der Ecken, 2 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 5: 1264x848 px, Hintergrund: Hintergrundfarbe der Ecken, 5 weiße Taschen entfernt, 5 Posen erkannt
+- Bogen 6: 1264x848 px, Hintergrund: Hintergrundfarbe der Ecken, 8 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 7: 1024x1024 px, Hintergrund: Hintergrundfarbe der Ecken, 7 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 8: 1024x1024 px, Hintergrund: Hintergrundfarbe der Ecken, 5 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 9: 1024x1024 px, Hintergrund: Hintergrundfarbe der Ecken, 1 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 10: 1024x1024 px, Hintergrund: Hintergrundfarbe der Ecken, 3 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 11: 1024x1024 px, Hintergrund: Hintergrundfarbe der Ecken, 4 weiße Taschen entfernt, 4 Posen erkannt
+- Bogen 12: 1024x1024 px, Hintergrund: Hintergrundfarbe der Ecken, 13 weiße Taschen entfernt, 4 Posen (Raster)
+Maßstab: neutrale Haltung 384 px -> 300 (x0.781)
+  Bogen 2 / Zelle 1: übersprungen, doppelt (identisch mit Bogen 1, Zelle 0)
+  ! Bogen 12 / Zelle 1: Figur berührt den Zellrand (evtl. abgeschnitten)
+Atlas 4096x1982, 2087 KB, 48 Frames
