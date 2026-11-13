@@ -10,6 +10,7 @@ import{GLPost}from'./gl.js';
 import{buildHouse}from'./houses.js';
 import{Hud}from'./hud.js';
 import{drawLoot,shopSelRect}from'./lootui.js';
+import{HoverFx,drawEndBtns}from'./hover.js';
 import{drawMeleeHud,meleeHalo,meleeStage}from'./meleehud.js';
 import{A,drawFighter,drawTrail}from'./rig.js';
 import{SelectScreen}from'./select.js';
@@ -18,7 +19,7 @@ import{Stage,THEMES}from'./stage.js';
 import{drawStoryHud,storyMobBars,storyWorld}from'./storyhud.js';
 // Render-Pipeline:  [Screen-Shake] → [Kamera-Transform: Stage, Fighter, Projektile, Partikel, Debug-Boxen] → restore → [HUD unskaliert]
 export class Renderer{
- constructor(canvas){this.cv=canvas;this.g=canvas.getContext('2d');this.applyGfx();this.stages=THEMES.map(t=>new Stage(W,H,GROUND,WORLD,t));this.stage=this.stages[0];this.hud=new Hud(W,H);this.sel=new SelectScreen(this.hud);this.bd=new Backdrop();this.post=new PostFX();this.selT=0;this.lootUi={open:false,mode:'main',rewards:null,t:0};this.scale=canvas.width/W}
+ constructor(canvas){this.cv=canvas;this.g=canvas.getContext('2d');this.applyGfx();this.stages=THEMES.map(t=>new Stage(W,H,GROUND,WORLD,t));this.stage=this.stages[0];this.hud=new Hud(W,H);this.sel=new SelectScreen(this.hud);this.bd=new Backdrop();this.hov=new HoverFx();this.endBtns=null;this.endHot=-1;this.post=new PostFX();this.selT=0;this.lootUi={open:false,mode:'main',rewards:null,t:0};this.scale=canvas.width/W}
  // Qualität anwenden. Niedrig: shadowBlur (Leuchten) am Canvas aus, Nachbearbeitung aus, alles direkt auf den sichtbaren Canvas.
  // Mittel/Hoch: Szene (gs) wird in ein Offscreen-Canvas gezeichnet und per WebGL (gl.js) veredelt; HUD/UI (g) liegt als transparenter Canvas darüber.
  // Ohne WebGL (oder bei Kontextverlust) bleibt es beim 2D-Pfad (fx.js): gs und g sind dann derselbe Canvas.
@@ -45,7 +46,7 @@ export class Renderer{
    h.kPlate(u,x2,y,pw,ph,{col:'#7fe8ff',on:false,sk:8,t});h.txt(u,'COINS  '+LOOT.coins,x2+pw/2+4,y+18,13,'#d6f6ff','center');
    if(!A.pvp){const sb=shopSelRect();h.kPlate(u,sb.x,sb.y,sb.w-6,sb.h,{col:'#7dff9a',on:false,sk:8,t});h.txt(u,'SHOP',sb.x+(sb.w-6)/2+4,sb.y+18,13,'#d8ffe2','center');   // Shop-Knopf neben dem Booster-Zähler
     h.txt(u,'B – BOOSTER ÖFFNEN  ·  P – SHOP',W-18,y+ph+16,10,pk?'#ffd23f':'#8f95d8','right')}}
-  drawLoot(u,this.hud,this.lootUi)}
+  drawLoot(u,this.hud,this.lootUi);this.hov.draw(u)}
  draw(game){if(this.useGL&&!this.glp.ok)this.applyGfx();if(game.arcade&&game.arcade.state==='select')return this.drawSelect(game);
   const g=this.gs,ui=this.g,s=this.scale,t=game.frame/60,cam=game.camera;this.stage=this.stages[(game.stageIndex||0)%this.stages.length];for(const st of this.stages)if(st!==this.stage&&st!==this.stages[0]){st.cache=null;st.cacheT=null} // Speicher sparen: nur aktuelles Level + Menü-Hintergrund halten
   if(this.useGL)this.uiClear();g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);
@@ -70,7 +71,7 @@ export class Renderer{
   this.post.impact(ui,game);if(!this.useGL)this.post.dust(ui,W,H,t,'#cdbbff',26,.6);
   if(game.phase==='intro'&&game.pf<26){ui.save();ui.globalAlpha=1-game.pf/26;ui.fillStyle='#000';ui.fillRect(0,0,W,H);ui.restore()}   // Einblenden aus Schwarz
   this.stage.overlay(ui);if(ST)drawStoryHud(ui,this.hud,game,t,this.cv);else this.hud.draw(ui,game);if(ML)drawMeleeHud(ui,this.hud,game,t);this.hud.flash(ui,game);this.areaBanner(ui,game,t);   // HUD/UI: unskaliert und scharf
-  drawLoot(ui,this.hud,this.lootUi);
+  drawEndBtns(ui,this.hud,this.endBtns,this.endHot,game.frame);drawLoot(ui,this.hud,this.lootUi);this.hov.draw(ui);
   if(game.debug)this.debugText(ui,game)}
 // Demokampf im Hintergrund der Startseite: nur die beiden Fighter + Projektile + Partikel, kein Hintergrund/HUD/Häuser
 drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);if(!this.bd.draw(g,W,H,'title',{dimAdd:.1})){g.fillStyle='#020312';g.fillRect(0,0,W,H)}const cam=game.camera;g.save();cam.apply(g);game.particles.drawFw(g);this.celeb(g,game);for(const f of[...game.fighters].filter(f=>!(f.dead>0)).sort((a,b)=>drawPri(a)-drawPri(b)||a.y-b.y))drawFighter(g,f,game.frame/60,1,GROUND);this.celeb(g,game,true);for(const p of game.projectiles)this.projectile(g,p,p.owner);game.particles.draw(g,true);g.restore();if(this.useGL){this.glFinish({bloom:.3*GFX.bloom,ab:0,vc:[0,0,.02],va:.1,grain:GFX.grain?.03:0,t:game.frame})}else this.post.dust(g,this.cv,game.frame/60,'#cdbbff',26,.4)}

@@ -13,18 +13,19 @@ import{NetInput,NET,encInput}from'./core/netplay.js';
 import{NetUi,netMessage}from'./render/netui.js';
 import{skinCount,skinName}from'./render/skins.js';
 import{THEMES}from'./render/stage.js';
-import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel}from'./render/lootui.js';
+import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel,shopCardRect,shopBackRect,shopBtnRect,shopSelRect,boosterRect,lootOpenRect,lootCloseRect,inR}from'./render/lootui.js';
+import{endBtnRect}from'./render/hover.js';
 import{Renderer}from'./render/renderer.js';
 import{Sound}from'./render/audio.js';
 import{loadFonts}from'./render/fonts.js';
-import{hitCar,hitChapter,hitEdit,hitMode,hitStage,hitVsCar,hitMeleeOpt}from'./render/select.js';
+import{hitCar,hitChapter,hitEdit,hitMode,hitStage,hitVsCar,hitMeleeOpt,carRect,editRect,stageRect,vcarRect,MELEE_OPTS,MODE_PILL,CHAPTER_RECT}from'./render/select.js';
 import{studioOpen,studioIsOpen,studioLoadSaved}from'./render/customstudio.js';
 import{BgPanel}from'./render/bgpanel.js';
 import{Intro}from'./render/intro.js';
 import{MusicStore,MusicPanel}from'./render/musicpanel.js';
 import{PackOpen}from'./render/packopen.js';
 // Einstiegspunkt: Vollbild-Canvas, Eingabe, KI, Game-Loop (fester Schritt) und Pause-Menü (M).
-loadFonts();   // eingebettete Schriften registrieren (Canvas + Menü)
+console.info('H!TisOP Maus-Update v3 aktiv');loadFonts();   // eingebettete Schriften registrieren (Canvas + Menü)
 const $=id=>document.getElementById(id);
 const load=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},save=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};   // Auswahl merken (falls Browser-Speicher verfügbar)
 let saved=Math.max(0,Math.min(AI_LEVELS.length-1,+load('tf_difficulty',0)||0));
@@ -85,13 +86,18 @@ let startMinT=0,startIdleT=0,startPinned=false;
 const startIdleArm=()=>{clearTimeout(startIdleT);if(start&&startOpen&&!startPinned)startIdleT=setTimeout(()=>{if(startOpen&&!startPinned)startMin(true)},2000)};
 const startMin=on=>{if(!start)return;clearTimeout(startMinT);clearTimeout(startIdleT);if(!on)startPinned=false;start.classList.toggle('min',on);const tg=$('startToggle');if(tg)tg.setAttribute('aria-expanded',on?'false':'true');if(!on)startIdleArm()};
 const startManual=()=>{const m=!startIsMin();startMin(m);startPinned=m};
-const startAutoOpen=()=>{curShow();startMin(true);startMinT=setTimeout(()=>startMin(false),2000)};
+let startQuiet=0;
+const startAutoOpen=()=>{curShow();startMin(true);startQuiet=performance.now()+700};   // Titelmenü bleibt eingeklappt (freie Sicht auf den Demokampf), bis die Maus bewegt wird (oder eine Taste / V gedrückt wird)
 const startIsMin=()=>!!start&&start.classList.contains('min');
 const startTg=$('startToggle');if(startTg)startTg.onclick=()=>{startManual();canvas.focus()};
 // Mauszeiger selbst: 2 s ohne Bewegung unsichtbar, bei Bewegung wieder sichtbar (nur im Titelmenü)
-let startCurT=0;
-const curShow=()=>{document.body.classList.remove('nocur');if(start&&startOpen)document.body.classList.add('curon');clearTimeout(startCurT);if(start&&startOpen)startCurT=setTimeout(()=>{if(startOpen)document.body.classList.add('nocur')},2000)};
-window.addEventListener('mousemove',e=>{if(!start||!startOpen||Math.abs(e.movementX||0)+Math.abs(e.movementY||0)<2)return;curShow();if(startIsMin()){if(!startPinned)startMin(false)}else startIdleArm()});
+// Gilt jetzt in ALLEN Menüs (Titel, Charakter-/Stage-Wahl, Shop/Booster, Game Over / Sieg, Pause, Panels): Zeiger sichtbar bei Bewegung, nach 2 s Ruhe weg. Im Kampf bleibt er aus.
+let startCurT=0,curWas=false,mouseL=null,endHot=-1;
+const panelsOpen=()=>studioIsOpen()||bgUi.isOpen||musicUi.isOpen||netUi.isOpen;
+const menuish=()=>!intro.active&&(startOpen||menuOpen||panelsOpen()||renderer.lootUi.open||(arcade.state!=='fight'&&!renderer.sel.launching));
+const curShow=()=>{const b=document.body,m=menuish();b.classList.remove('nocur');if(m)b.classList.add('curon');clearTimeout(startCurT);if(m)startCurT=setTimeout(()=>{if(menuish())b.classList.add('nocur')},2000)};
+window.addEventListener('mousemove',e=>{if(Math.abs(e.movementX||0)+Math.abs(e.movementY||0)<3)return;curShow();if(start&&startOpen&&!intro.active){if(startIsMin()){if(!startPinned&&performance.now()>startQuiet)startMin(false)}else startIdleArm()}});   // Mausbewegung während des Intros / direkt danach (Klick zum Überspringen) klappt das Menü nicht auf
+window.addEventListener('mousedown',()=>{if(menuish())curShow()});
 if(start){start.querySelectorAll('[data-mode]').forEach((b,i)=>{b.onclick=()=>{startI=i;startGo()}});const sm=load('tf_startmode','arcade');startI=START_MODES.indexOf(sm);if(startI<0)startI=0;startPick(0)}
 // ---- Demokampf im Hintergrund der Startseite (KI vs KI, Albtraum-Stufe, variierende Matchups) ----
 class DemoFight{
@@ -153,16 +159,41 @@ const lootNext=()=>{const u=renderer.lootUi;if(!u.po||u.po.advance()){u.mode='ma
 const shopBuy=i=>{const u=renderer.lootUi,o=SHOP[i];if(!o)return;u.sel=i;
  if(buyPack(i)){u.msg=`+${o.n} BOOSTER gekauft!`;u.msgOk=true;game.sfx('fw_rocket',{vol:.7,rate:1.5})}else{u.msg='Zu wenig Coins!';u.msgOk=false;game.sfx('block_guard',{vol:.5})}u.msgAt=u.t};
 const logical=e=>{const r=canvas.getBoundingClientRect();return[(e.clientX-r.left)/r.width*960,(e.clientY-r.top)/r.height*540]};
+canvas.addEventListener('mousemove',e=>{mouseL=logical(e)});canvas.addEventListener('mouseleave',()=>{mouseL=null});
+const canvasMenu=()=>!menuOpen&&!panelsOpen()&&!intro.active&&!startOpen&&!renderer.sel.launching;
+// Knöpfe auf den End-Bildschirmen (Game Over / Stage Clear / Sieg / Revanche): gleiche Aktionen wie ENTER / ESC / B
+const endBtns=()=>{const A=arcade,st=A.state;if(st==='fight'||st==='select'||A.t<30||!canvasMenu())return[];const b=[],sel=()=>A.toSelect();
+ if(netMatch&&netMatch.phase!=='pick'){if(st==='vsover'){b.push({label:'REVANCHE',col:'#7dff9a',fn:()=>netMatch&&netMatch.requestRematch()},{label:'VERLASSEN',col:'#ff9fb4',fn:()=>netMatch&&netMatch.leave()})}return b}
+ if(st==='clear')b.push({label:'WEITER',col:'#7fe8ff',fn:()=>A.confirm()});
+ else if(st==='gameover')b.push({label:A.mode==='story'?'WEITER':'NOCHMAL',col:'#7fe8ff',fn:()=>A.confirm()},{label:'CHARAKTERWAHL',col:'#b98bff',fn:sel});
+ else if(st==='victory'){if(A.hasNextChapter)b.push({label:'NÄCHSTES KAPITEL',col:'#7fe8ff',fn:()=>A.confirm()});b.push({label:'CHARAKTERWAHL',col:'#b98bff',fn:sel})}
+ else if(st==='vsover')b.push({label:'REVANCHE',col:'#7fe8ff',fn:()=>A.confirm()},{label:'KÄMPFERWAHL',col:'#b98bff',fn:sel});
+ if((st==='gameover'||st==='victory')&&LOOT.packs>0&&lootCan())b.push({label:'BOOSTER ('+LOOT.packs+')',col:'#ffd23f',fn:()=>lootOpen('main')});
+ return b};
+// Was liegt unter dem Mauszeiger? -> Rechteck für den weichen Hover-Rahmen (gleiche Reihenfolge wie im Klick-Handler)
+function hoverTarget(){endHot=-1;const L=mouseL;if(!L||menuOpen||panelsOpen()||startOpen||intro.active||renderer.sel.launching||document.body.classList.contains('nocur'))return null;
+ const u=renderer.lootUi,a=arcade,st=a.state;
+ if(u.open){if(u.mode==='shop'){const j=hitShopCard(...L);if(j>=0)return shopCardRect(j);return hitShopBack(...L)?shopBackRect():null}
+  if(u.mode==='main'){if(hitShopBtn(...L))return shopBtnRect();if(LOOT.packs>0&&inR(lootOpenRect(),...L))return lootOpenRect();if(inR(lootCloseRect(),...L))return lootCloseRect()}return null}
+ if(st!=='select'){const bs=endBtns();for(let i=0;i<bs.length;i++){const r=endBtnRect(i,bs.length);if(inR(r,...L)){endHot=i;return r}}return null}
+ if(!a.pvp&&lootCan()){if(hitShopSel(...L))return shopSelRect();if(inR(boosterRect(),...L))return boosterRect()}
+ const md=hitMode(...L);if(md>=0)return{x:MODE_PILL.x+md*MODE_PILL.w/4,y:MODE_PILL.y,w:MODE_PILL.w/4,h:MODE_PILL.h};
+ if(a.mode==='melee'&&a.vs.step===0&&!a.vs.locked[0]&&!a.vs.locked[1]){const mo=hitMeleeOpt(...L);if(mo>=0&&(mo!==1||a.cpu))return MELEE_OPTS[mo]}
+ if(a.pvp){const v=a.vs;if(v.step===1){const j=hitStage(...L);return j>=0&&a.stageOpen(j)?stageRect(j):null}const h=hitVsCar(...L);return h?vcarRect(h.pl,h.off):null}
+ if(a.mode==='story'&&hitChapter(...L))return CHAPTER_RECT;
+ if(CHARACTERS.custom&&a.cursor===CI()&&hitEdit(...L))return editRect();
+ const off=hitCar(...L);return off===null?null:carRect(off)}
 canvas.addEventListener('mousemove',e=>{const u=renderer.lootUi;if(u.open){if(u.mode==='shop'){const j=hitShopCard(...logical(e));if(j>=0)u.sel=j}return}
  if(arcade.state!=='select'||menuOpen||studioIsOpen()||renderer.sel.launching)return;
  if(arcade.pvp){if(arcade.vs.step===1){const j=hitStage(...logical(e));if(j>=0&&arcade.stageOpen(j))arcade.vs.stage=j}return}
  });   // Rondell: Hover ändert nichts mehr, es wird mit ◀ ▶ bzw. Klick auf die Seitenfiguren weitergeschaltet
 canvas.addEventListener('click',e=>{{const u=renderer.lootUi;if(u.open){const L=logical(e);   // Overlay offen: nur dort klicken
   if(u.mode==='shop'){const j=hitShopCard(...L);if(j>=0)shopBuy(j);else if(hitShopBack(...L)){u.mode='main';u.t=0}}
-  else if(u.mode==='main'&&hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null}
+  else if(u.mode==='main'){if(hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null}else if(LOOT.packs>0&&inR(lootOpenRect(),...L))lootReveal(openPack());else if(inR(lootCloseRect(),...L))u.open=false}
   else if(u.mode==='reveal')lootNext();
   return}}
- if(arcade.state==='select'&&!arcade.pvp&&lootCan()&&hitShopSel(...logical(e))){lootOpen('shop');return}
+ if(arcade.state==='select'&&!arcade.pvp&&lootCan()){const L=logical(e);if(hitShopSel(...L)){lootOpen('shop');return}if(inR(boosterRect(),...L)){lootOpen('main');return}}
+ if(arcade.state!=='select'&&canvasMenu()){const L=logical(e),bs=endBtns();for(let i=0;i<bs.length;i++)if(inR(endBtnRect(i,bs.length),...L)){bs[i].fn();return}return}
  if(arcade.state!=='select'||menuOpen||studioIsOpen()||renderer.sel.launching)return;const L=logical(e);
  const md=hitMode(...L);if(md>=0){arcade.setMode(['arcade','story','versus','melee'][md]);return}
  if(arcade.mode==='melee'&&arcade.vs.step===0&&!arcade.vs.locked[0]&&!arcade.vs.locked[1]){const mo=hitMeleeOpt(...L);if(mo>=0){if(mo===0)arcade.toggleCpu();else if(mo===1&&arcade.cpu)setDiff((arcade.difficulty+1)%AI_LEVELS.length);else if(mo===2)arcade.cycleStocks();return}}
@@ -171,6 +202,11 @@ canvas.addEventListener('click',e=>{{const u=renderer.lootUi;if(u.open){const L=
  if(arcade.mode==='story'&&hitChapter(...L)){if(arcade.cycleChapter())game.sfx('ui_round_start',{vol:.5,rate:1.4});return}   // Klick auf die Kapitel-Zeile
  if(CHARACTERS.custom&&arcade.cursor===CI()&&hitEdit(...L)){openStudio();return}
  const off=hitCar(...L),n=SLOTS().length;if(off===0)startFight(arcade.cursor);else if(off!==null)arcade.cursor=(arcade.cursor+off+n)%n;});   // linke/rechte Figur = eine weiterschalten, mittlere = kämpfen
+canvas.addEventListener('contextmenu',e=>{const u=renderer.lootUi;
+ if(u.open){if(u.mode==='shop'||u.mode==='reveal'){u.mode='main';u.t=0;u.po=null}else u.open=false;e.preventDefault();return}
+ if(!canvasMenu()||(netMatch&&netMatch.phase!=='pick'))return;const st=arcade.state;
+ if(st==='select'&&arcade.pvp){arcade.vsBack();e.preventDefault()}
+ else if(st==='gameover'||st==='victory'||st==='vsover'){arcade.toSelect();e.preventDefault()}});   // Rechtsklick = Zurück: Booster/Shop eine Ebene hoch, 2-Spieler-Auswahl zurück, End-Bildschirm -> Charakterwahl
 canvas.addEventListener('wheel',e=>{if(arcade.state!=='select'||arcade.pvp||menuOpen||studioIsOpen()||renderer.sel.launching||renderer.lootUi.open)return;const n=SLOTS().length;arcade.cursor=(arcade.cursor+(e.deltaY>0||e.deltaX>0?1:-1)+n)%n;e.preventDefault()},{passive:false});
 // ---- Online-Kampf (Lockstep: core/netplay.js + netmatch.js, Verbindung: core/netclient.js, Server: server/server.js, Oberfläche: render/netui.js) ----
 let netClient=null,netMatch=null,netBusy=false,netFrom='start',netLeaveAsk=false,netPendingRoom=null;
@@ -298,7 +334,9 @@ function assignPads(){const l=navigator.getGamepads?[...navigator.getGamepads()]
 function loop(now){if(intro.active){last=now;sound.music('menu');requestAnimationFrame(loop);return}   // Intro: Spiel steht still, aber die Menümusik läuft schon
  assignPads();const dt=now-last;
  {const showBtns=(startOpen||arcade.state==='select')&&!menuOpen&&!studioIsOpen()&&!bgUi.isOpen&&!musicUi.isOpen&&!renderer.sel.launching&&!renderer.lootUi.open;bgUi.setBtn(showBtns);musicUi.setBtn(showBtns)}   // Hintergrund-Knopf nur im Titelmenü + in den Auswahlbildschirmen
- if(!startOpen&&document.body.classList.contains('curon'))document.body.classList.remove('nocur','curon');sound.music(startOpen?'menu':musicFor());   // Titelmusik auf der Startseite, sonst Menü- / Kampf-Track
+ {const mn=menuish();if(mn&&!curWas)curShow();curWas=mn;   // Menü betreten: Zeiger zeigen, nach 2 s Ruhe weg
+  if(mn){const hr=hoverTarget();renderer.hov.want=hr;canvas.style.cursor=hr?'pointer':'';renderer.endBtns=arcade.state!=='select'?endBtns():null;renderer.endHot=endHot}
+  else{document.body.classList.remove('nocur','curon');canvas.style.cursor='';renderer.hov.want=null;renderer.endBtns=null}}sound.music(startOpen?'menu':musicFor());   // Titelmusik auf der Startseite, sonst Menü- / Kampf-Track
  if(gfxMode==='auto'&&!startOpen&&!menuOpen&&!document.hidden&&dt<500){autoT+=dt;slowAcc=Math.max(0,slowAcc+(dt>26?dt-16:-4));   // dauerhaft unter ~38 FPS => eine Stufe runter (nach 1,5 s Eingewöhnung)
   if(autoT>1500&&slowAcc>350&&GFX.level>0){setGfx(GFX.level-1);renderer.applyGfx();resize();slowAcc=0;autoT=0}}
  acc+=Math.min(100,dt);last=now;const STEP=1000/(60*(netMatch?SPEED:speed)*(startOpen?1:game.timeScale||1));   // Online: festes Tempo (beide Geräte müssen gleich schnell rechnen)

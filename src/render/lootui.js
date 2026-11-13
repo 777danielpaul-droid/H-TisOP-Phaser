@@ -30,6 +30,9 @@ export const shopCardRect=i=>{const w=220,h=250,gap=30,x0=W/2-(w*3+gap*2)/2;retu
 export const shopBackRect=()=>({x:W/2-80,y:H-84,w:160,h:28});
 export const shopSelRect=()=>({x:W-18-122-6-122-6-104,y:14,w:104,h:26});   // „SHOP“-Knopf im Startmenü, links neben dem Booster-Zähler
 export const hitShopSel=(lx,ly)=>inR(shopSelRect(),lx,ly);
+export const boosterRect=()=>({x:W-18-122-6-122,y:14,w:122,h:26});   // Booster-Zähler oben rechts (Klick = Booster-Übersicht)
+export const lootOpenRect=()=>({x:W/2-196,y:H-62,w:186,h:26});
+export const lootCloseRect=()=>({x:W/2+10,y:H-62,w:186,h:26});   // Booster-Übersicht: „Booster öffnen“ / „Schließen“ per Maus
 export const shopBtnRect=()=>({x:W-168,y:16,w:150,h:28});   // „SHOP“-Knopf in der Booster-Übersicht
 export function hitShopCard(lx,ly){for(let i=0;i<SHOP.length;i++)if(inR(shopCardRect(i),lx,ly))return i;return -1}
 export const hitShopBack=(lx,ly)=>inR(shopBackRect(),lx,ly);
@@ -79,5 +82,8 @@ export function drawLoot(g,hud,u){if(!u||!u.open)return;u.t=(u.t||0)+1;
   hud.txt(g,'FARBEN: '+(own.length?own.join(' · '):'noch keine – Booster bringen neue Farben'),W/2,y0+2*(ch+gx)+18,12,'#c9d0ff','center');
   const ow2=STAGE_POOL.filter(i=>ownsStage(i)).map(i=>STAGE_NAMES[i]);hud.txt(g,'STAGES: NEON CITY'+(ow2.length?' · '+ow2.join(' · '):'')+'   ('+(1+ow2.length)+'/'+(1+STAGE_POOL.length)+')',W/2,y0+2*(ch+gx)+38,12,'#c9d0ff','center');
   {const b=shopBtnRect();hud.kPlate(g,b.x,b.y,b.w,b.h,{col:'#ffd23f',on:true,sk:8,t:u.t});hud.txt(g,'P – SHOP',b.x+b.w/2+4,b.y+19,13,'#ffffff','center','#ffd23f')}
-  hud.txt(g,LOOT.packs>0?'ENTER – Booster öffnen   ·   P – Shop   ·   B / ESC – schließen':'Keine Booster – besiege Mantis im Story-Modus oder kaufe welche im Shop (P)   ·   B / ESC – schließen',W/2,H-34,14,'#ffffff','center')}
+  {const o=lootOpenRect(),c=lootCloseRect(),pk=LOOT.packs>0;
+   hud.kPlate(g,o.x,o.y,o.w,o.h,{col:pk?'#ffd23f':'#6a6a80',on:pk,sk:8,t:u.t});hud.txt(g,'BOOSTER ÖFFNEN',o.x+o.w/2+4,o.y+19,13,pk?'#ffffff':'#8a8aa0','center',pk?'#ffd23f':null);
+   hud.kPlate(g,c.x,c.y,c.w,c.h,{col:'#8f7bff',on:false,sk:8,t:u.t});hud.txt(g,'SCHLIESSEN',c.x+c.w/2+4,c.y+19,13,'#d6c8ff','center')}
+  hud.txt(g,LOOT.packs>0?'ENTER – Booster öffnen   ·   P – Shop   ·   B / ESC – schließen   ·   Rechtsklick – schließen':'Keine Booster – besiege Mantis im Story-Modus oder kaufe welche im Shop (P)   ·   B / ESC – schließen',W/2,H-16,12,'#ffffff','center')}
  g.restore()}
