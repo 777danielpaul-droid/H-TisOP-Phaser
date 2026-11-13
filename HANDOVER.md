@@ -70,6 +70,9 @@
 ## Intro ohne Startknopf (aktuell)
 - Das Intro hat **keinen „▶ START“-Knopf** mehr. Das stumme Video startet sofort (`render/intro.js`), **Enter / Esc / Klick auf „Überspringen“** beendet es. Die Menümusik wird gleichzeitig angefordert; Browser geben Ton erst nach der ersten Eingabe frei, bis dahin zeigt ein kleiner Hinweis unten links „Beliebige Taste = Ton an“ (`#intro-snd`), danach setzt die Musik sofort ein. Nicht wieder einen Startknopf einbauen (`#intro-go`/`#intro-start` sind entfernt). `tests/e2e-online.py` überspringt das Intro mit einem Enter.
 
+## Menü-Musik (Default)
+- `music/menu.ogg` ist der Track „23 Theme (TikTok Vers.) – Best Part“ (36,8 s, Loop): erste Sekunde abgeschnitten, auf −19,2 LUFS abgesenkt (wie `fight.ogg`; das Original war −7 LUFS und viel zu laut), Cover/Metadaten entfernt. Der alte Menü-Track ist ersetzt. Eigene Playlists (Taste N) überschreiben ihn weiterhin.
+
 ## HUD (v10): Gold-/Tusche-Design
 - `src/render/hud.js` ist das Martial-Arts-HUD (Tusche-Platten, Klingen-Lebensbalken, Portraits im Goldring mit Hanko-Siegel, Ring-Uhr, Pinsel-Combo-Zähler, Ensō-Banner). Serifenschrift mit CJK-Fallback (Kanji 武 闘 勝 壱 弐 参 brauchen eine Systemschrift mit CJK, sonst Kästchen).
 - Eigene Ergänzungen über das gelieferte HUD hinaus: Stage-Anzeige unter dem Timer (`STAGE n / total`) und Arcade-Banner (Stage Clear / Game Over / Arcade geschafft) im selben Stil.
