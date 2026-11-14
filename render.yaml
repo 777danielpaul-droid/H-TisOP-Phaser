@@ -1,21 +1,5 @@
-# Render-Blueprint: ZWEI Dienste.
-#  1) hitisop-spiel  = das Spiel als Static Site: schläft nie, lädt sofort, braucht keinen Server zum Spielen.
-#  2) hitisop        = Online-Server (WebSocket): darf schlafen, wird erst beim ersten Online-Spiel geweckt (dauert dann bis ~1 min, das Spiel zeigt eine Wartemeldung).
-# Render -> New -> Blueprint -> dieses Repo wählen, fertig. Das Spiel öffnest du danach über die Adresse von "hitisop-spiel" (https://hitisop-spiel.onrender.com).
-# Lautet die Adresse deines Online-Servers (Dienst "hitisop") anders, nur die Zeile HITISOP_ONLINE_URL unten anpassen.
+# Render-Blueprint: ein Web Service liefert das Spiel UND den Online-Server (WebSocket). Render -> New -> Blueprint -> dieses Repo wählen, fertig.
 services:
-  - type: web
-    runtime: static
-    name: hitisop-spiel
-    buildCommand: node tools/build.mjs
-    staticPublishPath: dist
-    headers:
-      - path: /*
-        name: Cache-Control
-        value: public, max-age=300, must-revalidate
-    envVars:
-      - key: HITISOP_ONLINE_URL
-        value: https://hitisop.onrender.com
   - type: web
     name: hitisop
     runtime: node
