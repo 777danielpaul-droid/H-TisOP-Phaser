@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""Erzeugt die Sammelkarten-Bilder assets/cards/<karten-id>.webp (600x840, Hochformat 5:7).
+
+Je Karte: Hintergrund in der Figurenfarbe (Glow, Schraffur, Lichtstrahlen) + eine Kampfpose
+der Figur aus ihrem Sprite-Atlas (assets/<sprite>/atlas.webp + meta.json).
+Name/Seltenheit/Text zeichnet das Spiel selbst darüber (render/lootui.js, unteres Drittel wird abgedunkelt)
+-> die Figur sitzt im oberen ~75 % der Karte.
+
+Aufruf:  python3 tools/make-cards.py        (danach: node tools/build.mjs)
+Neue Karte: Eintrag in CARDS unten (karten-id wie in src/core/loot.js, Sprite-Ordner, Frame-Name, Akzentfarbe).
+"""
+import json, math, os, random
+from PIL import Image, ImageDraw, ImageFilter, ImageChops
+
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+W, H = 600, 840
+FIG_BOX = (520, 520)      # größte Figurenbreite/-höhe in px (inkl. Effekte wie Schwung/Staub)
+FOOT_Y = 640              # Fußlinie der Figur auf der Karte (Name-Leiste beginnt bei ~ 0.84*H)
+
+# karten-id: (sprite-ordner, frame, akzentfarbe, größe-faktor)
+CARDS = {
+    'tiger':   ('tiger',   't_neu_posen_01', (63, 224, 255), 1.00),
+    'st3g0':   ('st3g0',   'p_9_3',          (125, 255, 74), 1.00),
+    'kitsune': ('kitsune', 'p_1_2',          (180, 107, 255), 1.00),
+    'anubis':  ('anubis',  'p_3_3',          (255, 212, 90), 1.00),
+    'alpha':   ('mantis',  'p_1_2',          (255, 122, 58), 1.00),
+    'krieger': ('mantis',  'p_2_2',          (125, 255, 154), 1.00),
+    'spaeher': ('mantis',  'p_3_1',          (150, 190, 255), 1.00),
+}
+
+
+def mix(c, d, t):
+    return tuple(int(c[i] + (d[i] - c[i]) * t) for i in range(3))
+
+
+def background(acc, seed):
+    rnd = random.Random(seed)
+    dark = mix(acc, (4, 8, 14), .88)
+    mid = mix(acc, (6, 12, 20), .72)
+    bg = Image.new('RGB', (W, H), dark)
+    # senkrechter Verlauf
+    px = ImageDraw.Draw(bg)
+    for y in range(H):
+        t = y / H
+        px.line([(0, y), (W, y)], fill=mix(mix(acc, (3, 6, 10), .78), (2, 5, 9), t))
+    # großer Glow hinter der Figur
+    glow = Image.new('RGB', (W, H), (0, 0, 0))
+    gd = ImageDraw.Draw(glow)
+    cx, cy = W // 2, 400
+    for r in range(330, 0, -6):
+        k = (1 - r / 330) ** 1.8
+        gd.ellipse([cx - r, cy - r * 1.15, cx + r, cy + r * 1.15], fill=mix((0, 0, 0), acc, .62 * k))
+    bg = ImageChops.add(bg, glow)
+    # Lichtstrahlen von hinten
+    rays = Image.new('RGB', (W, H), (0, 0, 0))
+    rd = ImageDraw.Draw(rays)
+    for i in range(14):
+        a = rnd.uniform(0, math.tau)
+        w = rnd.uniform(.03, .08)
+        L = 900
+        rd.polygon([(cx, cy), (cx + L * math.cos(a - w), cy + L * math.sin(a - w)),
+                    (cx + L * math.cos(a + w), cy + L * math.sin(a + w))], fill=mix((0, 0, 0), acc, .13))
+    rays = rays.filter(ImageFilter.GaussianBlur(5))
+    bg = ImageChops.add(bg, rays)
+    # diagonale Schraffur (leicht)
+    hatch = Image.new('RGB', (W, H), (0, 0, 0))
+    hd = ImageDraw.Draw(hatch)
+    for x in range(-H, W, 22):
+        hd.line([(x, H), (x + H, 0)], fill=mix((0, 0, 0), acc, .07), width=2)
+    bg = ImageChops.add(bg, hatch)
+    # Funken
+    sp = Image.new('RGB', (W, H), (0, 0, 0))
+    sd = ImageDraw.Draw(sp)
+    for _ in range(60):
+        x, y = rnd.randint(14, W - 14), rnd.randint(14, 700)
+        r = rnd.choice([1, 1, 2, 2, 3])
+        sd.ellipse([x - r, y - r, x + r, y + r], fill=mix((0, 0, 0), (255, 255, 255), rnd.uniform(.25, .7)))
+    sp = ImageChops.add(sp, sp.filter(ImageFilter.GaussianBlur(3)))
+    bg = ImageChops.add(bg, sp)
+    # Boden-Schimmer unter den Füßen
+    fl = Image.new('RGB', (W, H), (0, 0, 0))
+    fd = ImageDraw.Draw(fl)
+    for i in range(8):
+        fd.ellipse([cx - 250 + i * 14, FOOT_Y - 20 + i * 2, cx + 250 - i * 14, FOOT_Y + 34 - i * 2],
+                   fill=mix((0, 0, 0), acc, .05 + i * .012))
+    bg = ImageChops.add(bg, fl.filter(ImageFilter.GaussianBlur(6)))
+    # Vignette
+    vg = Image.new('L', (W, H), 0)
+    vd = ImageDraw.Draw(vg)
+    vd.ellipse([-120, -80, W + 120, H + 160], fill=255)
+    vg = vg.filter(ImageFilter.GaussianBlur(90))
+    black = Image.new('RGB', (W, H), (1, 3, 6))
+    bg = Image.composite(bg, black, vg)
+    return bg
+
+
+def sprite(sid, frame):
+    atlas = Image.open(os.path.join(ROOT, 'assets', sid, 'atlas.webp')).convert('RGBA')
+    f = json.load(open(os.path.join(ROOT, 'assets', sid, 'meta.json')))['frames'][frame]
+    return atlas.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h'])), f
+
+
+def make(cid, sid, frame, acc, size):
+    bg = background(acc, cid).convert('RGBA')
+    im, f = sprite(sid, frame)
+    k = min(FIG_BOX[0] / im.width, FIG_BOX[1] / im.height) * size
+    im = im.resize((max(1, int(im.width * k)), max(1, int(im.height * k))), Image.LANCZOS)
+    # Fußlinie: oy ist negativ (Frame-Oberkante über der Fußlinie)
+    foot_off = int((f['h'] + f['oy']) * k)   # Pixel unter der Fußlinie (Effekte)
+    x = (W - im.width) // 2
+    y = FOOT_Y - im.height + foot_off
+    # Schatten + Rand-Glow in Akzentfarbe
+    a = im.split()[3]
+    halo = Image.new('RGBA', im.size, acc + (0,))
+    halo.putalpha(a.filter(ImageFilter.GaussianBlur(14)).point(lambda v: int(v * .55)))
+    shadow = Image.new('RGBA', im.size, (0, 0, 0, 0))
+    shadow.putalpha(a.filter(ImageFilter.GaussianBlur(10)).point(lambda v: int(v * .7)))
+    bg.alpha_composite(halo, (x, y))
+    bg.alpha_composite(shadow, (x + 6, y + 10))
+    bg.alpha_composite(im, (x, y))
+    out = bg.convert('RGB')
+    path = os.path.join(ROOT, 'assets', 'cards', cid + '.webp')
+    out.save(path, 'WEBP', quality=90, method=6)
+    print(cid, '->', path, os.path.getsize(path) // 1024, 'KB')
+    return out
+
+
+if __name__ == '__main__':
+    os.makedirs(os.path.join(ROOT, 'assets', 'cards'), exist_ok=True)
+    for cid, (sid, frame, acc, size) in CARDS.items():
+        make(cid, sid, frame, acc, size)
