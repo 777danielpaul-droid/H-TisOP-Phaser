@@ -24,6 +24,7 @@ import{hitCar,hitChapter,hitEdit,hitMode,hitStage,hitVsCar,hitMeleeOpt,carRect,e
 import{studioOpen,studioIsOpen,studioLoadSaved}from'./render/customstudio.js';
 import{BgPanel}from'./render/bgpanel.js';
 import{Intro}from'./render/intro.js';
+import{ShopClip}from'./render/shopclip.js';
 import{MusicStore,MusicPanel}from'./render/musicpanel.js';
 import{PackOpen}from'./render/packopen.js';
 // Einstiegspunkt: Vollbild-Canvas, Eingabe, KI, Game-Loop (fester Schritt) und Pause-Menü (M).
@@ -155,7 +156,8 @@ const saveSkins=()=>{try{localStorage.setItem(SKIN_KEY,JSON.stringify({skins:arc
 try{const sv=JSON.parse(localStorage.getItem(SKIN_KEY)||'null');if(sv&&typeof sv==='object'){Object.assign(arcade.skins,sv.skins||{});arcade.vs.s1=sv.s1|0;arcade.vs.s2=sv.s2|0}}catch(e){}
 // ---- Booster-Overlay / Shop: Öffnen, Kaufen ----
 const lootCan=()=>{const st=arcade.state;return !menuOpen&&!renderer.sel.launching&&((st==='select'&&!arcade.pvp)||st==='gameover'||st==='victory')};
-const lootOpen=mode=>{const u=renderer.lootUi;u.open=true;u.mode=mode;u.rewards=null;u.t=0;u.sel=0;u.msg=null};
+const shopClip=new ShopClip(on=>{if(on){shopClip._mv=sound.mvol;sound.setMusicVolume(sound.mvol*.2)}else if(shopClip._mv!=null){sound.setMusicVolume(shopClip._mv);shopClip._mv=null}},()=>{clearInputs();canvas.focus()});   // Transfer-Clip beim Betreten des Shops (Musik währenddessen leiser)
+const lootOpen=mode=>{const u=renderer.lootUi;u.open=true;u.mode=mode;u.rewards=null;u.t=0;u.sel=0;u.msg=null;if(mode==='shop'){sound.unlock();shopClip.start()}};
 // Booster aufreißen: Animation (render/packopen.js) mit den schon gezogenen Belohnungen; ENTER/Klick treibt sie voran, ESC überspringt (Belohnungen sind bereits gespeichert)
 const lootReveal=rw=>{const u=renderer.lootUi;u.rewards=rw;u.po=new PackOpen(rw,(n,o)=>game.sfx(n,o));u.mode='reveal';u.t=0};
 const lootNext=()=>{const u=renderer.lootUi;if(!u.po||u.po.advance()){u.mode='main';u.t=0;u.po=null}};
@@ -199,7 +201,7 @@ canvas.addEventListener('mousemove',e=>{const dl=game.story&&game.story.dealer;i
 canvas.addEventListener('click',e=>{{const dl=game.story&&game.story.dealer;if(dl&&dl.active&&arcade.state==='fight'&&!menuOpen){const i=hitDealerOpt(...logical(e),dl.opts.length);if(i>=0)dl.click(i);return}}
  {const u=renderer.lootUi;if(u.open){const L=logical(e);   // Overlay offen: nur dort klicken
   if(u.mode==='shop'){const j=hitShopCard(...L);if(j>=0)shopBuy(j);else if(hitShopBack(...L)){u.mode='main';u.t=0}}
-  else if(u.mode==='main'){if(hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null}else if(LOOT.packs>0&&inR(lootOpenRect(),...L))lootReveal(openPack());else if(inR(lootCloseRect(),...L))u.open=false}
+  else if(u.mode==='main'){if(hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null;sound.unlock();shopClip.start()}else if(LOOT.packs>0&&inR(lootOpenRect(),...L))lootReveal(openPack());else if(inR(lootCloseRect(),...L))u.open=false}
   else if(u.mode==='reveal')lootNext();
   return}}
  if(arcade.state==='select'&&!arcade.pvp&&lootCan()){const L=logical(e);if(hitShopSel(...L)){lootOpen('shop');return}if(inR(boosterRect(),...L)){lootOpen('main');return}}
@@ -275,7 +277,8 @@ function netBarUpdate(){const m=netMatch;if(!m||m.phase==='pick'||m.phase==='clo
  else if(m.phase==='play'){if(netLeaveAsk)mid='KAMPF VERLASSEN?<small>ENTER = JA · ESC = NEIN</small>';else if(m.rematchWait)mid='WARTE AUF REVANCHE …';else if(st>NET.stallWarnMs){mid='VERBINDUNG LANGSAM …';cls='warn'}}
  netUi.setBar(`ONLINE · PING ${m.rtt?Math.round(m.rtt)+' ms':'…'} · DU = SPIELER ${m.slot+1}`,mid,cls)}
 addEventListener('keydown',e=>{
- if(intro.key(e)){e.preventDefault();return}   // Intro läuft: Enter/Esc überspringt, andere Tasten werden verschluckt
+ if(intro.key(e)){e.preventDefault();return}
+ if(shopClip.key(e)){e.preventDefault();return}   // Shop-Clip läuft: Enter/Esc/Leertaste überspringt, andere Tasten werden verschluckt   // Intro läuft: Enter/Esc überspringt, andere Tasten werden verschluckt
  if(studioIsOpen()||bgUi.isOpen||musicUi.isOpen||netUi.isOpen)return;   // Editor für die eigene Figur / Hintergrund-Panel / Online-Lobby haben Vorrang (Tippen in Feldern)
  if(e.code==='KeyH'&&!menuOpen&&(startOpen||(arcade.state==='select'&&!renderer.sel.launching&&!renderer.lootUi.open))){bgUi.open();e.preventDefault();return}   // H = eigenen Hintergrund einfügen (Titelmenü + Auswahl)
  if(e.code==='KeyN'&&!menuOpen&&(startOpen||(arcade.state==='select'&&!renderer.sel.launching&&!renderer.lootUi.open))){musicUi.open();e.preventDefault();return}   // N = eigene Musik (Titelmenü + Auswahl)
@@ -307,7 +310,7 @@ addEventListener('keydown',e=>{
     else if(e.code==='Enter'||e.code==='Space'||e.code==='KeyJ')shopBuy(u.sel);
     return}
    if(e.code==='Escape'||e.code==='KeyB'){if(u.mode==='reveal'){u.mode='main';u.t=0;u.po=null}else u.open=false}
-   else if(e.code==='KeyP'&&u.mode==='main'){u.mode='shop';u.sel=0;u.msg=null}
+   else if(e.code==='KeyP'&&u.mode==='main'){u.mode='shop';u.sel=0;u.msg=null;sound.unlock();shopClip.start()}
    else if(e.code==='Enter'||e.code==='Space'||e.code==='KeyJ'){if(u.mode==='reveal')lootNext();else if(LOOT.packs>0)lootReveal(openPack())}
    return}}
  if(e.code==='KeyM'){setMenu(!menuOpen);return}
@@ -365,6 +368,7 @@ function padPause(n){   // Pausenmenü: ↑↓ Eintrag, ←→ Wert/Reiter, ✕ 
   else{mark(null);showTab(tab+d)}}
  else if(n==='cross'&&el){if(el.tagName==='SELECT'){el.selectedIndex=(el.selectedIndex+1)%el.options.length;fire(el,'change')}else if(el.tagName!=='INPUT')el.click()}}
 function padMenu(now){
+ if(shopClip.active)return;
  const pads=navigator.getGamepads?[...navigator.getGamepads()].filter(g=>g&&g.connected):[];if(!pads.length&&!padNav.prev.size)return;
  let screen;
  if(intro.active)screen='intro';else if(panelsOpen())screen=null;else if(menuOpen)screen='pause';
@@ -394,4 +398,4 @@ function loop(now){if(intro.active){last=now;padMenu(now);sound.music('menu');re
 requestAnimationFrame(loop);
 sound.unlock();sound.music('menu');   // Menümusik schon beim Intro: Audio sofort vorbereiten (Browser geben es frei, sobald sie dürfen, spätestens bei der ersten Taste/Klick)
 intro.start();   // als Letztes: alles ist eingerichtet, das Video startet sofort (kein Startknopf), die Menümusik setzt ein, sobald der Browser Ton erlaubt
-window.__net=()=>netMatch;window.__intro=intro;window.__music=musicUi;window.__bgui=bgUi;window.__reveal=lootReveal;window.__lootOpen=lootOpen;window.__renderer=renderer;window.__demo=demo;window.__game=game;window.__arcade=arcade;
+window.__net=()=>netMatch;window.__intro=intro;window.__shopclip=shopClip;window.__music=musicUi;window.__bgui=bgUi;window.__reveal=lootReveal;window.__lootOpen=lootOpen;window.__renderer=renderer;window.__demo=demo;window.__game=game;window.__arcade=arcade;

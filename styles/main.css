@@ -515,3 +515,12 @@ input:focus,select:focus,textarea:focus{outline:1px solid #6debf1!important;box-
  box-shadow:0 0 9px #65dcff;
 }
 /* Top-right Shop button uses the same cool laser family as the other counters. */
+
+/* Transfer-Clip beim Betreten des Shops (render/shopclip.js) */
+#shopclip{position:fixed;inset:0;z-index:290;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .35s ease;cursor:pointer}
+#shopclip.out{opacity:0;pointer-events:none}
+#shopclip.hidden{display:none}
+#shopclip video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+#shopclip-skip{position:absolute;right:22px;bottom:22px;font:700 14px system-ui;letter-spacing:.06em;border-radius:0;background:linear-gradient(180deg,rgba(14,39,50,.94),rgba(3,12,19,.96));border:1px solid rgba(99,229,238,.48);color:#dffcff;padding:9px 16px;cursor:pointer;opacity:.85}
+#shopclip-skip:hover{opacity:1;border-color:var(--cy)}
+#shopclip-skip kbd{margin-right:6px;padding:1px 6px;border:1px solid #8f95d8;font-size:12px;color:#cfd8ff}

@@ -57,6 +57,9 @@ with sync_playwright() as p:
     boot()
     ok('rabe' not in pg.evaluate("__arcade.constructor.slotIds()"),'Rabe vor dem Kauf nicht wählbar')
     pg.keyboard.press('KeyP');pg.wait_for_timeout(500)
+    ok(pg.evaluate("__shopclip.active"),'Transfer-Clip läuft beim Betreten des Shops')
+    pg.keyboard.press('Enter');pg.wait_for_timeout(600)   # Clip überspringen
+    ok(not pg.evaluate("__shopclip.active"),'Clip übersprungen')
     ok(pg.evaluate("__renderer.lootUi.mode")=='shop','Shop offen')
     pg.screenshot(path='6_shop_before.png')
     for _ in range(3): pg.keyboard.press('ArrowRight')
