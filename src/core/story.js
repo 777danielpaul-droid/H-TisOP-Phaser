@@ -1,4 +1,5 @@
 import{AIController}from'./ai.js';
+import{Dealer}from'./blackmarket.js';
 import{CHARACTERS}from'./characters.js';
 import{EFFECT,GROUND,H}from'./config.js';
 import{Fighter}from'./fighter.js';
@@ -10,9 +11,10 @@ import{addPack}from'./loot.js';
 // Rein logisch (kein DOM) -> headless testbar. Werte hier justierbar.
 export const LV={x0:-800,x1:1900,start:-700,half:560};   // Levelgrenzen, Startpunkt, halbe Breite des gesperrten Kampffelds
 // Kapitel: je eigene Wellen (enc), Level-Look (stage = Index in THEMES, ground/line/lamp für die Straße), Textbausteine und Wellen-Limit (capBase + Welle, max cap).
+// npc = Schwarzmarkthändler KORVUS (core/blackmarket.js): x = Standort (zwischen den Wellen ansprechbar, bei einer Welle duckt er sich weg).
 // enc-Felder: x = Auslöse-Position, n = Anzahl Mantis, boss = Boss-Figur (1 = Alpha-Mantis) und at = Platz in der Spawn-Reihenfolge (0 = zuerst).
 export const CHAPTERS=[
- {id:1,name:'DER SCHWARM',stage:0,capBase:2,cap:5,look:{ground:['#14101f','#050309'],line:'#4a3b78',lamp:'255,210,120',acc:'#7dff9a'},
+ {id:1,name:'DER SCHWARM',stage:0,capBase:2,cap:5,npc:{x:-480},look:{ground:['#14101f','#050309'],line:'#4a3b78',lamp:'255,210,120',acc:'#7dff9a'},
   intro:['Die Stadt schläft nicht mehr. Aus den Gassen kriechen Insektenkrieger.','Kämpfe dich durch das Viertel – sie kommen in Gruppen.'],
   win:{title:'SCHWARM BESIEGT',say:'Die Stadt ist sicher – vorerst.'},
   enc:[
@@ -21,7 +23,7 @@ export const CHAPTERS=[
    {x:600,n:4,title:'DRITTE WELLE',say:'Der Schwarm hat dich eingekreist!'},
    {x:1000,n:5,title:'VIERTE WELLE',say:'Sie greifen von beiden Seiten an – bleib in Bewegung!'},
    {x:1380,n:4,boss:1,title:'DER ALPHA',say:'Der Anführer des Schwarms steigt herab.'}]},
- {id:2,name:'DER DÄMON ERWACHT',stage:2,capBase:3,cap:6,look:{ground:['#0c2a22','#030a07'],line:'#52ffa8',lamp:'120,255,200',acc:'#ff6a7a'},
+ {id:2,name:'DER DÄMON ERWACHT',stage:2,capBase:3,cap:6,npc:{x:-480},look:{ground:['#0c2a22','#030a07'],line:'#52ffa8',lamp:'120,255,200',acc:'#ff6a7a'},
   intro:['Der Schwarm war nur der Vorbote. Im Hafen regt sich etwas viel Größeres.','Mehr Krieger, härtere Wellen – und am Ende wartet er.'],
   win:{title:'DÄMON BESIEGT',say:'Das Glühen im Hafen erlischt.'},
   enc:[
@@ -39,14 +41,15 @@ export class MobAI extends AIController{
    this.feed(dist>want+40?fwd:dist<want-60?-fwd:0,0,[],game.hitstop>0);return}
   super.tick(me,opp,game)}}
 export class Story{
- constructor(game,{ai=0,chapter=1}={}){this.g=game;this.lvl=[0,1,1,2][Math.max(0,Math.min(3,ai|0))];this.ch=Math.max(1,Math.min(CHAPTERS.length,chapter|0||1));this.cfg=CHAPTERS[this.ch-1];this.encs=this.cfg.enc;this.rage=false;this.cp=0;this.kills=0;this.att=[];this.mobs=[];this.l=LV.x0;this.r=LV.x1}
+ constructor(game,{ai=0,chapter=1}={}){this.g=game;this.lvl=[0,1,1,2][Math.max(0,Math.min(3,ai|0))];this.ch=Math.max(1,Math.min(CHAPTERS.length,chapter|0||1));this.cfg=CHAPTERS[this.ch-1];this.encs=this.cfg.enc;this.rage=false;this.cp=0;this.kills=0;this.att=[];this.mobs=[];this.l=LV.x0;this.r=LV.x1;this.dealer=null}
  get total(){return this.encs.length}
  alive(){return this.mobs.filter(m=>m.state!=='ko')}
  nearest(f){let b=null,bd=1e9;for(const m of this.alive()){const d=Math.abs(m.x-f.x);if(d<bd){bd=d;b=m}}return b}
  pairs(){const p=this.g.p1,o=[];for(const m of this.alive()){o.push([p,m],[m,p])}return o}
  // Start / Neustart (Game.startRound): am letzten Checkpoint
  begin(){const g=this.g,p=g.p1;this.mobs=[];this.items=[];g.fighters=[p];this.queue=[];this.state='walk';this.enc=this.cp;this.ft=0;this.sd=0;this.goT=0;this.doneT=0;this.msg=null;this.att=[];this.rage=false;
-  p.x=this.cp?this.encs[this.cp-1].x+140:LV.start;p.facing=1;this.setBounds(LV.x0,LV.x1)}
+  p.x=this.cp?this.encs[this.cp-1].x+140:LV.start;p.facing=1;this.setBounds(LV.x0,LV.x1);
+  this.dealer=this.cfg.npc?new Dealer(this,this.cfg.npc):null}   // Händler: bei jedem (Neu-)Start frisch (Gespräch geschlossen)
  setBounds(l,r){this.l=l;this.r=r;this.g.arena.setOpen(l,r)}
  engage(e){this.state='fight';this.setBounds(Math.max(LV.x0,e.x-LV.half),Math.min(LV.x1,e.x+LV.half));
   this.queue=[];for(let i=0;i<e.n;i++)this.queue.push({side:i%2?-1:1,elite:false});
@@ -74,7 +77,7 @@ export class Story{
    if(it.kind==='pack'){addPack();g.fx.ps.ring(it.x,GROUND-40,'#ffd23f',110);g.pop(it.x,GROUND-130,'+1 BOOSTER','#ffd23f',1.1,{text:true})}
    else{const h=Math.round(p.maxHp*it.heal);p.hp=Math.min(p.maxHp,p.hp+h);g.fx.ps.ring(it.x,GROUND-40,'#7dff9a',110);g.pop(it.x,GROUND-130,'+'+h,'#7dff9a',1.2)}}}
   this.items=this.items.filter(i=>!i.got&&i.age<1800)}
- update(){const g=this.g,p=g.p1;this.ft++;this.pickups();
+ update(){const g=this.g,p=g.p1;this.ft++;this.pickups();if(this.dealer)this.dealer.update();
   for(const m of this.mobs)if(m.state==='ko')m.koT=(m.koT||0)+1;
   const gone=this.mobs.filter(m=>m.state==='ko'&&m.koT>80);
   if(gone.length){this.mobs=this.mobs.filter(m=>!gone.includes(m));g.fighters=g.fighters.filter(f=>!gone.includes(f))}

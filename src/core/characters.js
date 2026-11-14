@@ -31,6 +31,9 @@ export const CHARACTERS={
  anubis:{id:'anubis',name:'ANUBIS',desc:'Wächter der Unterwelt · Endgegner',boss:true,hp:1150,walk:1.05,dmg:1.08,def:.93,jump:1,dash:1.1,airJumps:1,meter:1.15,pal:'tiger',glow:'#ffd45a',sprites:'anubis',defeat:true,mods:MODS.anubis,
   pros:'Viel HP, harte Normals, Seelenwellen, Schweifhieb gegen Cross-ups, Richterspruch mit Launcher',cons:'Etwas langsamere Sprünge, Richterspruch auf Block bestrafbar, keine Rüstung',
   ai:[{min:100,max:330,b:'S',dx:-1,p:.16},{min:90,max:260,b:'M',dx:1,p:.18},{min:90,max:270,b:'H',dx:1,p:.14},{min:140,max:320,b:'S',dx:0,dy:1,p:.12}]},
+ rabe:{id:'rabe',name:'KORVUS',desc:'Schwarzmarkthändler · Schattensicheln & Federsturm',unlockable:true,hp:980,walk:1.04,dmg:1.02,def:.98,jump:1.1,dash:1.1,airJumps:1,meter:1.05,pal:'tiger',glow:'#9d5cff',sprites:'rabe',defeat:true,mods:MODS.rabe,
+  pros:'Schattensicheln (J/L), Federsturm gegen Cross-ups, Rabenflug als Anti-Air, hohe Sprünge, schneller Dash',cons:'Wenig Rüstung, Krallen-Rausch auf Block bestrafbar, Sicheln nur mittelschnell',
+  ai:[{min:100,max:330,b:'S',dx:-1,p:.15},{min:90,max:260,b:'M',dx:1,p:.16},{min:90,max:260,b:'H',dx:1,p:.12},{min:140,max:320,b:'S',dx:0,dy:1,p:.1}]},
  mantis:{id:'mantis',name:'MANTIS',desc:'Insektenkrieger',hp:190,walk:1,dmg:.6,def:1,jump:1,dash:1,airJumps:0,meter:.01,pal:'tiger',glow:'#7dff9a',sprites:'mantis',noSpecialBlock:true,defeat:true,mods:MANTIS_MODS,
   ai:[{min:100,max:300,b:'S',dx:0,p:.14},{min:90,max:220,b:'S',dx:1,p:.1},{min:90,max:240,b:'M',dx:1,p:.16}]},
  mantisAlpha:{id:'mantisAlpha',name:'ALPHA-MANTIS',desc:'Schwarm-Anführer',hp:650,walk:.92,dmg:.95,def:1,jump:1,dash:1,airJumps:0,meter:.01,pal:'tiger',glow:'#ff7a3a',sprites:'mantis',noSpecialBlock:true,spriteScale:1.25,size:1.25,defeat:true,mods:ALPHA_MODS,
@@ -44,6 +47,8 @@ export const ROSTER=['tiger','st3g0','kitsune'];
 export const LADDER=['tiger','st3g0','kitsune'];
 // Endgegner: steht in jedem Arcade-Durchlauf als letzte Stufe (außer man spielt ihn selbst); wer das Arcade einmal schafft, schaltet ihn als spielbaren Kämpfer frei (Browser-Speicher, siehe unlocks.js).
 export const BOSS='anubis';
-for(const id of loadUnlocks())if(id===BOSS&&CHARACTERS[id]&&!ROSTER.includes(id))ROSTER.push(id);
+// Freischaltbare Kämpfer: Anubis (Arcade durchspielen) und KORVUS der Rabe (Kauf im Shop / beim Schwarzmarkthändler, Preis: CHAR_PRICE in loot.js)
+export const UNLOCKABLE=[BOSS,'rabe'];
+for(const id of loadUnlocks())if(UNLOCKABLE.includes(id)&&CHARACTERS[id]&&!ROSTER.includes(id))ROSTER.push(id);
 // true = gerade neu freigeschaltet
 export function unlockChar(id){if(!CHARACTERS[id]||ROSTER.includes(id))return false;ROSTER.push(id);saveUnlock(id);return true}

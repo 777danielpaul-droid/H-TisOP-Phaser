@@ -1,73 +1,99 @@
 import{GROUND}from'./config.js';
 // Fassade für Treffer-/Bewegungseffekte. Rendering-unabhängig: schreibt nur in das ParticleSystem.
+// Look wie beim Feuerwerk: statt flacher Formen (Zackenstern, Fadenkreuz, Schlagklingen, einfarbige Ringe) blinkende Funkelsterne (ps.sparkle / sparkleBall / sparkleRing)
+// und spitze Glanzsterne (ps.glint). Ringe/Druckwellen (ps.ring / ps.shock) zeichnen ihre Sterne selbst.
 const GLITTER_PAL=['#ffffff','#ffe27a','#7df9ff','#ff7ae6'];   // Glitzer-Farben neben der Figurenfarbe
+const FX_GOLD='#ffe27a';
+const fxPal=c=>[c,c,'#ffffff',FX_GOLD,'#7df9ff','#ff7ae6'];   // Palette: Figurenfarbe doppelt gewichtet + Weiß/Gold/Cyan/Pink
 export class Effects{
  constructor(ps){this.ps=ps}
- hit(x,y,power,color,dir){const n=7+power*5,ps=this.ps,cols=[color,...GLITTER_PAL],fwd=dir>0?0:Math.PI;
-  ps.burst(x,y,{count:n,speed:5+power*2.5,color:'#ffffff',life:14,size:2.4});
-  ps.burst(x,y,{count:n,speed:4+power*2,color,life:26,size:3.2,angle:fwd,spread:2.4,gravity:.12});
-  ps.ring(x,y,color,30+power*16);ps.ring(x,y,'#ffffff',18+power*10);
-  ps.spark(x,y,color,6+power*4,9+power*2.5);
-  // Hitmarker: Zackenstern + Fadenkreuz + Flare + Schlagstreifen
-  ps.starpop(x,y,color,52+power*30,8+power);ps.marker(x,y,'#ffffff',36+power*18,11);
-  ps.flare(x,y,color,48+power*30,9+power*3,Math.random());
-  const a0=fwd+(Math.random()-.5)*.5;ps.slash(x,y,'#ffffff',a0,80+power*50,8+power,6+power*1.6);
-  for(let i=0;i<power;i++)ps.slash(x,y,i%2?color:'#fff',a0+(i+1)*.42*(i%2?1:-1),60+power*34,10,4);
-  // Glitzer + Splitter + Funken, Richtung Schlag und rundherum
-  ps.glitter(x,y,{count:12+power*11,speed:5+power*2.4,life:42+power*12,size:3.6+power,colors:cols,gravity:.1,angle:fwd,spread:3.6});
-  ps.glitter(x,y,{count:5+power*4,speed:2.4,life:70,size:3.2,colors:cols,gravity:-.012});
-  if(power>=2){for(let i=0;i<2+power;i++)ps.bolt(x,y,i%2?color:'#7df9ff',Math.random()*6.283,90+power*34,6+((Math.random()*3)|0));
-   ps.burst(x,y,{count:6+power*3,speed:6+power*2,color,life:44,size:2.6,angle:fwd,spread:2.2,gravity:.32})}
-  if(power>=3)ps.shock(x,y+60,color,170,22)
+ hit(x,y,power,color,dir){const ps=this.ps,P=power,fwd=dir>0?0:Math.PI,cols=fxPal(color);
+  // Kernblitz: weicher Lichtkern + spitzer Glanzstern (poppt auf, blinkt aus)
+  ps.flare(x,y,color,40+P*24,7+P*2,Math.random());
+  ps.glint(x,y,'#ffffff',44+P*20,13+P*3);
+  if(P>=2)ps.glint(x,y,color,66+P*26,18+P*3,2);
+  ps.spark(x,y,color,4+P*3,8+P*2);
+  // Funkel-Burst: nach vorn und rundherum, dazu langsam schwebende Sterne, die etwas später nachzünden
+  ps.sparkle(x,y,{count:10+P*6,speed:6+P*2.2,life:36+P*8,size:9+P*1.5,colors:cols,gravity:.07,dr:.93,angle:fwd,spread:3.4});
+  ps.sparkle(x,y,{count:4+P*2,speed:2,life:58+P*6,size:8,colors:cols,gravity:-.012,dr:.97,delay:10});
+  ps.sparkleRing(x,y,color,34+P*16);
+  if(P>=2)ps.sparkleRing(x,y,'#ffffff',20+P*10,{count:8+P*2});
+  if(P>=3){ps.shock(x,y+60,color,170,22);ps.sparkleBall(x,y,color,60+P*14,{count:18+P*5,life:56,size:10});
+   for(let i=0;i<P;i++)ps.bolt(x,y,i%2?color:'#7df9ff',Math.random()*6.283,80+P*26,6+((Math.random()*3)|0))}
  }
- block(x,y,color){const ps=this.ps;ps.burst(x,y,{count:9,speed:4.5,color,life:14,size:2.2,spread:3});ps.ring(x,y,'#9bd',24);ps.marker(x,y,'#8fd4ff',34,10);ps.starpop(x,y,'#8fd4ff',44,7);ps.glitter(x,y,{count:9,speed:5,life:34,size:3,colors:['#ffffff','#8fd4ff','#bfe9ff'],gravity:.08})}
+ block(x,y,color){const ps=this.ps,cols=['#ffffff','#8fd4ff','#bfe9ff','#8fd4ff'];
+  ps.glint(x,y,'#bfe9ff',44,11);ps.flare(x,y,'#8fd4ff',40,8,Math.random());
+  ps.sparkle(x,y,{count:12,speed:5,life:36,size:8,colors:cols,gravity:.06,dr:.93,glint:1});ps.sparkleRing(x,y,'#8fd4ff',28)}
  land(x,y,big){if(big)this.ps.shock(x,y,'#b9a8ff',120,18);
-  this.ps.burst(x,y-2,{count:big?14:6,speed:big?5:2.5,color:'#8a7fb8',life:22,size:3,angle:-Math.PI/2,spread:3.4,gravity:-.01,streak:.4});if(big)this.ps.glitter(x,y-4,{count:10,speed:4,life:36,size:3,colors:['#ffffff','#b9a8ff'],angle:-Math.PI/2,spread:2.6})}
+  this.ps.burst(x,y-2,{count:big?10:5,speed:big?5:2.5,color:'#8a7fb8',life:20,size:2.6,angle:-Math.PI/2,spread:3.4,gravity:-.01,streak:.4});
+  this.ps.sparkle(x,y-4,{count:big?14:5,speed:big?4.2:2.2,life:big?44:30,size:8,colors:['#ffffff','#b9a8ff','#7df9ff'],angle:-Math.PI/2,spread:2.8,gravity:.05,dr:.93,glint:big?1:0})}
  jump(x,y){this.land(x,y,false)}
- dash(x,y,dir){this.ps.burst(x,y-8,{count:6,speed:3,color:'#9a8bff',life:16,size:2.4,angle:dir>0?Math.PI:0,spread:1.2,gravity:0});this.ps.glitter(x,y-8,{count:5,speed:3.4,life:32,size:2.8,colors:GLITTER_PAL,angle:dir>0?Math.PI:0,spread:1.4,gravity:.02})}
- // Launcher: Druckwelle am Boden + Lichtsäule nach oben (Gegner startet in den Luftkampf)
+ dash(x,y,dir){const a=dir>0?Math.PI:0;this.ps.burst(x,y-8,{count:4,speed:3,color:'#9a8bff',life:14,size:2.2,angle:a,spread:1.2,gravity:0});
+  this.ps.sparkle(x,y-8,{count:7,speed:3.4,life:34,size:7,colors:GLITTER_PAL,angle:a,spread:1.5,gravity:.015,dr:.95,glint:0})}
+ // Launcher: Druckwelle am Boden + Funkelsäule nach oben (Gegner startet in den Luftkampf)
  launch(x,y,color){const ps=this.ps;ps.shock(x,y,color,210,22);ps.ring(x,y-20,'#ffffff',90);ps.ring(x,y-60,color,120);
-  ps.burst(x,y-30,{count:18,speed:9,color:'#ffffff',life:26,size:3,angle:-Math.PI/2,spread:.7,gravity:-.05,streak:2.2});
-  ps.glitter(x,y-30,{count:22,speed:8,life:54,size:4,colors:[color,...GLITTER_PAL],gravity:-.03,angle:-Math.PI/2,spread:.8})}
- // Super Jump: Staubring am Boden + senkrechte Streifen (Verfolgungssprung)
- superJump(x,y,color){const ps=this.ps;ps.shock(x,y,color,150,16);ps.ring(x,y-10,'#ffffff',70);
-  ps.burst(x,y-10,{count:12,speed:8,color,life:22,size:2.8,angle:-Math.PI/2,spread:.5,gravity:-.04,streak:2.4})}
- // Boden-Prall (Meteor-Spike / Air-Hyper-Finale): große Druckwelle, Splitter, Blitze
+  ps.glint(x,y-20,'#ffffff',80,16);ps.glint(x,y-90,color,60,18,3);
+  ps.sparkle(x,y-30,{count:30,speed:9,life:58,size:10,colors:fxPal(color),gravity:-.025,dr:.95,angle:-Math.PI/2,spread:.9});
+  ps.sparkle(x,y-10,{count:16,speed:3,life:52,size:8,colors:fxPal(color),gravity:-.02,dr:.96,angle:-Math.PI/2,spread:2.2,delay:8})}
+ // Super Jump: Funkelring am Boden + aufsteigende Sterne (Verfolgungssprung)
+ superJump(x,y,color){const ps=this.ps;ps.shock(x,y,color,150,16);ps.ring(x,y-10,'#ffffff',70);ps.glint(x,y-12,color,56,14);
+  ps.sparkle(x,y-10,{count:18,speed:8,life:40,size:9,colors:fxPal(color),gravity:-.03,dr:.94,angle:-Math.PI/2,spread:.7})}
+ // Boden-Prall (Meteor-Spike / Air-Hyper-Finale): große Druckwelle, Funkelfontäne, Glanzsterne
  slam(x,y,color){const ps=this.ps;ps.shock(x,y,color,420,30);ps.shock(x,y,'#ffffff',260,22);ps.ring(x,y-10,color,200);ps.ring(x,y-10,'#ffffff',130);
-  ps.burst(x,y-6,{count:34,speed:11,color:'#ffffff',life:34,size:3.6,angle:-Math.PI/2,spread:3.0,gravity:.2});
-  ps.glitter(x,y-6,{count:40,speed:9,life:70,size:5,colors:[color,...GLITTER_PAL],gravity:.08,angle:-Math.PI/2,spread:3.2});
-  for(let i=0;i<6;i++)ps.bolt(x,y-6,i%2?color:'#7df9ff',-Math.PI/2+(i-2.5)*.5,130+i*14,7)}
+  ps.flare(x,y-8,'#ffffff',150,14,.4);ps.glint(x,y-10,'#ffffff',130,20);ps.glint(x,y-10,color,95,24,3);
+  ps.sparkle(x,y-6,{count:56,speed:10,life:76,size:11,colors:fxPal(color),gravity:.1,dr:.94,angle:-Math.PI/2,spread:3.0});
+  ps.sparkle(x,y-6,{count:22,speed:3,life:70,size:9,colors:fxPal(color),gravity:-.01,dr:.96,delay:14});
+  ps.sparkleRing(x,y-6,color,230,{count:44,life:40});
+  for(let i=0;i<4;i++)ps.bolt(x,y-6,i%2?color:'#7df9ff',-Math.PI/2+(i-1.5)*.55,130+i*16,7)}
  // Combo-Effekt: skaliert mit der Trefferzahl, farbig nach Charakter
- combo(x,y,hits,color,dir){const n=10+hits*4,ps=this.ps,h=Math.min(hits,12);
-  ps.burst(x,y,{count:n,speed:6+hits*2,color:'#ffffff',life:20,size:3});
-  ps.starburst(x,y,color,12+hits*4);ps.ring(x,y,color,40+hits*20);ps.ring(x,y,'#ffffff',24+hits*12);
-  ps.glitter(x,y,{count:8+h*4,speed:7+h*.8,life:50,size:4,colors:[color,...GLITTER_PAL]});
-  if(hits>=4)ps.starpop(x,y,color,90+h*8,10);if(hits>=6)for(let i=0;i<4;i++)ps.bolt(x,y,color,Math.random()*6.283,140,8)
+ combo(x,y,hits,color,dir){const ps=this.ps,h=Math.min(hits,12),cols=fxPal(color);
+  ps.flare(x,y,color,50+h*8,10,Math.random());ps.glint(x,y,'#ffffff',54+h*9,14+((h/3)|0));if(hits>=3)ps.glint(x,y,color,80+h*10,18,2);
+  ps.sparkle(x,y,{count:14+h*5,speed:6+h*.9,life:46,size:9+h*.4,colors:cols,gravity:.06,dr:.94});
+  ps.sparkleRing(x,y,color,40+hits*18);ps.ring(x,y,'#ffffff',24+hits*12);
+  if(hits>=4)ps.sparkleBall(x,y,color,70+h*9,{count:30+h*6,life:60,size:10});
+  if(hits>=6)for(let i=0;i<4;i++)ps.bolt(x,y,color,Math.random()*6.283,140,8)
  }
- // Verstärkter K.O.: Explosion aus Licht, Glitzer, Splittern und Blitzen
- ko(x,y,color){const ps=this.ps,cols=[color,...GLITTER_PAL];
-  ps.flare(x,y,'#ffffff',280,24,.3);ps.shock(x,y+80,color,440,36);for(let i=0;i<8;i++)ps.slash(x,y,i%2?color:'#fff',i*.7854+.2,260,16,10);
-  ps.burst(x,y,{count:60,speed:14,color:'#ffffff',life:40,size:4});ps.burst(x,y,{count:30,speed:10,color,life:45,size:3.5,angle:0,spread:3});
-  ps.starburst(x,y,color,24);ps.ring(x,y,color,220);ps.ring(x,y,'#ffffff',150);ps.ring(x,y,color,90);
-  ps.starpop(x,y,color,230,14);ps.marker(x,y,'#ffffff',150,16);
-  ps.glitter(x,y,{count:90,speed:13,life:80,size:6,colors:cols,gravity:.07});
-  for(let i=0;i<10;i++)ps.bolt(x,y,i%2?color:'#7df9ff',i*.628+Math.random()*.4,200+Math.random()*120,8)
+ // Verstärkter K.O. (der Siegesstoß): Glanzstern-Blitz, große Funkelkugeln wie ein Feuerwerk, Ringe, Fontäne und Glitzerregen
+ ko(x,y,color){const ps=this.ps,cols=fxPal(color);
+  ps.flare(x,y,'#ffffff',300,22,.3);ps.glint(x,y,'#ffffff',270,28);ps.glint(x,y,color,200,34,2);
+  for(let i=0;i<10;i++){const a=i/10*6.283+Math.random()*.5,d=90+Math.random()*200;ps.glint(x+Math.cos(a)*d,y+Math.sin(a)*d*.8,i%2?color:FX_GOLD,34+Math.random()*46,14+((Math.random()*10)|0),3+i*3)}   // Blinksterne poppen nacheinander auf
+  ps.spark(x,y,'#ffffff',30,15);
+  ps.sparkleBall(x,y,color,230,{count:120,life:96,size:12,colors:cols});
+  ps.sparkleBall(x,y,FX_GOLD,140,{count:60,life:84,size:11,colors:['#ffffff',FX_GOLD,'#ffffff',color],delay:4});
+  ps.sparkleBall(x,y,'#ffffff',320,{count:50,life:112,size:10,colors:['#ffffff',color,FX_GOLD],delay:7,gravity:.05});
+  ps.sparkleRing(x,y,color,300,{count:34,life:44});ps.sparkleRing(x,y,'#ffffff',190,{count:24,life:40});ps.sparkleRing(x,y,FX_GOLD,100,{count:16,life:34});
+  ps.shock(x,y+80,color,440,36);ps.ring(x,y,color,220);ps.ring(x,y,'#ffffff',140);
+  ps.sparkle(x,y,{count:44,speed:9,life:90,size:11,colors:cols,gravity:.09,dr:.95,angle:-Math.PI/2,spread:2.6,delay:6});                // Fontäne nach oben, fällt als Glitzer zurück
+  ps.sparkle(x,y-230,{count:50,speed:.9,life:110,size:9,colors:cols,gravity:.03,dr:.99,angle:Math.PI/2,spread:.7,jx:640,jy:80,delay:34});   // Glitzerregen
+  for(let i=0;i<5;i++)ps.bolt(x,y,i%2?color:'#7df9ff',i*1.257+Math.random()*.4,200+Math.random()*100,8)
  }
- // Runden-Sieg, Auftakt: Lichtexplosion (der Dauer-Effekt kommt aus celebrate())
- win(x,y,color){const ps=this.ps,cols=[color,...GLITTER_PAL];
-  ps.flare(x,y,'#ffffff',420,30,.1);ps.shock(x,GROUND,color,560,44);ps.shock(x,GROUND,'#ffffff',360,30);
-  for(const r of[90,160,240])ps.ring(x,y,r%2?'#ffffff':color,r);
-  ps.glitter(x,y,{count:130,speed:12,life:100,size:6.5,colors:cols,gravity:.05});
-  for(let i=0;i<12;i++)ps.bolt(x,y,i*.5236,220+Math.random()*160,9);ps.starpop(x,y,color,260,16)
+ // Runden-Sieg, Auftakt (Wechsel in die Siegespose): Glanzstern-Blitz, Funkelkugel, Fontäne, Glitzerregen (der Dauer-Effekt kommt aus celebrate())
+ win(x,y,color){const ps=this.ps,cols=fxPal(color);
+  ps.flare(x,y,'#ffffff',360,28,.1);ps.glint(x,y,'#ffffff',250,28);ps.glint(x,y,FX_GOLD,180,34,3);ps.glint(x,y,color,130,38,6);
+  for(let i=0;i<8;i++){const a=i/8*6.283+Math.random()*.5,d=80+Math.random()*170;ps.glint(x+Math.cos(a)*d,y+Math.sin(a)*d*.9,i%2?'#ffffff':color,30+Math.random()*34,14+((Math.random()*8)|0),6+i*3)}
+  ps.sparkleBall(x,y,color,210,{count:110,life:100,size:12,colors:cols});
+  ps.sparkleBall(x,y,FX_GOLD,120,{count:50,life:86,size:11,colors:['#ffffff',FX_GOLD],delay:5});
+  ps.sparkleRing(x,y,color,260,{count:32,life:44});ps.sparkleRing(x,y,'#ffffff',160,{count:22,life:38});ps.sparkleRing(x,GROUND-6,FX_GOLD,200,{count:26,life:44});
+  ps.shock(x,GROUND,color,560,44);ps.shock(x,GROUND,'#ffffff',360,30);
+  ps.sparkle(x,y,{count:50,speed:10,life:100,size:11,colors:cols,gravity:.1,dr:.95,angle:-Math.PI/2,spread:2.2,delay:8});
+  ps.sparkle(x,y-250,{count:60,speed:.9,life:120,size:9,colors:cols,gravity:.03,dr:.99,angle:Math.PI/2,spread:.7,jx:760,jy:90,delay:40});
+  for(let i=0;i<6;i++)ps.bolt(x,y,i*1.047,220+Math.random()*120,9)
  }
- // Sieger-Finale: Lichtsäule (Renderer), Feuerwerk, Glitzerregen, aufsteigende Funken, Druckwellen. t = Frames seit Rundenende, cam = Kamera
- celebrate(f,t,cam){const ps=this.ps,col=f.char.glow||'#fff',cols=[col,'#ffd23f','#3fe0ff','#ff4fd8','#7dffc8'];
+ // Sieger-Finale: Lichtsäule (Renderer), Feuerwerk, Glitzerregen, aufsteigende Funkelsterne, Glanzsterne am Körper, Funkelringe. t = Frames seit Rundenende, cam = Kamera
+ celebrate(f,t,cam){const ps=this.ps,col=f.char.glow||'#fff',cols=[col,'#ffd23f','#3fe0ff','#ff4fd8','#7dffc8'],sz=f.char.size||1,pal=[col,col,'#ffffff',FX_GOLD],by=f.y-100*sz;
   if(t<240?t%32===2:t%90===2){const x=f.x+(Math.random()-.5)*620,ty=86+Math.random()*140;ps.rocket(x,GROUND,ty,cols[(Math.random()*cols.length)|0])}
-  if(t%3===0)ps.glitter(f.x+(Math.random()-.5)*130,GROUND-4,{count:2,speed:2.6,life:90,size:3.4,colors:[col,'#ffe27a','#ffffff'],gravity:-.045,angle:-Math.PI/2,spread:.9});
+  // aufsteigende Funkelsterne in der Aura
+  if(t%2===0)ps.sparkle(f.x+(Math.random()-.5)*130*sz,GROUND-4-Math.random()*90*sz,{count:1+(t%6===0?1:0),speed:1.5,life:90,size:9,colors:pal,gravity:-.035,dr:.985,angle:-Math.PI/2,spread:.7});
+  // Sterne kreisen spiralförmig um den Körper
+  if(t%3===0){const a=t*.13;ps.sparkle(f.x+Math.cos(a)*70*sz,by+Math.sin(a)*105*sz,{count:1,speed:.5,life:56,size:8,colors:pal,gravity:-.01,dr:.97,glint:1})}
+  // Glitzerregen von oben
+  if(t%4===0)ps.sparkle(f.x,70,{count:3,speed:.8,life:130,size:8,colors:[col,'#ffffff',FX_GOLD,'#7df9ff'],gravity:.025,dr:.99,angle:Math.PI/2,spread:.5,jx:900,jy:60,glint:1});
+  // Blink: Glanzsterne blitzen an der Körperkontur auf
+  if(t%14===6){const a=Math.random()*6.283;ps.glint(f.x+Math.cos(a)*62*sz,by+Math.sin(a)*110*sz,Math.random()<.5?'#ffffff':col,(36+Math.random()*34)*sz,15+((Math.random()*6)|0))}
   // Charakter-Aura (Renderer zeichnet die Flammen-/Blitzform): hier die passenden Partikel
-  const sz=f.char.size||1;
-  if(f.char.id==='tiger'){if(t%3===0)ps.bolt(f.x+(Math.random()-.5)*110,f.y-30-Math.random()*170*sz,Math.random()<.5?'#7df9ff':'#ffffff',Math.random()*6.283,60+Math.random()*80,6);if(t%5===0)ps.glitter(f.x,f.y-100,{count:5,speed:6,life:26,size:3,colors:['#ffffff','#7df9ff','#3fb8ff'],gravity:0})}
-  else if(t%4===0)ps.glitter(f.x+(Math.random()-.5)*100,GROUND-6,{count:2,speed:3,life:60,size:3.4,colors:[col,'#ffe9a8','#ffffff'],gravity:-.05,angle:-Math.PI/2,spread:.8});
-  if(t%40===8){ps.ring(f.x,GROUND-10,col,300);ps.shock(f.x,GROUND,col,330,30);ps.glitter(f.x,f.y-100,{count:26,speed:9,life:60,size:4.4,colors:[col,...GLITTER_PAL],gravity:.04})}
+  if(f.char.id==='tiger'){if(t%3===0)ps.bolt(f.x+(Math.random()-.5)*110,f.y-30-Math.random()*170*sz,Math.random()<.5?'#7df9ff':'#ffffff',Math.random()*6.283,60+Math.random()*80,6);if(t%5===0)ps.sparkle(f.x,by,{count:5,speed:6,life:30,size:8,colors:['#ffffff','#7df9ff','#3fb8ff'],gravity:0,dr:.92})}
+  else if(t%4===0)ps.sparkle(f.x+(Math.random()-.5)*100,GROUND-6,{count:2,speed:3,life:64,size:8,colors:[col,'#ffe9a8','#ffffff'],gravity:-.05,dr:.98,angle:-Math.PI/2,spread:.8});
+  if(t%40===8){ps.sparkleRing(f.x,GROUND-10,col,300,{count:40,life:42});ps.ring(f.x,GROUND-10,col,260);ps.shock(f.x,GROUND,col,330,30);ps.glint(f.x,by,FX_GOLD,90*sz,18);
+   ps.sparkleBall(f.x,by,col,110,{count:34,life:60,size:10,colors:pal})}
  }
 }

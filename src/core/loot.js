@@ -1,3 +1,4 @@
+import{CHARACTERS,ROSTER,unlockChar}from'./characters.js';
 import{H,W}from'./config.js';
 
 import{Story}from'./story.js';
@@ -29,6 +30,17 @@ export const unlockAll=()=>{for(const[id,k]of SKIN_POOL)if(!ownsSkin(id,k))(LOOT
 export const addPack=(n=1)=>{LOOT.packs+=n;saveLoot()};
 // Shop: Booster für Coins. Preise hier anpassen (Coins gibt es nur aus Boostern: ca. 35-40 pro Pack, daher kostet 1 Booster 100).
 export const SHOP=[{n:1,price:100},{n:3,price:270},{n:5,price:425}];
+// Kämpfer im Shop (Karte hinter den Boostern): EIN dauerhafter Kauf je Figur, danach in der Charakterwahl spielbar (Freischaltung in unlocks.js, Münzen in LOOT.coins).
+// >>> PREIS HIER ÄNDERN <<< (Testpreis 10 Coins; später einfach die Zahl erhöhen – Shop-Karte, Händler-Dialog und Kauflogik lesen ausschließlich diesen Wert).
+export const CHAR_PRICE={rabe:10};
+export const CHAR_SHOP=Object.keys(CHAR_PRICE).map(id=>({id,price:CHAR_PRICE[id]}));
+export const shopCount=()=>SHOP.length+CHAR_SHOP.length;   // Karten im Shop: erst die Booster (Index 0..SHOP.length-1), dann die Kämpfer
+export const charPrice=id=>CHAR_PRICE[id]|0;
+export const ownsChar=id=>ROSTER.includes(id);   // spielbar = freigeschaltet (Browser-Speicher 'hitisop.unlocks')
+export const canBuyChar=id=>charPrice(id)>0&&!!CHARACTERS[id]&&!ownsChar(id)&&LOOT.coins>=charPrice(id);
+// Kämpfer kaufen: erst freischalten + speichern, dann Münzen abbuchen (so wird nie bezahlt, ohne freizuschalten). Doppelkauf unmöglich: schon besessen -> false, keine Abbuchung.
+export function buyChar(id){if(!charPrice(id)||!CHARACTERS[id]||ownsChar(id)||LOOT.coins<charPrice(id))return false;
+ unlockChar(id);if(!ownsChar(id))return false;LOOT.coins-=charPrice(id);saveLoot();return true}
 export const canBuy=i=>!!SHOP[i]&&LOOT.coins>=SHOP[i].price;
 export function buyPack(i){const o=SHOP[i];if(!o||LOOT.coins<o.price)return false;LOOT.coins-=o.price;LOOT.packs+=o.n;saveLoot();return true}
 // Wertigkeit eines Preises 0..4 (steuert Aufdeck-Spannung und Feuerwerk in render/packopen.js):

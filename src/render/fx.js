@@ -1,9 +1,12 @@
 import{F_DISP,F_TECH}from'./fonts.js';
 import{GFX}from'../core/config.js';
+import{sparkIdx,sparkDraw}from'../core/particles.js';
 // Post-Processing + Ambient-Effekte (Canvas 2D, ohne Abhängigkeiten, läuft überall – auch ohne ctx.filter):
 //  - Bloom (Downscale-Kette, Helligkeit quadriert = weiche Schwelle), Vignette (pulsiert bei niedrigem Leben), Filmkorn
-//  - Chromatische Aberration bei Treffern/K.O./Hyper, Impact-Frame mit Speedlines bei harten Treffern
+//  - Chromatische Aberration bei Treffern/K.O./Hyper, Impact-Frame (Lichtkern, Glanzstrahlen, Funkelpunkte) bei harten Treffern
 //  - schwebende Staubpartikel, Boden-Lichtpfützen unter den Kämpfern, Schadenszahlen
+// Hex (#rgb / #rrggbb) -> rgba(); ungültig = weiß
+const fxRgba=(c,a)=>{let h=String(c||'').replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');if(!/^[0-9a-f]{6}$/i.test(h))return`rgba(255,255,255,${a})`;return`rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`};
 const fclamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fmk=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(2,w|0);c.height=Math.max(2,h|0);return c};
 const fhn=k=>{const s=Math.sin(k*12.9898)*43758.5453;return s-Math.floor(s)};
@@ -47,13 +50,21 @@ export class PostFX{
  floorGlow(g,f,ground,t,hit=0){if(!GFX.glow)return;const col=(f.char&&f.char.glow)||'#fff',sz=(f.char&&f.char.size)||1,air=fclamp((ground-f.y)/260,0,1),a=(.2+.12*Math.sin(t*3+f.x*.01)+hit*.35)*(1-air*.6),r=(95+hit*30)*sz;
   g.save();g.globalCompositeOperation='lighter';g.translate(f.x,ground+2);g.scale(1,.2);const gr=g.createRadialGradient(0,0,2,0,0,r);gr.addColorStop(0,col+Math.round(fclamp(a,0,1)*255).toString(16).padStart(2,'0'));gr.addColorStop(1,col+'00');
   g.fillStyle=gr;g.beginPath();g.arc(0,0,r,0,6.283);g.fill();g.restore()}
- // Impact-Frame bei harten Treffern/K.O.: Blitz + Speedlines aus dem Treffpunkt + kurze Abdunklung
- impact(g,game){const im=game.impact;if(!im||im.t<=0)return;const W=960,H=540,u=im.t/im.t0,[ox,oy]=game.camera.toScreen(im.x,im.y);
-  g.save();if(u>.55){g.globalAlpha=(u-.55)/.45*.55*im.p;g.fillStyle='#fff';g.fillRect(0,0,W,H)}
-  g.globalAlpha=.4*u*im.p;g.fillStyle='#000010';g.fillRect(0,0,W,H);
-  g.globalCompositeOperation='lighter';g.strokeStyle=im.col;g.globalAlpha=.85*u*im.p;
-  for(let i=0,N=Math.round(46*GFX.rays);i<N;i++){const a=fhn(i*5.3+im.seed)*6.283,r0=40+fhn(i)*90+(1-u)*70,r1=r0+90+fhn(i+9)*420;g.lineWidth=.8+fhn(i*2)*2.6*u;g.beginPath();g.moveTo(ox+Math.cos(a)*r0,oy+Math.sin(a)*r0*.8);g.lineTo(ox+Math.cos(a)*r1,oy+Math.sin(a)*r1*.8);g.stroke()}
-  g.globalAlpha=.7*u*im.p;g.fillStyle='#fff';const r=26+(1-u)*70;g.beginPath();g.arc(ox,oy,r,0,6.283);g.fill();g.restore()}
+ // Impact-Frame bei harten Treffern/K.O.: kurzer weicher Lichtblitz, Lichtkern mit dünnen Glanzstrahlen und blinkenden Funkelpunkten (statt Vollblitz + dicker Speedlines + weißer Scheibe)
+ impact(g,game){const im=game.impact;if(!im||im.t<=0)return;const W=960,H=540,u=im.t/im.t0,[ox,oy]=game.camera.toScreen(im.x,im.y),P=im.p,spr=sparkIdx(im.col),T=1-u;
+  g.save();if(u>.6){g.globalAlpha=(u-.6)/.4*.3*P;g.fillStyle='#fff';g.fillRect(0,0,W,H)}   // nur ein kurzer, weicher Aufheller
+  g.globalCompositeOperation='lighter';
+  // Lichtkern: weicher Verlauf, wächst und verglüht
+  {const R=(70+T*190)*(.8+.2*P),gr=g.createRadialGradient(ox,oy,0,ox,oy,R);gr.addColorStop(0,'rgba(255,255,255,.95)');gr.addColorStop(.18,'rgba(255,255,255,.55)');gr.addColorStop(.5,fxRgba(im.col,.33));gr.addColorStop(1,fxRgba(im.col,0));
+   g.globalAlpha=Math.min(1,u*1.5)*.85*Math.min(1,P);g.fillStyle=gr;g.fillRect(ox-R,oy-R,R*2,R*2)}
+  // Glanzstrahlen: dünn, spitz zulaufend, flackern (jeder Strahl blinkt für sich)
+  g.fillStyle='#ffffff';
+  for(let i=0,N=Math.round(18*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*5.3+im.seed)*6.283,fl=fhn(i*3.7+im.seed+Math.floor(T*10)),r0=14+fhn(i)*26,L=r0+(60+fhn(i+9)*250)*(.5+.5*T+.2*P),w=1.2+fhn(i*2)*2.4*u,nx=-Math.sin(a),ny=Math.cos(a);
+   g.globalAlpha=Math.min(1,u*1.4)*(.25+.75*fl*fl)*.85;g.beginPath();g.moveTo(ox+Math.cos(a)*r0+nx*w,oy+Math.sin(a)*r0*.85+ny*w);g.lineTo(ox+Math.cos(a)*L,oy+Math.sin(a)*L*.85);g.lineTo(ox+Math.cos(a)*r0-nx*w,oy+Math.sin(a)*r0*.85-ny*w);g.closePath();g.fill()}
+  // Funkelpunkte, die vom Treffpunkt wegfliegen und blinken
+  for(let i=0,N=Math.round(26*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*7.1+im.seed)*6.283,sp=60+fhn(i*1.3)*300,d=24+sp*T*(.6+.4*(1-T)),s=.5+.5*Math.sin(T*28*(.6+fhn(i*2.9))+i*2.1),tw=s*s*s,r=(4+fhn(i*4.4)*8)*(.6+.8*tw)*(.4+.6*u);
+   g.globalAlpha=Math.min(1,u*1.6)*(.35+.65*tw);sparkDraw(g,ox+Math.cos(a)*d,oy+Math.sin(a)*d*.85,r,fhn(i)<.45?36:spr,tw,1)}
+  g.restore()}
  // Schadenszahlen / Textpops (Welt-Raum)
  pops(g,game){const z=game.camera.z||game.camera.zoom||1;g.save();g.lineJoin='round';g.textAlign='center';
   for(const p of game.pops){const u=p.age/p.life,e=1-Math.pow(1-fclamp(u*2.2,0,1),3),sc=(p.age<7?1.7-.7*(p.age/7):1)*p.size/z*.92,a=u>.65?1-(u-.65)/.35:1;

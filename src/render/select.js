@@ -47,7 +47,7 @@ export function hitVsCar(lx,ly){for(const pl of[1,2])for(const off of[0,-1,1]){c
 export const vsCardRect=(i,n=4)=>cardRect(i,n);   // gleiches Raster wie im Arcade-Menü
 export function hitVsCard(lx,ly,n=4){for(let i=0;i<n;i++){const r=vsCardRect(i,n);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
 export const DIFF=['LEICHT','NORMAL','HART','ALPTRAUM'],DCOL=['#7fe8ff','#9b9bff','#d38bff','#ff4d5e'];
-export const FIG={tiger:.9,st3g0:.88,kitsune:.86};   // Größenausgleich je Figur in der Liste
+export const FIG={tiger:.9,st3g0:.88,kitsune:.86,rabe:.88};   // Größenausgleich je Figur in der Liste
 export const PX=508,PW=422;   // Profilbereich rechts (x, Breite)
 export const VTEXT={tiger:['LET\'S GO','上吧！'],st3g0:['UNLIKELY','不太可能'],kitsune:['TRY!','试试吧！'],anubis:['JUDGMENT','审判']};   // Schriftzug im Übergangsvideo + chinesische Übersetzung
 export const DIM='#8f95d8',TXT='#d6dcff';

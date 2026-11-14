@@ -88,4 +88,19 @@ st3g0.airsuper={label:'Drachen-Sturz',info:'HYPER in der Luft: Schlagregen, Fina
 kitsune.airsuper={label:'Neunschwanz-Wirbel',info:'HYPER in der Luft: Schweif-Wirbel, Finale = Boden-Prall'};
 anubis.airsuper={label:'Himmelsgericht',info:'HYPER in der Luft: Richterspruch aus der Höhe, Finale = Boden-Prall',dmg:32};
 cyberdemon.airsuper={label:'Höllenregen',info:'HYPER in der Luft: Klauenregen, Finale = Boden-Prall',dmg:33};
-export const MODS={tiger,st3g0,kitsune,anubis,cyberdemon};
+// ---------- KORVUS (Rabe, Schwarzmarkthändler): Zoner/Trickser – Schattensicheln, Federsturm, hohe Sprünge ----------
+// Stärke: Sichelwellen (J/L) halten auf Abstand, Federsturm trifft auch hinter ihm (Anti-Cross-up), Rabenflug = unverwundbarer Anti-Air, schneller Dash + hoher Sprung.
+// Schwäche: keine Rüstung, kein Teleport, Krallen-Rausch ist auf Block bestrafbar, Sicheln nur mittelschnell.
+const rabe={...norm({su:0,rc:-1,dmg:1.02,reach:6}),
+ fireball:{label:'Schattensichel',info:'Violette Sichelwelle: J = schnell, L = stark',su:9,rc:16,proj:P({frame:9,y:-112,vx:11,w:100,h:72,dmg:50,hs:16,bs:9,life:72,look:'claw'}),
+  v:{L:{su:7,rc:13,proj:P({frame:7,y:-112,vx:12,w:84,h:58,dmg:38,hs:14,bs:8,life:58,look:'claw'})},
+     H:{su:13,rc:22,proj:P({frame:13,y:-112,vx:10,w:132,h:94,dmg:76,hs:20,bs:13,life:98,look:'claw'})}}},
+ rising:{label:'Rabenflug',info:'Unverwundbarer Anti-Air, Launcher',su:4,ac:8,rc:23,dmg:88,inv:[1,10],launch:{vx:2,vy:-17}},
+ rush:{label:'Krallen-Rausch',info:'3 Hiebe + Launcher – auf Block bestrafbar',anim:'heavy',su:7,ac:12,rc:23,dmg:34,hs:18,bs:12,pb:3,multi:3,lunge:11,box:[10,-126,120,82],launch:{vx:3,vy:-13},hstop:4,shake:3,glow:1},
+ back:{label:'Federsturm',info:'Trifft auch hinter ihm (Anti-Cross-up)',anim:'kick',crouch:false,lv:'mid',su:8,ac:5,rc:19,dmg:64,hs:22,bs:13,pb:4,box:[-155,-100,300,100],hard:false,hstop:6,shake:3,glow:1},
+ airsp:{label:'Sturzflug',info:'Steiler Sturzangriff, Knockdown',su:5,dmg:80,box:[-10,-70,100,100],dive:{vx:3.3,vy:17},hard:true,land:12,hstop:8,shake:5},
+ '6M':{label:'Krallenstoß',info:'Schneller Vorstoß-Poke',anim:'punch',su:7,ac:3,rc:13,dmg:52,lv:'mid',box:[10,-124,108,44],lunge:6,hs:21,bs:12},
+ '6H':{label:'Schnabelhieb',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:13,ac:4,rc:19,dmg:84,lv:'high',lunge:7,box:[10,-162,116,66],hs:26,bs:16,glow:1},
+ super:{label:'Rabenschwarm',info:'HYPER: Ein Schwarm aus Schatten stürzt nach vorn – 9 Treffer + Launcher',anim:'hyper',beam:0,glow:1,dmg:30,su:20,ac:50,rc:26,multi:6,minScale:.5,box:[-20,-200,460,220],launch:{vx:5,vy:-13},inv:[0,34],hstop:2,shake:6}};
+
+export const MODS={tiger,st3g0,kitsune,anubis,cyberdemon,rabe};

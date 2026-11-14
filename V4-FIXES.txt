@@ -21,3 +21,15 @@ Neue Card-Packs + seltenere Belohnungen
   Der Build bettet das Sheet als window.__PACKS__ ein (tools/build.mjs). Fehlt das Sheet, greift das alte Vektor-Päckchen als Fallback.
 - Pro Booster höchstens EINE gute Belohnung (seltene/epische Karte, neue Farbe, neue Stage). Rest: meist Coins, ab und zu ein gewöhnliches Sammelbild.
   Stellschrauben oben in src/core/loot.js: GOOD_CHANCE (.22), GOOD_MIX, FILLER_COIN. Ergebnis: ca. 22 % der Booster enthalten etwas Gutes, ca. 39 Coins pro Booster.
+
+---
+Glitzer-Effekte im Kampf (Treffer, Siegesstoß, Siegespose)
+- Neues Funkel-System in src/core/particles.js, Optik wie beim Feuerwerk: weicher Farb-Glow, Blinken (sin³), auf den Blink-Spitzen spitzer Kreuzglanz.
+  ps.sparkle (Burst/Fontäne/Regen) · ps.sparkleBall (Kugel wie die Feuerwerks-Kugel, aber im Vordergrund) · ps.sparkleRing (laufender Ring aus Sternen) · ps.glint (großer Glanzstern, poppt auf und blinkt aus).
+  ps.ring() und ps.shock() zeichnen jetzt selbst Funkelpunkte auf ihrer Ellipse -> alle Bewegungs-Ringe im Spiel (Moves, Story, Melee) glitzern automatisch.
+- src/core/effects.js: hit, block, combo, launch, slam, ko (Siegesstoß), win (Wechsel in die Siegespose) und celebrate (Dauer-Effekt der Siegespose) komplett auf Funkeln/Glanzsterne umgestellt.
+  Comic-Zackenstern, Fadenkreuz und Schlagklingen werden nicht mehr benutzt (die Methoden starpop/marker/slash bleiben im Code, falls du sie noch brauchst).
+- src/render/fx.js: Impact-Frame (K.O./harte Treffer) = weicher Lichtkern + dünne Glanzstrahlen + blinkende Funkelpunkte statt Vollblitz, Abdunklung, dicken Speedlines und weißer Scheibe.
+- src/render/renderer.js (Aura der Siegespose): aufsteigende Energie-Streifen großteils durch blinkende Funkelsterne ersetzt, dazu Glanzpunkte mit Kreuzglanz an der Körperkontur.
+- Leistung: Funkelsterne sind gedeckelt (1100 x GFX.fx), Mengen skalieren mit der Qualitätsstufe (GFX.fx).
+- Neuer Test: tests/sparkle.test.js (in npm test eingetragen).

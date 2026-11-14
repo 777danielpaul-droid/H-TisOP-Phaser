@@ -7,13 +7,14 @@ import{Arcade}from'./core/arcade.js';
 import{CHARACTERS,ROSTER}from'./core/characters.js';
 import{MOVE_LIST,charMoves}from'./core/moves.js';
 import{SPEED,GFX,GFX_PRESETS,setGfx}from'./core/config.js';
-import{openPack,buyPack,canBuy,LOOT,SHOP,ownsSkin,ownedStages}from'./core/loot.js';
+import{openPack,buyPack,canBuy,LOOT,SHOP,CHAR_SHOP,shopCount,buyChar,ownsChar,ownsSkin,ownedStages}from'./core/loot.js';
 import{NetClient,netServerUrl,connectPatient}from'./core/netclient.js';
 import{NetMatch}from'./core/netmatch.js';
 import{NetInput,NET,encInput}from'./core/netplay.js';
 import{NetUi,netMessage}from'./render/netui.js';
 import{skinCount,skinName}from'./render/skins.js';
 import{THEMES}from'./render/stage.js';
+import{hitDealerOpt}from'./render/storyhud.js';
 import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel,shopCardRect,shopBackRect,shopBtnRect,shopSelRect,boosterRect,lootOpenRect,lootCloseRect,inR}from'./render/lootui.js';
 import{endBtnRect}from'./render/hover.js';
 import{Renderer}from'./render/renderer.js';
@@ -158,7 +159,12 @@ const lootOpen=mode=>{const u=renderer.lootUi;u.open=true;u.mode=mode;u.rewards=
 // Booster aufreißen: Animation (render/packopen.js) mit den schon gezogenen Belohnungen; ENTER/Klick treibt sie voran, ESC überspringt (Belohnungen sind bereits gespeichert)
 const lootReveal=rw=>{const u=renderer.lootUi;u.rewards=rw;u.po=new PackOpen(rw,(n,o)=>game.sfx(n,o));u.mode='reveal';u.t=0};
 const lootNext=()=>{const u=renderer.lootUi;if(!u.po||u.po.advance()){u.mode='main';u.t=0;u.po=null}};
-const shopBuy=i=>{const u=renderer.lootUi,o=SHOP[i];if(!o)return;u.sel=i;
+const shopBuy=i=>{const u=renderer.lootUi;
+ if(i>=SHOP.length){const c=CHAR_SHOP[i-SHOP.length];if(!c)return;u.sel=i;   // Kämpfer-Karte: einmaliger, dauerhafter Kauf
+  if(ownsChar(c.id)){u.msg='Schon freigeschaltet!';u.msgOk=false;game.sfx('block_guard',{vol:.5})}
+  else if(buyChar(c.id)){u.msg=CHARACTERS[c.id].name+' FREIGESCHALTET!';u.msgOk=true;game.sfx('fw_finale',{vol:.6})}
+  else{u.msg='Zu wenig Coins!';u.msgOk=false;game.sfx('block_guard',{vol:.5})}u.msgAt=u.t;return}
+ const o=SHOP[i];if(!o)return;u.sel=i;
  if(buyPack(i)){u.msg=`+${o.n} BOOSTER gekauft!`;u.msgOk=true;game.sfx('fw_rocket',{vol:.7,rate:1.5})}else{u.msg='Zu wenig Coins!';u.msgOk=false;game.sfx('block_guard',{vol:.5})}u.msgAt=u.t};
 const logical=e=>{const r=canvas.getBoundingClientRect();return[(e.clientX-r.left)/r.width*960,(e.clientY-r.top)/r.height*540]};
 canvas.addEventListener('mousemove',e=>{mouseL=logical(e)});canvas.addEventListener('mouseleave',()=>{mouseL=null});
@@ -185,11 +191,13 @@ function hoverTarget(){endHot=-1;const L=mouseL;if(!L||menuOpen||panelsOpen()||s
  if(a.mode==='story'&&hitChapter(...L))return CHAPTER_RECT;
  if(CHARACTERS.custom&&a.cursor===CI()&&hitEdit(...L))return editRect();
  const off=hitCar(...L);return off===null?null:carRect(off)}
-canvas.addEventListener('mousemove',e=>{const u=renderer.lootUi;if(u.open){if(u.mode==='shop'){const j=hitShopCard(...logical(e));if(j>=0)u.sel=j}return}
+canvas.addEventListener('mousemove',e=>{const dl=game.story&&game.story.dealer;if(dl&&dl.active){const i=hitDealerOpt(...logical(e),dl.opts.length);if(i>=0)dl.sel=i;return}
+ const u=renderer.lootUi;if(u.open){if(u.mode==='shop'){const j=hitShopCard(...logical(e));if(j>=0)u.sel=j}return}
  if(arcade.state!=='select'||menuOpen||studioIsOpen()||renderer.sel.launching)return;
  if(arcade.pvp){if(arcade.vs.step===1){const j=hitStage(...logical(e));if(j>=0&&arcade.stageOpen(j))arcade.vs.stage=j}return}
  });   // Rondell: Hover ändert nichts mehr, es wird mit ◀ ▶ bzw. Klick auf die Seitenfiguren weitergeschaltet
-canvas.addEventListener('click',e=>{{const u=renderer.lootUi;if(u.open){const L=logical(e);   // Overlay offen: nur dort klicken
+canvas.addEventListener('click',e=>{{const dl=game.story&&game.story.dealer;if(dl&&dl.active&&arcade.state==='fight'&&!menuOpen){const i=hitDealerOpt(...logical(e),dl.opts.length);if(i>=0)dl.click(i);return}}
+ {const u=renderer.lootUi;if(u.open){const L=logical(e);   // Overlay offen: nur dort klicken
   if(u.mode==='shop'){const j=hitShopCard(...L);if(j>=0)shopBuy(j);else if(hitShopBack(...L)){u.mode='main';u.t=0}}
   else if(u.mode==='main'){if(hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null}else if(LOOT.packs>0&&inR(lootOpenRect(),...L))lootReveal(openPack());else if(inR(lootCloseRect(),...L))u.open=false}
   else if(u.mode==='reveal')lootNext();
@@ -286,13 +294,16 @@ addEventListener('keydown',e=>{
   else if(e.code==='Enter'||e.code==='Space'||e.code==='KeyJ')startGo();
   e.preventDefault();return
  }
+ {const dl=game.story&&game.story.dealer;   // Schwarzmarkthändler (Story): E spricht an, im Gespräch gehen die Tasten an den Dialog
+  if(dl&&arcade.state==='fight'&&!menuOpen){if(dl.active){if(dl.key(e.code)){e.preventDefault();return}if(e.code==='KeyM'){}else{e.preventDefault();return}}
+   else if(e.code==='KeyE'&&dl.open()){e.preventDefault();return}}}
  {const u=renderer.lootUi,st=arcade.state,can=lootCan();   // Booster-Overlay (B) mit Shop (P)
   if(u.open||(can&&(e.code==='KeyB'||e.code==='KeyP'))){e.preventDefault();
    if(!u.open){lootOpen(e.code==='KeyP'?'shop':'main');return}
    if(u.mode==='shop'){
     if(e.code==='Escape'||e.code==='KeyB'||e.code==='KeyP'){u.mode='main';u.t=0}
-    else if(e.code==='ArrowLeft'||e.code==='KeyA')u.sel=(u.sel+SHOP.length-1)%SHOP.length;
-    else if(e.code==='ArrowRight'||e.code==='KeyD')u.sel=(u.sel+1)%SHOP.length;
+    else if(e.code==='ArrowLeft'||e.code==='KeyA')u.sel=(u.sel+shopCount()-1)%shopCount();
+    else if(e.code==='ArrowRight'||e.code==='KeyD')u.sel=(u.sel+1)%shopCount();
     else if(e.code==='Enter'||e.code==='Space'||e.code==='KeyJ')shopBuy(u.sel);
     return}
    if(e.code==='Escape'||e.code==='KeyB'){if(u.mode==='reveal'){u.mode='main';u.t=0;u.po=null}else u.open=false}
@@ -357,7 +368,7 @@ function padMenu(now){
  const pads=navigator.getGamepads?[...navigator.getGamepads()].filter(g=>g&&g.connected):[];if(!pads.length&&!padNav.prev.size)return;
  let screen;
  if(intro.active)screen='intro';else if(panelsOpen())screen=null;else if(menuOpen)screen='pause';
- else if(netMatch&&netMatch.phase!=='pick')screen='online';else if(startOpen)screen='start';else if(arcade.state==='fight')screen='fight';
+ else if(netMatch&&netMatch.phase!=='pick')screen='online';else if(startOpen)screen='start';else if(arcade.state==='fight')screen=game.story&&game.story.dealer&&game.story.dealer.active?'dealer':'fight';
  else if(arcade.state==='select'&&renderer.sel.launching)screen=null;else if(arcade.state==='select'&&arcade.pvp&&!renderer.lootUi.open)screen='versus';else screen='menu';
  const over=['clear','gameover','victory','vsover'].includes(arcade.state);
  for(const e of padNav.poll(now,pads,screen!==null)){
