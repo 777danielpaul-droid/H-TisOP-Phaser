@@ -1,12 +1,12 @@
 # Render-Blueprint: ZWEI Dienste, damit das Spiel sofort lädt und der Server nur bei einem Online-Spiel aufwachen muss.
-#  1) hitisop               = das Spiel (Static Site, schläft nie) -> Adresse bleibt https://hitisop.onrender.com
+#  1) hit-isop              = das Spiel (Static Site, schläft nie) -> Adresse https://hit-isop.onrender.com
 #  2) hitisop-online-server = Online-Server (WebSocket, Gratis-Instanz schläft) -> wird erst beim Start eines Online-Spiels geweckt (bis ~1 min, das Spiel zeigt eine Wartemeldung). Diese Adresse tippst du nie selbst ein.
-# Einrichten: Render -> New -> Blueprint -> dieses Repo wählen (vorher den alten Dienst "hitisop" löschen, damit die Adresse frei wird).
+# Einrichten: Render -> New -> Blueprint -> dieses Repo wählen. Den Namen (name: hit-isop) kannst du ändern; ist er schon vergeben, hängt Render eine Zufallsendung an.
 # Wenn Render dem Server eine andere Adresse gibt (steht im Dashboard beim Dienst), nur die Zeile HITISOP_ONLINE_URL unten anpassen.
 services:
   - type: web
     runtime: static
-    name: hitisop
+    name: hit-isop
     buildCommand: node tools/build.mjs
     staticPublishPath: dist
     headers:
