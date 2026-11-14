@@ -8,22 +8,20 @@ const fxPal=c=>[c,c,'#ffffff',FX_GOLD,'#7df9ff','#ff7ae6'];   // Palette: Figure
 export class Effects{
  constructor(ps){this.ps=ps}
  hit(x,y,power,color,dir){const ps=this.ps,P=power,fwd=dir>0?0:Math.PI,cols=fxPal(color);
-  // Kernblitz: weicher Lichtkern + spitzer Glanzstern (poppt auf, blinkt aus)
-  ps.flare(x,y,color,40+P*24,7+P*2,Math.random());
-  ps.glint(x,y,'#ffffff',44+P*20,13+P*3);
-  if(P>=2)ps.glint(x,y,color,66+P*26,18+P*3,2);
-  ps.spark(x,y,color,4+P*3,8+P*2);
-  // Funkel-Burst: nach vorn und rundherum, dazu langsam schwebende Sterne, die etwas später nachzünden
-  ps.sparkle(x,y,{count:10+P*6,speed:6+P*2.2,life:36+P*8,size:9+P*1.5,colors:cols,gravity:.07,dr:.93,angle:fwd,spread:3.4});
-  ps.sparkle(x,y,{count:4+P*2,speed:2,life:58+P*6,size:8,colors:cols,gravity:-.012,dr:.97,delay:10});
-  ps.sparkleRing(x,y,color,34+P*16);
-  if(P>=2)ps.sparkleRing(x,y,'#ffffff',20+P*10,{count:8+P*2});
-  if(P>=3){ps.shock(x,y+60,color,170,22);ps.sparkleBall(x,y,color,60+P*14,{count:18+P*5,life:56,size:10});
-   for(let i=0;i<P;i++)ps.bolt(x,y,i%2?color:'#7df9ff',Math.random()*6.283,80+P*26,6+((Math.random()*3)|0))}
+  // Dezenter Treffer-Funke (bewusst klein): kleiner Lichtkern + kleiner Glanzstern, wenige kleine Funkelsterne
+  ps.flare(x,y,color,26+P*9,6+P,Math.random());
+  ps.glint(x,y,'#ffffff',16+P*6,10+P*2);
+  if(P>=2)ps.glint(x,y,color,24+P*8,13+P*2,2);
+  ps.spark(x,y,color,3+P*2,6+P*1.5);
+  ps.sparkle(x,y,{count:5+P*3,speed:4+P*1.6,life:26+P*6,size:4.5+P*.7,colors:cols,gravity:.07,dr:.93,angle:fwd,spread:3.4});
+  if(P>=2)ps.sparkle(x,y,{count:2+P,speed:1.6,life:40+P*4,size:4.5,colors:cols,gravity:-.012,dr:.97,delay:10});
+  if(P>=2)ps.sparkleRing(x,y,color,22+P*9,{count:6+P*2});
+  if(P>=3){ps.shock(x,y+60,color,110,16);ps.sparkleBall(x,y,color,40+P*9,{count:10+P*3,life:44,size:5.5});
+   for(let i=0;i<P;i++)ps.bolt(x,y,i%2?color:'#7df9ff',Math.random()*6.283,50+P*16,5+((Math.random()*3)|0))}
  }
  block(x,y,color){const ps=this.ps,cols=['#ffffff','#8fd4ff','#bfe9ff','#8fd4ff'];
-  ps.glint(x,y,'#bfe9ff',44,11);ps.flare(x,y,'#8fd4ff',40,8,Math.random());
-  ps.sparkle(x,y,{count:12,speed:5,life:36,size:8,colors:cols,gravity:.06,dr:.93,glint:1});ps.sparkleRing(x,y,'#8fd4ff',28)}
+  ps.glint(x,y,'#bfe9ff',24,10);ps.flare(x,y,'#8fd4ff',26,7,Math.random());
+  ps.sparkle(x,y,{count:7,speed:4,life:30,size:5,colors:cols,gravity:.06,dr:.93,glint:1});ps.sparkleRing(x,y,'#8fd4ff',20)}
  land(x,y,big){if(big)this.ps.shock(x,y,'#b9a8ff',120,18);
   this.ps.burst(x,y-2,{count:big?10:5,speed:big?5:2.5,color:'#8a7fb8',life:20,size:2.6,angle:-Math.PI/2,spread:3.4,gravity:-.01,streak:.4});
   this.ps.sparkle(x,y-4,{count:big?14:5,speed:big?4.2:2.2,life:big?44:30,size:8,colors:['#ffffff','#b9a8ff','#7df9ff'],angle:-Math.PI/2,spread:2.8,gravity:.05,dr:.93,glint:big?1:0})}
@@ -47,10 +45,10 @@ export class Effects{
   for(let i=0;i<4;i++)ps.bolt(x,y-6,i%2?color:'#7df9ff',-Math.PI/2+(i-1.5)*.55,130+i*16,7)}
  // Combo-Effekt: skaliert mit der Trefferzahl, farbig nach Charakter
  combo(x,y,hits,color,dir){const ps=this.ps,h=Math.min(hits,12),cols=fxPal(color);
-  ps.flare(x,y,color,50+h*8,10,Math.random());ps.glint(x,y,'#ffffff',54+h*9,14+((h/3)|0));if(hits>=3)ps.glint(x,y,color,80+h*10,18,2);
-  ps.sparkle(x,y,{count:14+h*5,speed:6+h*.9,life:46,size:9+h*.4,colors:cols,gravity:.06,dr:.94});
-  ps.sparkleRing(x,y,color,40+hits*18);ps.ring(x,y,'#ffffff',24+hits*12);
-  if(hits>=4)ps.sparkleBall(x,y,color,70+h*9,{count:30+h*6,life:60,size:10});
+  ps.flare(x,y,color,34+h*5,9,Math.random());ps.glint(x,y,'#ffffff',30+h*5,12+((h/3)|0));if(hits>=3)ps.glint(x,y,color,44+h*6,15,2);
+  ps.sparkle(x,y,{count:8+h*3,speed:5+h*.7,life:38,size:5+h*.25,colors:cols,gravity:.06,dr:.94});
+  ps.sparkleRing(x,y,color,28+hits*11);ps.ring(x,y,'#ffffff',18+hits*8);
+  if(hits>=4)ps.sparkleBall(x,y,color,50+h*6,{count:18+h*4,life:50,size:6});
   if(hits>=6)for(let i=0;i<4;i++)ps.bolt(x,y,color,Math.random()*6.283,140,8)
  }
  // Verstärkter K.O. (der Siegesstoß): Glanzstern-Blitz, große Funkelkugeln wie ein Feuerwerk, Ringe, Fontäne und Glitzerregen

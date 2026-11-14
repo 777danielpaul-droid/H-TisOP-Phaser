@@ -108,11 +108,23 @@ export function drawShop(g,hud,u){const sel=u.sel|0;
  const b=shopBackRect();hud.kPlate(g,b.x,b.y,b.w,b.h,{col:'#8f7bff',on:false,sk:8,t:u.t});hud.txt(g,'ZURÜCK',b.x+b.w/2+4,b.y+19,13,'#d6c8ff','center');
  const age=u.t-(u.msgAt==null?-999:u.msgAt);if(u.msg&&age<110){g.save();g.globalAlpha=Math.min(1,(110-age)/30);hud.txt(g,u.msg,W/2,H-112,20,u.msgOk?'#7dff9a':'#ff6f7f','center',u.msgOk?'#7dff9a':'#ff6f7f');g.restore()}
  hud.txt(g,'◀ ▶  wählen   ·   ENTER / Klick – kaufen   ·   ESC / P – zurück',W/2,H-34,14,'#ffffff','center')}
+// ---- Karten-Ansicht (Klick auf eine Karte = groß anzeigen) ----
+export const CARD_GRID={cols:6,cw:112,ch:152,gx:10,y0:104};
+export const cardGridRect=i=>{const G=CARD_GRID,x0=W/2-(G.cols*G.cw+(G.cols-1)*G.gx)/2;return{x:x0+(i%G.cols)*(G.cw+G.gx),y:G.y0+Math.floor(i/G.cols)*(G.ch+G.gx),w:G.cw,h:G.ch}};
+export function hitCardGrid(lx,ly){for(let i=0;i<CARDS.length;i++)if(inR(cardGridRect(i),lx,ly)&&(LOOT.cards[CARDS[i].id]|0)>0)return i;return -1}   // nur besessene Karten lassen sich ansehen
+export const cardFace=c=>({col:RARITY[c.r].c,t1:c.name,t2:RARITY[c.r].n,t3:'x'+(LOOT.cards[c.id]|0)+' gesammelt',id:c.id});
+export const cardFaceAt=i=>cardFace(CARDS[i]);
+export function drawZoom(g,hud,u){const z=u&&u.zoom;if(!z)return;u.zt=(u.zt||0)+1;const e=Math.min(1,u.zt/10),k=1-Math.pow(1-e,3),w=300,h=414;
+ g.save();g.globalAlpha=.95*k;g.fillStyle='#010409';g.fillRect(0,0,W,H);g.globalAlpha=1;
+ g.save();g.globalCompositeOperation='lighter';const R=330,gr=g.createRadialGradient(W/2,H/2,20,W/2,H/2,R);gr.addColorStop(0,z.col+'55');gr.addColorStop(1,z.col+'00');g.globalAlpha=k;g.fillStyle=gr;g.fillRect(W/2-R,H/2-R,R*2,R*2);g.restore();
+ g.translate(W/2,H/2-6);const sc=.82+.18*k;g.scale(sc,sc);g.globalAlpha=k;
+ card(g,hud,-w/2,-h/2,w,h,z.col,z.t1,z.t2,z.t3,1,z.id?cardImg(z.id):null);
+ g.restore();hud.txt(g,'Klick / ESC / ENTER – schließen',W/2,H-22,14,'#ffffff','center')}
 export function drawLoot(g,hud,u){if(!u||!u.open)return;u.t=(u.t||0)+1;
  g.save();g.globalAlpha=.94;g.fillStyle='#010509ee';g.fillRect(0,0,W,H);g.globalAlpha=1;
  // Vault chassis and recessed glass work surface.
  g.save();hud.kChamfer(g,14,12,W-28,H-24,22);const deck=g.createLinearGradient(0,12,0,H-12);deck.addColorStop(0,'#1b2d35');deck.addColorStop(.12,'#07131a');deck.addColorStop(.82,'#02080d');deck.addColorStop(1,'#182830');g.fillStyle=deck;g.fill();g.strokeStyle='rgba(172,221,226,.54)';g.lineWidth=1;g.stroke();hud.kChamfer(g,21,19,W-42,H-38,17);g.strokeStyle='rgba(91,229,237,.18)';g.stroke();g.fillStyle='#6de6ed';g.fillRect(32,26,90,2);g.fillRect(W-122,H-28,90,2);g.restore();
- if(u.mode==='reveal'&&u.po){u.po.draw(g,hud,u);g.restore();return}   // Booster aufreißen (render/packopen.js)
+ if(u.mode==='reveal'&&u.po){u.po.draw(g,hud,u);g.restore();drawZoom(g,hud,u);return}   // Booster aufreißen (render/packopen.js)
  hud.txt(g,u.mode==='shop'?'XENOS SUPPLY EXCHANGE':'REWARD VAULT  /  DATA ARCHIVE',W/2,52,29,'#eaffff','center','#62ddea');hud.lab(g,'ALIEN CONTROL NETWORK  //  SECURE INVENTORY',W/2,72,9,'#6faebb','center',2,null,'700');
  hud.txt(g,`SEALED PACKS  ${LOOT.packs}     /     CREDITS  ${LOOT.coins}     /     DATA CARDS  ${cardsOwned()}/${CARDS.length}`,W/2,96,13,'#9cebf2','center');
  if(u.mode==='shop')drawShop(g,hud,u);
@@ -137,5 +149,5 @@ export function drawLoot(g,hud,u){if(!u||!u.open)return;u.t=(u.t||0)+1;
   {const o=lootOpenRect(),c=lootCloseRect(),pk=LOOT.packs>0;
    hud.kPlate(g,o.x,o.y,o.w,o.h,{col:pk?'#ffd23f':'#6a6a80',on:pk,sk:8,t:u.t});hud.txt(g,'BOOSTER ÖFFNEN',o.x+o.w/2+4,o.y+19,13,pk?'#ffffff':'#8a8aa0','center',pk?'#ffd23f':null);
    hud.kPlate(g,c.x,c.y,c.w,c.h,{col:'#8f7bff',on:false,sk:8,t:u.t});hud.txt(g,'SCHLIESSEN',c.x+c.w/2+4,c.y+19,13,'#d6c8ff','center')}
-  hud.txt(g,LOOT.packs>0?'ENTER – Booster öffnen   ·   P – Shop   ·   B / ESC – schließen   ·   Rechtsklick – schließen':'Keine Booster – besiege Mantis im Story-Modus oder kaufe welche im Shop (P)   ·   B / ESC – schließen',W/2,H-16,12,'#ffffff','center')}
- g.restore()}
+  hud.txt(g,LOOT.packs>0?'Karte anklicken – groß ansehen   ·   ENTER – Booster öffnen   ·   P – Shop   ·   B / ESC – schließen':'Karte anklicken – groß ansehen   ·   Keine Booster – Story-Modus oder Shop (P)   ·   B / ESC – schließen',W/2,H-16,12,'#ffffff','center')}
+ g.restore();drawZoom(g,hud,u)}

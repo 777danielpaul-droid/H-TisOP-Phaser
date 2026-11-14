@@ -43,7 +43,7 @@ check('Funkelsterne sind gedeckelt (<2000)',ps.tw.length<2000,String(ps.tw.lengt
 // --- Effekte: Treffer, Siegesstoß, Siegespose
 const E=(f)=>{const p=new ParticleSystem(),fx=new Effects(p);f(fx,p);return p};
 const h1=E(fx=>fx.hit(0,0,1,'#3fe0ff',1)),h4=E(fx=>fx.hit(0,0,4,'#3fe0ff',1));
-check('Treffer funkelt (Sterne + Glanzstern), stärker bei mehr Power',h1.tw.length>=20&&h1.gn.length>=1&&h4.tw.length>h1.tw.length&&h4.gn.length>h1.gn.length,h1.tw.length+'/'+h4.tw.length);
+check('Treffer funkelt (Sterne + Glanzstern), stärker bei mehr Power',h1.tw.length>=6&&h1.gn.length>=1&&h4.tw.length>h1.tw.length&&h4.gn.length>h1.gn.length,h1.tw.length+'/'+h4.tw.length);
 check('Treffer ohne flache Comic-Formen (kein Zackenstern/Fadenkreuz/Schlagklinge)',h4.pw.length===0&&h4.mk.length===0&&h4.sl.length===0);
 const ko=E(fx=>fx.ko(0,0,'#ffd23f'));
 check('Siegesstoß (K.O.): große Funkelkugeln + viele Glanzsterne',ko.tw.length>300&&ko.gn.length>=10&&ko.pw.length===0,ko.tw.length+'/'+ko.gn.length);

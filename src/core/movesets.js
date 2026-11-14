@@ -92,9 +92,9 @@ cyberdemon.airsuper={label:'Höllenregen',info:'HYPER in der Luft: Klauenregen, 
 // Stärke: Sichelwellen (J/L) halten auf Abstand, Federsturm trifft auch hinter ihm (Anti-Cross-up), Rabenflug = unverwundbarer Anti-Air, schneller Dash + hoher Sprung.
 // Schwäche: keine Rüstung, kein Teleport, Krallen-Rausch ist auf Block bestrafbar, Sicheln nur mittelschnell.
 const rabe={...norm({su:0,rc:-1,dmg:1.02,reach:6}),
- fireball:{label:'Schattensichel',info:'Violette Sichelwelle: J = schnell, L = stark',su:9,rc:16,proj:P({frame:9,y:-112,vx:11,w:100,h:72,dmg:50,hs:16,bs:9,life:72,look:'claw'}),
-  v:{L:{su:7,rc:13,proj:P({frame:7,y:-112,vx:12,w:84,h:58,dmg:38,hs:14,bs:8,life:58,look:'claw'})},
-     H:{su:13,rc:22,proj:P({frame:13,y:-112,vx:10,w:132,h:94,dmg:76,hs:20,bs:13,life:98,look:'claw'})}}},
+ fireball:{label:'Schattensichel',info:'Violette Sichelwelle: J = schnell, L = stark',su:9,rc:16,proj:P({frame:9,y:-112,vx:11,w:100,h:72,dmg:50,hs:16,bs:9,life:72,look:'sickle'}),
+  v:{L:{su:7,rc:13,proj:P({frame:7,y:-112,vx:12,w:84,h:58,dmg:38,hs:14,bs:8,life:58,look:'sickle'})},
+     H:{su:13,rc:22,proj:P({frame:13,y:-112,vx:10,w:132,h:94,dmg:76,hs:20,bs:13,life:98,look:'sickle'})}}},
  rising:{label:'Rabenflug',info:'Unverwundbarer Anti-Air, Launcher',su:4,ac:8,rc:23,dmg:88,inv:[1,10],launch:{vx:2,vy:-17}},
  rush:{label:'Krallen-Rausch',info:'3 Hiebe + Launcher – auf Block bestrafbar',anim:'heavy',su:7,ac:12,rc:23,dmg:34,hs:18,bs:12,pb:3,multi:3,lunge:11,box:[10,-126,120,82],launch:{vx:3,vy:-13},hstop:4,shake:3,glow:1},
  back:{label:'Federsturm',info:'Trifft auch hinter ihm (Anti-Cross-up)',anim:'kick',crouch:false,lv:'mid',su:8,ac:5,rc:19,dmg:64,hs:22,bs:13,pb:4,box:[-155,-100,300,100],hard:false,hstop:6,shake:3,glow:1},

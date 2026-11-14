@@ -82,6 +82,8 @@ export class PackOpen{
   for(let i=0;i<[0,1,3,5,8][T];i++)this.later(i*7,()=>{this.col=this.items[i%3].face.col;f.rocket(120+Math.random()*720,540,90+Math.random()*100,this.col,.75)});
   f.glitter(480,200,{count:40,speed:8,life:80,size:4,colors:[PO_GOLD,'#ffffff','#7df9ff','#ff7ae6'],gravity:.05});if(T>=3)f.mega(480,170,PO_GOLD,1.4,2,1.2)}
  // ENTER / Klick. true = Animation zu Ende (zurück zur Übersicht)
+ // Klick auf eine Karte der Zusammenfassung -> deren Inhalt (zum Groß-Ansehen) oder null
+ hitSum(lx,ly){if(this.ph!=='sum'||this.pt<30)return null;for(let i=0;i<this.items.length;i++){const r=poSum(i);if(Math.abs(lx-r.x)<=r.w/2&&Math.abs(ly-r.y)<=r.h/2)return this.items[i].face}return null}
  advance(){const P=this.ph;
   if(P==='idle'){this.ph='tear';this.pt=0;return false}
   if(P==='tear'){if(this.pt<PO.tearAt-1)this.pt=PO.tearAt-1;return false}                // Wackeln überspringen

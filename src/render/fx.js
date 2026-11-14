@@ -52,17 +52,17 @@ export class PostFX{
   g.fillStyle=gr;g.beginPath();g.arc(0,0,r,0,6.283);g.fill();g.restore()}
  // Impact-Frame bei harten Treffern/K.O.: kurzer weicher Lichtblitz, Lichtkern mit dünnen Glanzstrahlen und blinkenden Funkelpunkten (statt Vollblitz + dicker Speedlines + weißer Scheibe)
  impact(g,game){const im=game.impact;if(!im||im.t<=0)return;const W=960,H=540,u=im.t/im.t0,[ox,oy]=game.camera.toScreen(im.x,im.y),P=im.p,spr=sparkIdx(im.col),T=1-u;
-  g.save();if(u>.6){g.globalAlpha=(u-.6)/.4*.3*P;g.fillStyle='#fff';g.fillRect(0,0,W,H)}   // nur ein kurzer, weicher Aufheller
+  g.save();if(u>.6){g.globalAlpha=(u-.6)/.4*.12*P;g.fillStyle='#fff';g.fillRect(0,0,W,H)}   // nur ein kurzer, weicher Aufheller
   g.globalCompositeOperation='lighter';
   // Lichtkern: weicher Verlauf, wächst und verglüht
-  {const R=(70+T*190)*(.8+.2*P),gr=g.createRadialGradient(ox,oy,0,ox,oy,R);gr.addColorStop(0,'rgba(255,255,255,.95)');gr.addColorStop(.18,'rgba(255,255,255,.55)');gr.addColorStop(.5,fxRgba(im.col,.33));gr.addColorStop(1,fxRgba(im.col,0));
+  {const R=(40+T*100)*(.8+.2*P),gr=g.createRadialGradient(ox,oy,0,ox,oy,R);gr.addColorStop(0,'rgba(255,255,255,.95)');gr.addColorStop(.18,'rgba(255,255,255,.55)');gr.addColorStop(.5,fxRgba(im.col,.33));gr.addColorStop(1,fxRgba(im.col,0));
    g.globalAlpha=Math.min(1,u*1.5)*.85*Math.min(1,P);g.fillStyle=gr;g.fillRect(ox-R,oy-R,R*2,R*2)}
   // Glanzstrahlen: dünn, spitz zulaufend, flackern (jeder Strahl blinkt für sich)
   g.fillStyle='#ffffff';
-  for(let i=0,N=Math.round(18*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*5.3+im.seed)*6.283,fl=fhn(i*3.7+im.seed+Math.floor(T*10)),r0=14+fhn(i)*26,L=r0+(60+fhn(i+9)*250)*(.5+.5*T+.2*P),w=1.2+fhn(i*2)*2.4*u,nx=-Math.sin(a),ny=Math.cos(a);
+  for(let i=0,N=Math.round(9*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*5.3+im.seed)*6.283,fl=fhn(i*3.7+im.seed+Math.floor(T*10)),r0=14+fhn(i)*26,L=r0+(30+fhn(i+9)*120)*(.5+.5*T+.2*P),w=1.2+fhn(i*2)*2.4*u,nx=-Math.sin(a),ny=Math.cos(a);
    g.globalAlpha=Math.min(1,u*1.4)*(.25+.75*fl*fl)*.85;g.beginPath();g.moveTo(ox+Math.cos(a)*r0+nx*w,oy+Math.sin(a)*r0*.85+ny*w);g.lineTo(ox+Math.cos(a)*L,oy+Math.sin(a)*L*.85);g.lineTo(ox+Math.cos(a)*r0-nx*w,oy+Math.sin(a)*r0*.85-ny*w);g.closePath();g.fill()}
   // Funkelpunkte, die vom Treffpunkt wegfliegen und blinken
-  for(let i=0,N=Math.round(26*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*7.1+im.seed)*6.283,sp=60+fhn(i*1.3)*300,d=24+sp*T*(.6+.4*(1-T)),s=.5+.5*Math.sin(T*28*(.6+fhn(i*2.9))+i*2.1),tw=s*s*s,r=(4+fhn(i*4.4)*8)*(.6+.8*tw)*(.4+.6*u);
+  for(let i=0,N=Math.round(12*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*7.1+im.seed)*6.283,sp=30+fhn(i*1.3)*140,d=24+sp*T*(.6+.4*(1-T)),s=.5+.5*Math.sin(T*28*(.6+fhn(i*2.9))+i*2.1),tw=s*s*s,r=(2.5+fhn(i*4.4)*4.5)*(.6+.8*tw)*(.4+.6*u);
    g.globalAlpha=Math.min(1,u*1.6)*(.35+.65*tw);sparkDraw(g,ox+Math.cos(a)*d,oy+Math.sin(a)*d*.85,r,fhn(i)<.45?36:spr,tw,1)}
   g.restore()}
  // Schadenszahlen / Textpops (Welt-Raum)

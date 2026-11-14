@@ -269,6 +269,13 @@ drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTr
  look(g,p,col){const L=p.def.look,t=p.age;g.save();g.translate(p.x,p.y);g.globalCompositeOperation='lighter';
   if(L==='claw'){const d=Math.sign(p.vx);g.strokeStyle='#fff';g.shadowColor=col;g.shadowBlur=14;g.lineWidth=4;
    for(const o of[-12,0,12]){g.beginPath();g.moveTo(-d*34,o*1.3);g.quadraticCurveTo(0,o-8,d*30,o*.8+6);g.stroke()}g.strokeStyle=col;g.lineWidth=2;g.stroke()}
+  else if(L==='sickle'){const d=Math.sign(p.vx)||1,R=Math.max(26,p.h*.62),sp=t*.42*d,a=Math.min(1,t/3);   // Schattensichel: drehende, leuchtende Mondsichel mit Nachbildern + Schweif
+   const tr=g.createLinearGradient(-d*R*3.2,0,0,0);tr.addColorStop(0,col+'00');tr.addColorStop(1,col+'88');g.fillStyle=tr;g.beginPath();g.ellipse(-d*R*1.6,0,R*1.7,R*.34,0,0,7);g.fill();
+   const blade=(rot,al,core)=>{g.save();g.rotate(rot);if(d<0)g.scale(-1,1);g.globalAlpha=al*a;g.beginPath();g.arc(0,0,R,-2.3,2.3);g.quadraticCurveTo(R*2.55,0,R*Math.cos(2.3),-R*Math.sin(2.3));g.closePath();
+    const gr=g.createLinearGradient(-R,0,R,0);gr.addColorStop(0,col);gr.addColorStop(.55,core?'#c9a6ff':col);gr.addColorStop(1,'#f3eaff');g.fillStyle=gr;g.shadowColor=col;g.shadowBlur=core?16:0;g.fill();
+    if(core){g.strokeStyle='#ffffff';g.lineWidth=1.8;g.stroke()}g.restore()};
+   blade(sp-d*.9,.18);blade(sp-d*.6,.3);blade(sp-d*.3,.5);blade(sp,1,true);
+   g.globalAlpha=a*.4;const gl=g.createRadialGradient(0,0,2,0,0,R*1.4);gl.addColorStop(0,col+'66');gl.addColorStop(.5,col+'33');gl.addColorStop(1,col+'00');g.fillStyle=gl;g.beginPath();g.arc(0,0,R*1.4,0,7);g.fill()}
   else if(L==='fire'){const d=Math.sign(p.vx),R=p.h/2,fl=1+.12*Math.sin(t*.7);   // Feuerwelle: flackernde Glutballen mit Schweif nach hinten
    for(let i=5;i>=0;i--){const cx=-d*i*R*.62,r=R*(1-i*.11)*fl,cy=Math.sin(t*.5+i*1.7)*R*.18*i/3;g.globalAlpha=Math.max(0,1-i*.15);
     const gr=g.createRadialGradient(cx,cy,r*.1,cx,cy,r);gr.addColorStop(0,'#fffbd0');gr.addColorStop(.35,'#ffc531');gr.addColorStop(.7,'#ff5a14cc');gr.addColorStop(1,'#c0180000');

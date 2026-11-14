@@ -15,7 +15,7 @@ import{NetUi,netMessage}from'./render/netui.js';
 import{skinCount,skinName}from'./render/skins.js';
 import{THEMES}from'./render/stage.js';
 import{hitDealerOpt}from'./render/storyhud.js';
-import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel,shopCardRect,shopBackRect,shopBtnRect,shopSelRect,boosterRect,lootOpenRect,lootCloseRect,inR}from'./render/lootui.js';
+import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel,shopCardRect,shopBackRect,shopBtnRect,shopSelRect,boosterRect,lootOpenRect,lootCloseRect,inR,hitCardGrid,cardFaceAt}from'./render/lootui.js';
 import{endBtnRect}from'./render/hover.js';
 import{Renderer}from'./render/renderer.js';
 import{Sound}from'./render/audio.js';
@@ -157,7 +157,7 @@ try{const sv=JSON.parse(localStorage.getItem(SKIN_KEY)||'null');if(sv&&typeof sv
 // ---- Booster-Overlay / Shop: Öffnen, Kaufen ----
 const lootCan=()=>{const st=arcade.state;return !menuOpen&&!renderer.sel.launching&&((st==='select'&&!arcade.pvp)||st==='gameover'||st==='victory')};
 const shopClip=new ShopClip(on=>{if(on){shopClip._mv=sound.mvol;sound.setMusicVolume(sound.mvol*.2)}else if(shopClip._mv!=null){sound.setMusicVolume(shopClip._mv);shopClip._mv=null}},()=>{clearInputs();canvas.focus()});   // Transfer-Clip beim Betreten des Shops (Musik währenddessen leiser)
-const lootOpen=mode=>{const u=renderer.lootUi;u.open=true;u.mode=mode;u.rewards=null;u.t=0;u.sel=0;u.msg=null;if(mode==='shop'){sound.unlock();shopClip.start()}};
+const lootOpen=mode=>{const u=renderer.lootUi;u.open=true;u.zoom=null;u.mode=mode;u.rewards=null;u.t=0;u.sel=0;u.msg=null;if(mode==='shop'){sound.unlock();shopClip.start()}};
 // Booster aufreißen: Animation (render/packopen.js) mit den schon gezogenen Belohnungen; ENTER/Klick treibt sie voran, ESC überspringt (Belohnungen sind bereits gespeichert)
 const lootReveal=rw=>{const u=renderer.lootUi;u.rewards=rw;u.po=new PackOpen(rw,(n,o)=>game.sfx(n,o));u.mode='reveal';u.t=0};
 const lootNext=()=>{const u=renderer.lootUi;if(!u.po||u.po.advance()){u.mode='main';u.t=0;u.po=null}};
@@ -200,9 +200,10 @@ canvas.addEventListener('mousemove',e=>{const dl=game.story&&game.story.dealer;i
  });   // Rondell: Hover ändert nichts mehr, es wird mit ◀ ▶ bzw. Klick auf die Seitenfiguren weitergeschaltet
 canvas.addEventListener('click',e=>{{const dl=game.story&&game.story.dealer;if(dl&&dl.active&&arcade.state==='fight'&&!menuOpen){const i=hitDealerOpt(...logical(e),dl.opts.length);if(i>=0)dl.click(i);return}}
  {const u=renderer.lootUi;if(u.open){const L=logical(e);   // Overlay offen: nur dort klicken
+  if(u.zoom){u.zoom=null;return}   // große Kartenansicht offen: Klick schließt sie
   if(u.mode==='shop'){const j=hitShopCard(...L);if(j>=0)shopBuy(j);else if(hitShopBack(...L)){u.mode='main';u.t=0}}
-  else if(u.mode==='main'){if(hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null;sound.unlock();shopClip.start()}else if(LOOT.packs>0&&inR(lootOpenRect(),...L))lootReveal(openPack());else if(inR(lootCloseRect(),...L))u.open=false}
-  else if(u.mode==='reveal')lootNext();
+  else if(u.mode==='main'){const ci=hitCardGrid(...L);if(ci>=0){u.zoom=cardFaceAt(ci);u.zt=0}else if(hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null;sound.unlock();shopClip.start()}else if(LOOT.packs>0&&inR(lootOpenRect(),...L))lootReveal(openPack());else if(inR(lootCloseRect(),...L))u.open=false}
+  else if(u.mode==='reveal'){const f=u.po&&u.po.hitSum(...L);if(f){u.zoom=f;u.zt=0}else lootNext()}
   return}}
  if(arcade.state==='select'&&!arcade.pvp&&lootCan()){const L=logical(e);if(hitShopSel(...L)){lootOpen('shop');return}if(inR(boosterRect(),...L)){lootOpen('main');return}}
  if(arcade.state!=='select'&&canvasMenu()){const L=logical(e),bs=endBtns();for(let i=0;i<bs.length;i++)if(inR(endBtnRect(i,bs.length),...L)){bs[i].fn();return}return}
@@ -215,7 +216,7 @@ canvas.addEventListener('click',e=>{{const dl=game.story&&game.story.dealer;if(d
  if(CHARACTERS.custom&&arcade.cursor===CI()&&hitEdit(...L)){openStudio();return}
  const off=hitCar(...L),n=SLOTS().length;if(off===0)startFight(arcade.cursor);else if(off!==null)arcade.cursor=(arcade.cursor+off+n)%n;});   // linke/rechte Figur = eine weiterschalten, mittlere = kämpfen
 canvas.addEventListener('contextmenu',e=>{const u=renderer.lootUi;
- if(u.open){if(u.mode==='shop'||u.mode==='reveal'){u.mode='main';u.t=0;u.po=null}else u.open=false;e.preventDefault();return}
+ if(u.open){if(u.zoom){u.zoom=null;e.preventDefault();return}if(u.mode==='shop'||u.mode==='reveal'){u.mode='main';u.t=0;u.po=null}else u.open=false;e.preventDefault();return}
  if(!canvasMenu()||(netMatch&&netMatch.phase!=='pick'))return;const st=arcade.state;
  if(st==='select'&&arcade.pvp){arcade.vsBack();e.preventDefault()}
  else if(st==='gameover'||st==='victory'||st==='vsover'){arcade.toSelect();e.preventDefault()}});   // Rechtsklick = Zurück: Booster/Shop eine Ebene hoch, 2-Spieler-Auswahl zurück, End-Bildschirm -> Charakterwahl
@@ -303,6 +304,7 @@ addEventListener('keydown',e=>{
  {const u=renderer.lootUi,st=arcade.state,can=lootCan();   // Booster-Overlay (B) mit Shop (P)
   if(u.open||(can&&(e.code==='KeyB'||e.code==='KeyP'))){e.preventDefault();
    if(!u.open){lootOpen(e.code==='KeyP'?'shop':'main');return}
+   if(u.zoom){if(e.code==='Escape'||e.code==='Enter'||e.code==='Space'||e.code==='KeyJ'||e.code==='KeyB')u.zoom=null;return}   // große Kartenansicht: Taste schließt sie
    if(u.mode==='shop'){
     if(e.code==='Escape'||e.code==='KeyB'||e.code==='KeyP'){u.mode='main';u.t=0}
     else if(e.code==='ArrowLeft'||e.code==='KeyA')u.sel=(u.sel+shopCount()-1)%shopCount();
