@@ -50,7 +50,9 @@ export const cardsOwned=()=>CARDS.filter(c=>LOOT.cards[c.id]>0).length;
 export const pick=(a,rnd)=>a[Math.floor(rnd()*a.length)];
 // Pro Booster höchstens EINE gute Belohnung (Tier >= 2: seltene/epische Karte, neue Farbe, neue Stage). Der Rest sind Coins und ab und zu ein gewöhnliches Sammelbild.
 // Feinjustierung: GOOD_CHANCE = Wahrscheinlichkeit, dass ein Booster überhaupt etwas Gutes enthält; GOOD_MIX = Verteilung darunter; FILLER_COIN = Anteil Coins bei den übrigen Plätzen.
-export const GOOD_CHANCE=.22,GOOD_MIX={epic:.15,rare:.40},FILLER_COIN=.78;   // GOOD_MIX: Rest (~45 %) = neue Farbe/Stage, solange es noch welche gibt
+// >>> TESTMODUS (14.11.2026): Drops absichtlich hochgeschraubt, damit Karten/Booster schnell geprüft werden können. <<<
+// Originalwerte fürs fertige Spiel: GOOD_CHANCE=.22, GOOD_MIX={epic:.15,rare:.40}, FILLER_COIN=.78
+export const GOOD_CHANCE=.9,GOOD_MIX={epic:.4,rare:.5},FILLER_COIN=.45;   // GOOD_MIX: Rest (~45 %) = neue Farbe/Stage, solange es noch welche gibt
 export const isGood=r=>prizeTier(r)>=2;
 const mkCard=(c,rnd)=>({type:'card',id:c.id,name:c.name,r:c.r,isNew:!(LOOT.cards[c.id]>0)});
 // Füllplatz: meist wenig Coins (6-26), selten ein dicker Coin-Treffer (35-50), sonst eine gewöhnliche Karte
@@ -65,8 +67,13 @@ export function rollGood(rnd){const x=rnd(),card=r=>mkCard(pick(CARDS.filter(c=>
  const f=pick(free,rnd);if(f[0]==='stage')return{type:'stage',idx:f[1],name:STAGE_NAMES[f[1]],isNew:true};
  const[,id,k]=f;return{type:'skin',char:id,idx:k,name:skinName(id,k),col:SKINS[id][k].col,isNew:true}}
 // Booster öffnen: 3 Belohnungen (meist Coins, ab und zu eine gewöhnliche Karte, selten EIN guter Treffer). null, wenn kein Booster da ist.
-export function openPack(rnd=Math.random){if(LOOT.packs<1)return null;LOOT.packs--;const out=[],good=rnd()<GOOD_CHANCE,slot=Math.floor(rnd()*3);   // der gute Treffer (falls vorhanden) landet auf einem zufälligen Platz
- for(let i=0;i<3;i++){const r=good&&i===slot?rollGood(rnd):rollFiller(rnd);
-  if(r.type==='coins')LOOT.coins+=r.n;else if(r.type==='card')LOOT.cards[r.id]=(LOOT.cards[r.id]|0)+1;else if(r.type==='stage')LOOT.stages.push(r.idx);else(LOOT.skins[r.char]=LOOT.skins[r.char]||[]).push(r.idx);
-  out.push(r)}
+// GUARANTEED_CARD: jeder Booster enthält mindestens EINE Sammelkarte (Testmodus; fürs fertige Spiel auf false stellen).
+export const GUARANTEED_CARD=true;
+export function openPack(rnd=Math.random){if(LOOT.packs<1)return null;LOOT.packs--;const good=rnd()<GOOD_CHANCE,slot=Math.floor(rnd()*3);   // der gute Treffer (falls vorhanden) landet auf einem zufälligen Platz
+ const out=[];for(let i=0;i<3;i++)out.push(good&&i===slot?rollGood(rnd):rollFiller(rnd));
+ if(GUARANTEED_CARD&&!out.some(r=>r.type==='card')){   // keine Karte dabei -> einen Coin-Platz zur Karte machen (höchstens EINE gute Belohnung bleibt erhalten)
+  const k=out.findIndex(r=>!isGood(r)),at=k<0?slot:k,hasGood=out.some((r,i)=>i!==at&&isGood(r));
+  if(!hasGood){const x=rnd(),c=pick(CARDS.filter(c=>c.r===(x<GOOD_MIX.epic/(GOOD_MIX.epic+GOOD_MIX.rare)?2:1)),rnd);out[at]=mkCard(c,rnd)}
+  else out[at]=mkCard(pick(CARDS.filter(c=>c.r===0),rnd),rnd)}
+ for(const r of out){if(r.type==='coins')LOOT.coins+=r.n;else if(r.type==='card')LOOT.cards[r.id]=(LOOT.cards[r.id]|0)+1;else if(r.type==='stage')LOOT.stages.push(r.idx);else(LOOT.skins[r.char]=LOOT.skins[r.char]||[]).push(r.idx)}
  saveLoot();return out}
