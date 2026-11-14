@@ -9,6 +9,23 @@ export const PHYS={gravity:.7,jumpV:-20.5,superJumpV:-21.5,airJumpV:-17,hopV:-15
 // vy = Start-Auftrieb (negativ = hoch), vx = Rückstoß in Schlagrichtung, grav = Schwerkraft-Faktor im Pop (kleiner = schwebt länger),
 // cap = ab dieser Höhe (px) gibt es im Pop-up kaum noch Nachschub, reach = bis zu dieser Höhe (px) reicht die Hurtbox im Pop-up bis zum Boden (Tiefschläge treffen weiter), drag = horizontale Dämpfung je Frame (Gegner bleibt in Reichweite), land = Erholungs-Frames bei der Landung (kein Knockdown), mid/heavy = Schadensschwellen.
 export const BOUNCE={L:{vy:-4.8,vx:1.2},M:{vy:-5.4,vx:1.6},H:{vy:-9.2,vx:3},multi:{vy:-4.6,vx:1},proj:{vy:-6.5,vx:1.6},grav:.62,drag:.93,land:10,cap:110,reach:80,mid:45,heavy:75};
+// Luftkampf-System (MvC2-Stil): Launcher -> Super Jump -> Luft-Combo -> Finisher. Alle Zeiten in Frames, Distanzen in px.
+// ctrl   = Luftsteuerung: accel/brake = Beschleunigung mit/ohne Richtungseingabe, atk/atkAccel/atkBrake = Steuerung WÄHREND eines Luftangriffs (Anteil des Lauftempos),
+//          fastFall = Zusatz-Schwerkraft bei gehaltenem Runter (schnell zum Gegner/Boden), turn = Mindestabstand (px), ab dem sich die Figur in der Luft zum Gegner dreht
+// hover  = Angreifer "hängt" kurz in der Luft, wenn ein Luft-Normal trifft (vy = Auftrieb, grav = Schwerkraftfaktor für `frames` Frames) -> flüssige Ketten ohne Absinken
+// chase  = Super Jump nach Launcher (vy = Sprungtempo; Magnet horizontal: Soll-Abstand gap, Stärke k, max Tempo, blend; Höhen-Lock: sobald die Figur `near` px an die Höhe des Gegners heran ist, folgt sie seiner Flugbahn
+//          [lock = Anteil je Frame, ky = Höhenkorrektur]; gilt `frames` lang oder bis Doppelsprung/Air-Dash; nur wenn man nicht zurückhält)
+// hop    = dasselbe, schwächer, für den Sprungabbruch nach normalen Bodentreffern (Pop-up)
+// dash   = Air-Dash: home = Anteil, mit dem er zur Höhe des Gegners zielt (max homeMax), up/down = vertikales Tempo bei Hoch/Runter, atk = ab diesem Frame Angriff möglich
+// juggle = Gegner in der Luft: decay = Auftriebsverlust je Treffer, minF = Mindestanteil, gravRamp = Schwerkraft wächst je Treffer, drag = horizontale Dämpfung (bleibt in Reichweite),
+//          cap = ab dieser Höhe (px) gibt es kaum noch Auftrieb (kein Verschwinden nach oben)
+// relaunchMax = Sky-Launcher (↑ + L in der Luft) pro Combo, slamMax = Boden-Prälle (Meteor-Spike/Air-Hyper) pro Combo, freshMax = nach dem Sky-Launcher darf pro Luftphase 1× direkt eine frische Luft-Kette gestartet werden (ohne Puffer-Timing), relaunchJuggle = so viele Juggle-Punkte gibt er zurück; slam = Boden-Prall des Meteor-Spikes (bounceVy = Rückprall, juggleLeft = verbleibende Juggle-Punkte danach)
+export const AIR={ctrl:{accel:.3,brake:.035,atk:.75,atkAccel:.16,atkBrake:.02,fastFall:.9,turn:14},
+ hover:{vy:-2.6,frames:10,grav:.3},
+ chase:{vy:-23.5,frames:46,gap:64,k:.1,max:10,blend:.38,lock:.34,ky:.2,near:90},hop:{frames:26,gap:62,k:.09,max:8,blend:.3,lock:.3,ky:.18,near:70},
+ dash:{home:.14,homeMax:4.5,up:-5.2,down:7.5,atk:3},
+ juggle:{decay:.075,minF:.4,gravRamp:.05,drag:.965,cap:330},
+ relaunchMax:1,relaunchJuggle:3,slamMax:1,freshMax:1,slam:{bounceVy:-11.5,juggleLeft:3}};
 // Melee-Modus (Smash-Stil): Schaden in %, Rückstoß wächst mit dem %-Wert, Stocks (Leben), offene Plattform ohne Wände.
 // pl/pr = Plattformkanten, x0/x1/y0/y1 = Blast-Zonen (wer sie verlässt, verliert einen Stock), pctScale = Move-Schaden -> %,
 // kbDiv = je höher, desto später fliegt man weit, base = Grund-Rückstoß je Trefferstärke (leicht/mittel/schwer), flinch = darunter bleibt man am Boden stehen.

@@ -78,9 +78,9 @@ export class SelectScreen{
    g.shadowBlur=0;g.globalAlpha=al*.5;g.strokeStyle=c;g.lineWidth=1.5;g.strokeText(txt,lx,yy)};
   row(T[0],y,size,col);row(T[1],y+size*.78,size*.58,col2);g.restore()}
  // Kurzvideo als Rahmen-Feld (16:9) zeichnen
- vidPanel(g,v,x,y,w,h,col,al,flash){g.save();g.globalAlpha=al;g.shadowColor=col;g.shadowBlur=24;g.fillStyle='#000';this.hud.kChamfer(g,x,y,w,h,12);g.fill();g.shadowBlur=0;g.save();g.clip();
-  try{if(v)g.drawImage(v,x,y,w,h)}catch(e){}g.restore();g.strokeStyle=col;g.lineWidth=1.4;this.hud.kChamfer(g,x,y,w,h,12);g.stroke();g.strokeStyle='#4a4c9a';g.lineWidth=1;this.hud.kChamfer(g,x-5,y-5,w+10,h+10,15);g.stroke();
-  if(flash>0){g.globalAlpha=al*Math.min(.92,flash*.55);g.fillStyle='#fff';this.hud.kChamfer(g,x,y,w,h,12);g.fill()}g.restore()}
+ vidPanel(g,v,x,y,w,h,col,al,flash){g.save();g.globalAlpha=al;g.shadowColor=col;g.shadowBlur=24;g.fillStyle='#000';this.hud.kChamfer(g,x,y,w,h,18);g.fill();g.shadowBlur=0;g.save();g.clip();
+  try{if(v)g.drawImage(v,x,y,w,h)}catch(e){}g.restore();g.strokeStyle=col;g.lineWidth=1.4;this.hud.kChamfer(g,x,y,w,h,18);g.stroke();g.strokeStyle='#4a4c9a';g.lineWidth=1;this.hud.kChamfer(g,x-5,y-5,w+10,h+10,22);g.stroke();
+  if(flash>0){g.globalAlpha=al*Math.min(.92,flash*.55);g.fillStyle='#fff';this.hud.kChamfer(g,x,y,w,h,18);g.fill()}g.restore()}
  // Feuerwerk weiterlaufen lassen (Schritte in 60-Hz-Frames, unabhängig von der Monitorfrequenz)
  stepLaunch(t,cellCx){const ln=this.ln;if(!ln)return;const dt=this._lt==null?1:Math.min(3,Math.max(0,t-this._lt));ln.acc+=dt;
   const col=ln.col,col2=ln.col2,vid=!!(ln.vid||ln.vid2),V=ln.V||70,FIN=Math.max(1,V-50),fx=ln.fx,sp=ln.sp,fy=ln.fy;
@@ -110,7 +110,18 @@ export class SelectScreen{
  fake(id,t){const ch=CHARACTERS[id],f=this.fakes[id]||(this.fakes[id]={x:0,y:0,facing:1,char:ch,anim:'idle',animU:0,sf:0,mf:0,move:null,state:'idle',trail:[],vx:0,vy:0,menu:true});f.sf=t;f.char=ch;return f}
  // Text in Zeilen umbrechen (Breite in Logik-Pixeln)
  wrap(g,s,size,maxW){const out=[];let line='';for(const w of String(s).split(' ')){const tr=line?line+' '+w:w;if(line&&this.hud.mw(g,tr,size)>maxW){out.push(line);line=w}else line=tr}if(line)out.push(line);return out}
- draw(g,arcade,t,W,H){if(arcade.pvp)return this.drawVs(g,arcade,t,W,H);const hud=this.hud;this.modePill(g,arcade,t);
+ draw(g,arcade,t,W,H){if(arcade.pvp)return this.drawVs(g,arcade,t,W,H);const hud=this.hud;
+  // Main character bay: dark glass console, machined corners and restrained cyan telemetry.
+  g.save();hud.kChamfer(g,18,104,466,394,18);const bay=g.createLinearGradient(0,104,0,498);bay.addColorStop(0,'rgba(7,19,28,.54)');bay.addColorStop(1,'rgba(2,7,13,.18)');g.fillStyle=bay;g.fill();g.strokeStyle='rgba(89,207,225,.34)';g.lineWidth=1;g.stroke();
+  hud.lab(g,'HOLOGRAPHIC COMBATANT BAY',34,124,9,'#78d8e7','left',2,null,'700');hud.kRule(g,34,466,134,'#4faebe',null,.55);
+  g.fillStyle='rgba(107,226,240,.45)';g.fillRect(34,482,58,2);g.fillStyle='rgba(107,226,240,.14)';g.fillRect(98,482,368,1);
+  hud.lab(g,'BIO-SIGNATURE',34,475,8,'#668e9c','left',1,null,'700');hud.lab(g,'SYNC  /  READY',466,475,8,'#7be5ee','right',1,null,'700');g.restore();
+  // Deck rails: machined dark-chrome hardware ties the character bay and profile console together.
+  g.save();g.strokeStyle='rgba(144,198,207,.22)';g.lineWidth=1;g.beginPath();g.moveTo(18,96);g.lineTo(942,96);g.moveTo(18,504);g.lineTo(942,504);g.stroke();
+  g.fillStyle='rgba(100,226,235,.8)';g.fillRect(18,95,74,2);g.fillRect(868,503,74,2);
+  hud.lab(g,'XENOS COMBAT SYSTEM  /  PERSONNEL INTERFACE',480,18,8,'#7299a2','center',2,null,'700');
+  hud.lab(g,'BAY 01',28,146,8,'#6d9aa4','left',2,null,'700');hud.lab(g,'PROFILE  /  02',930,146,8,'#6d9aa4','right',2,null,'700');g.restore();
+  this.modePill(g,arcade,t);
   // Titel (klein, links oben) + Unterzeile
   hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#7fe8ff','#7fe8ff'],'center',null,t,false,true,900,4);g.restore();
    hud.fancy(g,'H!TisOP',W/2+2,64,40,['#b98bff','#b98bff'],'center',null,t,false,true,900,4);
@@ -142,7 +153,20 @@ export class SelectScreen{
   for(const{i,d}of items){const id=slots[i],ch=CHARACTERS[id],ad=Math.min(1,Math.abs(d)),sel=Math.abs(d)<.5,cx=CAR.cx+d*CAR.spacing,base=lerp(CAR.base,CAR.sideBase,ad),
     fade=Math.abs(d)>1?Math.max(0,1-(Math.abs(d)-1)/.7):1,col=ch?ch.glow||'#fff':'#3fe0ff';
    g.save();g.globalAlpha=(this.ln?(i===cur?1:.18):lerp(1,.5,ad))*fade;
-   // Bodenlicht (Mitte groß, Seiten klein)
+   // Physischer Character-Dock: eingelassene Obsidian-Kapsel mit gefräster Chromkante.
+   const podW=lerp(132,92,ad),podH=lerp(218,166,ad),podX=cx-podW/2,podY=base-podH+28;
+   g.save();hud.kChamfer(g,podX,podY,podW,podH,14);const pg=g.createLinearGradient(podX,podY,podX+podW,podY+podH);
+   pg.addColorStop(0,'rgba(95,137,148,.34)');pg.addColorStop(.18,'rgba(18,37,47,.92)');pg.addColorStop(.62,'rgba(3,10,16,.96)');pg.addColorStop(1,'rgba(36,54,62,.72)');g.fillStyle=pg;g.fill();
+   g.strokeStyle=sel?'rgba(180,250,252,.9)':'rgba(112,161,174,.42)';g.lineWidth=sel?1.6:1;g.stroke();
+   hud.kChamfer(g,podX+4,podY+4,podW-8,podH-8,11);g.strokeStyle='rgba(255,255,255,.12)';g.lineWidth=.7;g.stroke();
+   g.save();hud.kChamfer(g,podX+8,podY+12,podW-16,podH-42,10);g.clip();
+   const well=g.createRadialGradient(cx,podY+podH*.52,4,cx,podY+podH*.52,podW*.72);well.addColorStop(0,col+(sel?'30':'16'));well.addColorStop(1,'#0000');g.fillStyle=well;g.fillRect(podX+8,podY+12,podW-16,podH-42);
+   g.fillStyle='rgba(220,250,255,.055)';for(let yy=podY+20;yy<podY+podH-34;yy+=7)g.fillRect(podX+8,yy,podW-16,1);
+   g.restore();g.fillStyle=sel?'rgba(104,237,242,.9)':'rgba(105,160,174,.48)';g.fillRect(podX+12,podY+podH-24,podW-24,1.5);
+   g.fillStyle=sel?'#eaffff':'#72939d';g.fillRect(podX+12,podY+podH-18,Math.max(12,(podW-24)*(sel?1:.42)),2);
+   if(sel){g.save();g.globalCompositeOperation='lighter';g.shadowColor=col;g.shadowBlur=18;g.strokeStyle=col;g.lineWidth=1;hud.kChamfer(g,podX-4,podY-4,podW+8,podH+8,16);g.stroke();g.restore()}
+   g.restore();
+   // Bodenlicht / Magnetischer Dock-Ring
    const rw=lerp(86,42,ad),gl=g.createRadialGradient(cx,base+4,2,cx,base+4,rw);gl.addColorStop(0,col+(ad<.5?'aa':'33'));gl.addColorStop(1,'#0000');g.fillStyle=gl;g.beginPath();g.ellipse(cx,base+4,rw,rw*.22,0,0,7);g.fill();
    if(ch){const f=this.fake(id,t/2),s=lerp(CAR.sc,CAR.scSide,ad)*(FIG[id]||1);f.skin=arcade.skinOf(id);f.x=cx;f.y=base;g.save();g.translate(cx,base);g.scale(s,s);g.translate(-cx,-base);drawFighter(g,f,t/60,1,base);g.restore()}
    else{const k=lerp(1.8,1,ad);g.strokeStyle=col;g.lineWidth=3*k;g.lineCap='round';g.beginPath();g.moveTo(cx-16*k,base-50*k);g.lineTo(cx+16*k,base-50*k);g.moveTo(cx,base-66*k);g.lineTo(cx,base-34*k);g.stroke()}
@@ -160,9 +184,14 @@ export class SelectScreen{
  // Profil rechts: Porträt, Name, Kurzbeschreibung, Werte, Stärken/Schwächen, Arcade-Gegner
  profile(g,id,arcade,t,W){const hud=this.hud,ch=CHARACTERS[id],col=ch?ch.glow||'#fff':'#3fe0ff';
   g.save();
-  // zarte Fläche statt Rahmen
-  const bg=g.createLinearGradient(PX-20,0,PX+PW+20,0);bg.addColorStop(0,'#0a061800');bg.addColorStop(.12,'#0a0618cc');bg.addColorStop(1,'#0a0618cc');g.fillStyle=bg;g.fillRect(PX-20,104,PW+50,396);
-  hud.kVRule(g,PX,112,492,col,.9);
+  // Charakterdaten liegen in einer eigenen, eingelassenen Holo-Konsole.
+  const panelX=PX-20,panelY=104,panelW=PW+34,panelH=396;
+  g.save();hud.kChamfer(g,panelX,panelY,panelW,panelH,18);const panelGrad=g.createLinearGradient(0,panelY,0,panelY+panelH);
+  panelGrad.addColorStop(0,'rgba(10,24,34,.92)');panelGrad.addColorStop(.45,'rgba(4,12,20,.94)');panelGrad.addColorStop(1,'rgba(2,6,12,.97)');g.fillStyle=panelGrad;g.fill();
+  g.strokeStyle='rgba(111,222,235,.42)';g.lineWidth=1;g.stroke();hud.kChamfer(g,panelX+5,panelY+5,panelW-10,panelH-10,14);g.strokeStyle='rgba(255,255,255,.08)';g.stroke();
+  g.fillStyle='rgba(83,222,239,.65)';g.fillRect(panelX+18,panelY+2,82,2);g.fillStyle='rgba(132,112,255,.55)';g.fillRect(panelX+panelW-100,panelY+2,82,2);
+  hud.lab(g,'SUBJECT DATA  /  LIVE ANALYSIS',panelX+18,panelY+22,9,'#83dce9','left',2,null,'700');
+  hud.kVRule(g,PX,138,492,col,.72);g.restore();
   if(!ch){   // leerer Slot
    hud.fam(F_DISP,()=>hud.fancy(g,'EIGENE FIGUR',PX+16,162,40,['#ffffff',col],'left',col,t,false,false,400,2));
    this.wrap(g,'Lade deine Sprite-Sheets hoch, stelle Name, Moves und Werte ein und kämpfe mit deinem eigenen Charakter.',14,PW-30).forEach((l,k)=>hud.txt(g,l,PX+16,198+k*20,14,TXT,'left'));
@@ -214,7 +243,7 @@ export class SelectScreen{
   if(arcade.mode==='story'){const c=CHAPTERS[arcade.chapter-1],nx=CHAPTERS[arcade.chapter],lock=nx&&!arcade.chapterOpen(arcade.chapter+1);   // Kapitelwahl (K / Klick): Kapitel 2+ erst nach Abschluss des Vorgängers
    hud.lab(g,'K = KAPITEL '+arcade.chapter+':  '+c.name,W-24,500,12,'#7dff9a','right',2,'#7dff9a','800');
    if(lock)hud.lab(g,'KAPITEL '+(arcade.chapter+1)+' GESPERRT – schließe Kapitel '+arcade.chapter+' ab',W-24,480,10,'#7d6fb0','right',2,null,'600')}}
- modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','story','versus','melee'].indexOf(A.mode),cols=[P1C,'#7dff9a',P2C,'#8f7bff'],sw=m.w/4;
+ modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','story','versus','melee'].indexOf(A.mode),cols=['#65dce9','#9b8cff','#6eaaff','#c08cff'],sw=m.w/4;
   ['ARCADE','STORY','2 SPIELER','MELEE'].forEach((n,i)=>{const on=i===k,x=m.x+i*sw+(i?3:0),w=sw-6;hud.kPlate(g,x,m.y,w,m.h,{col:cols[i],on,sk:9,t});hud.txt(g,n,x+w/2+4,m.y+18,13,on?'#ffffff':DIM,'center',on?cols[i]:null)});
   hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#7d86c8','left')}
  title(g,t,W,sub,col='#9fe8ff'){const hud=this.hud;
@@ -223,7 +252,10 @@ export class SelectScreen{
    hud.fancy(g,'H!TisOP',W/2,64,40,['#ffffff','#bfb0ff'],'center','#8f6bff',t,false,false,900,4)});
   hud.kSub(g,sub,W/2,88,13,col,4,t)}
  // ---- 2-Spieler-Modus: Kämpferwahl (zwei Cursor) ----
- drawVs(g,A,t,W,H){const hud=this.hud,v=A.vs,M=A.mode==='melee';this.modePill(g,A,t);
+ drawVs(g,A,t,W,H){const hud=this.hud,v=A.vs,M=A.mode==='melee';
+  g.save();hud.kChamfer(g,18,104,466,394,18);g.fillStyle='rgba(5,16,24,.46)';g.fill();g.strokeStyle='rgba(95,207,224,.32)';g.stroke();
+  hud.kChamfer(g,PX-20,104,PW+34,396,18);g.fillStyle='rgba(5,16,24,.74)';g.fill();g.strokeStyle='rgba(95,207,224,.34)';g.stroke();
+  hud.lab(g,'DUAL COMBAT LINK  /  PLAYER SYNC',PX,124,9,'#78d8e7','left',2,null,'700');g.restore();this.modePill(g,A,t);
   if(v.step===1)return this.drawStagePick(g,A,t,W,H);
   this.title(g,t,W,M?'MELEE – WÄHLT EURE KÄMPFER':'2 SPIELER – WÄHLT EURE KÄMPFER',M?'#bfe9ff':undefined);
   if(M)this.meleeOpts(g,A,t,W);
@@ -231,9 +263,9 @@ export class SelectScreen{
   this.vsRondell(g,A,t,1,slots);this.vsRondell(g,A,t,2,slots);
   g.save();g.globalAlpha=.5;hud.kRule(g,30,488,302,'#4a4c9a','r',.9);g.restore();
   // Profil rechts wie im Arcade-Menü, je Spieler ein Block
-  g.save();const bg=g.createLinearGradient(PX-20,0,PX+PW+20,0);bg.addColorStop(0,'#0a061800');bg.addColorStop(.12,'#0a0618cc');bg.addColorStop(1,'#0a0618cc');g.fillStyle=bg;g.fillRect(PX-20,104,PW+50,396);
-  hud.kVRule(g,PX,112,292,P1C,.9);hud.kVRule(g,PX,312,492,P2C,.9);
-  hud.kRule(g,PX+8,PX+PW-8,302,'#4a4c9a','r',.9);g.restore();
+  g.save();hud.kChamfer(g,PX-20,104,PW+34,396,18);g.fillStyle='rgba(4,12,19,.82)';g.fill();g.strokeStyle='rgba(95,207,224,.34)';g.stroke();
+  hud.kVRule(g,PX,138,292,P1C,.85);hud.kVRule(g,PX,312,492,P2C,.85);
+  hud.kRule(g,PX+8,PX+PW-8,302,'#4e8290','r',.8);g.restore();
   this.vsProfile(g,A,t,1,slots[v.c1],104,P1C,M);this.vsProfile(g,A,t,2,slots[v.c2],304,P2C,M);
   // Fuß: Wartehinweis + Steuerung
   const one=v.locked[0]!==v.locked[1];if(one&&Math.sin(t*.14)>-.4)hud.fam(F_DISP,()=>hud.fancy(g,`WARTE AUF SPIELER ${v.locked[0]?2:1}`,34,496,22,['#ffffff','#9fe8ff'],'left','#8f7bff',t,false,false,400,2));
@@ -252,6 +284,12 @@ export class SelectScreen{
   for(const{i,d}of items){const id=slots[i],ch=CHARACTERS[id],ad=Math.min(1,Math.abs(d)),sel=Math.abs(d)<.5,cx=VCAR.cx+d*VCAR.spacing,base=lerp(base0,sideB,ad),
     fade=Math.abs(d)>1?Math.max(0,1-(Math.abs(d)-1)/.7):1,col=sel?pc:(ch.glow||'#fff');
    g.save();g.globalAlpha=lerp(1,.5,ad)*fade;
+   // Player-specific docking capsule, machined black chrome with a live edge light.
+   const dw=lerp(108,78,ad),dh=lerp(126,102,ad),dx=cx-dw/2,dy=base-dh+16;
+   hud.kChamfer(g,dx,dy,dw,dh,12);const dg=g.createLinearGradient(dx,dy,dx+dw,dy+dh);dg.addColorStop(0,'#405b65');dg.addColorStop(.2,'#10242d');dg.addColorStop(.72,'#030a10');dg.addColorStop(1,'#263d46');g.fillStyle=dg;g.fill();
+   g.strokeStyle=sel?pc:'rgba(124,177,188,.44)';g.lineWidth=sel?1.4:1;g.stroke();hud.kChamfer(g,dx+4,dy+4,dw-8,dh-8,9);g.strokeStyle='rgba(255,255,255,.12)';g.stroke();
+   g.fillStyle=pc;g.globalAlpha*=sel?.8:.24;g.fillRect(dx+10,dy+dh-13,dw-20,1.5);g.globalAlpha=lerp(1,.5,ad)*fade;
+   if(sel){g.shadowColor=pc;g.shadowBlur=15;g.strokeStyle=pc;g.lineWidth=1;hud.kChamfer(g,dx-3,dy-3,dw+6,dh+6,14);g.stroke();g.shadowBlur=0}
    const rw=lerp(66,34,ad),gl=g.createRadialGradient(cx,base+4,2,cx,base+4,rw);gl.addColorStop(0,col+(ad<.5?'aa':'33'));gl.addColorStop(1,'#0000');g.fillStyle=gl;g.beginPath();g.ellipse(cx,base+4,rw,rw*.22,0,0,7);g.fill();
    const f=this.fake(id,t/2),sc=lerp(VCAR.sc,VCAR.scSide,ad)*(FIG[id]||1);f.skin=sel?A.vsSkinOf(pl):0;f.x=cx;f.y=base;g.save();g.translate(cx,base);g.scale(sc,sc);g.translate(-cx,-base);drawFighter(g,f,t/60,1,base);g.restore();
    hud.fam(F_DISP,()=>hud.fancy(g,ch.name,cx,base+lerp(26,18,ad),lerp(22,13,ad),sel?['#ffffff',pc]:['#cfc6ee','#a79bd6'],'center',sel?pc:null,t,false,false,400,1));
@@ -292,6 +330,7 @@ export class SelectScreen{
   void t}
  // ---- 2-Spieler-Modus: Stage-Wahl ----
  drawStagePick(g,A,t,W,H){const hud=this.hud,v=A.vs,N=THEMES.length+1,slots=Arcade.slotIds();
+  g.save();hud.kChamfer(g,24,108,912,302,20);g.fillStyle='rgba(5,16,24,.50)';g.fill();g.strokeStyle='rgba(96,210,226,.3)';g.stroke();hud.lab(g,'TACTICAL ENVIRONMENT SELECT  /  STAGE DATA',44,128,9,'#78d8e7','left',2,null,'700');g.restore();
   if(this.ln&&this.ln.vs)return this.drawVsLaunch(g,A,t,W,H,slots);
   this.title(g,t,W,A.mode==='melee'?'MELEE – STAGE WÄHLEN':'STAGE WÄHLEN',A.mode==='melee'?'#bfe9ff':undefined);
   for(let i=0;i<N;i++){const r=stageRect(i,N),T=THEMES[i],sel=v.stage===i,pulse=.5+.5*Math.sin(t*.12),cx=r.x+r.w/2,col=T?T.lights[0]:'#9fe8ff';

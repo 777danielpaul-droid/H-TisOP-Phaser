@@ -1,5 +1,5 @@
 import{hit}from'./combat.js';
-import{BARRIER,BOUNCE,GROUND,H,MELEE,PHYS,SPAM,WALL_L,WALL_R}from'./config.js';
+import{AIR,BARRIER,BOUNCE,GROUND,H,MELEE,PHYS,SPAM,WALL_L,WALL_R}from'./config.js';
 import{Hitbox}from'./hitbox.js';
 import{buildMoves}from'./moves.js';
 import{strike,swingSound}from'./sfx.js';
@@ -19,7 +19,7 @@ export class Fighter{
  // Melee-Felder: pct = Schaden in %, stocks = Leben, dead = Frames bis Respawn, inv = Unverwundbarkeit, hover = Schweben auf der Respawn-Plattform, onStage/under = Boden unter den Füßen?
  reset(){Object.assign(this,{x:this.startX,y:GROUND,vx:0,vy:0,facing:this.startFacing,hp:this.maxHp,state:'idle',sf:0,mf:0,move:null,moveName:'',
   hitDone:false,contact:false,hitCd:0,stun:0,coyote:0,airJumps:this.maxAJ,airDashes:1,launched:false,chainLen:0,comboHits:0,comboDmg:0,juggle:0,pop:false,hard:false,landLag:0,dashDir:0,
-  noGrav:false,kdFrames:0,blockCrouch:false,anim:'idle',animU:0,_mo:0,spam:{btn:'',n:0,t:999},
+  noGrav:false,hoverF:0,chase:0,chaseK:null,slam:false,slams:0,fresh:0,relaunch:0,airHits:0,kdFrames:0,blockCrouch:false,anim:'idle',animU:0,_mo:0,spam:{btn:'',n:0,t:999},
   pct:0,stocks:0,dead:0,inv:0,hover:0,onStage:true,under:false,recUsed:false});this.trail.length=0;this.comboShow={hits:0,dmg:0,t:0}}
  // Kämpfer wechseln (Menü): neue Stats + Moves, danach Zurücksetzen
  setChar(char,skin=0){this.char=char;this.skin=skin|0;this.moves=buildMoves(char);this.maxHp=char.hp;this.reset()}
@@ -54,7 +54,7 @@ export class Fighter{
   if(m.lv==='low')return crouch;if(m.lv==='high')return !crouch;return true}
  // ---------- Frame-Update ----------
  update(opp,game){
-  this.sf++;
+  this.sf++;this.foeRef=opp;
   if(this.inv>0)this.inv--;
   if(this.hover>0){const i=this.input;this.hover--;if(i&&(i.dx||i.dy||(i.buf&&i.buf.length)))this.hover=0;   // Respawn: schwebt auf der Plattform, bis er sich bewegt/angreift (oder die Zeit abläuft)
    if(this.hover>0){this.noGrav=true;this.vy=0;this.vx*=.85}else this.noGrav=false}
@@ -62,11 +62,12 @@ export class Fighter{
   if(this.spam.t<999)this.spam.t++;
   if(this.comboFlash>0)this.comboFlash--;
   if(FACE_STATES.includes(this.state))this.facing=opp.x>=this.x?1:-1;
+  else if(this.state==='air'&&!game.melee&&Math.abs(opp.x-this.x)>AIR.ctrl.turn)this.facing=opp.x>=this.x?1:-1;   // Luft: zum Gegner drehen (Über-den-Kopf-Sprung, Chase-Jump)
   if(this.grounded)this.coyote=PHYS.coyote;else if(this.coyote>0)this.coyote--;
   switch(this.state){
    case'attack':this.tickAttack(opp,game);break;
    case'hit':case'block':this.vx*=.84;if(--this.stun<=0){this.endCombo();this.blockCrouch=false;this.setState('idle')}break;
-   case'airhit':if(this.pop)this.vx*=BOUNCE.drag;if(--this.stun<=0){this.endCombo();this.pop=false;const M=!!game.melee;this.airJumps=M?this.maxAJ:0;this.airDashes=M?1:0;if(M)this.recUsed=false;this.setState('air')}break;   // Melee: nach dem Hitstun darf man zurückspringen/dashen
+   case'airhit':if(this.pop)this.vx*=BOUNCE.drag;else if(!game.melee&&!this.slam)this.vx*=AIR.juggle.drag;if(--this.stun<=0){this.endCombo();this.pop=false;const M=!!game.melee;this.airJumps=M?this.maxAJ:0;this.airDashes=M?1:0;if(M)this.recUsed=false;this.setState('air')}break;   // Melee: nach dem Hitstun darf man zurückspringen/dashen
    case'knockdown':if(this.sf>=this.kdFrames)this.setState('wakeup');break;
    case'wakeup':if(this.sf>=18)this.setState('idle');break;
    case'dash':this.tickDash(game);break;
@@ -74,6 +75,7 @@ export class Fighter{
    case'recover':this.tickRecover(game);break;
    case'tumble':case'ko':case'win':break;
    default:this.free(game)}
+  this.airAssist(opp,game);
   this.physics(game)}
  // ---------- Freie Aktionen ----------
  free(game){const i=this.input;
@@ -83,7 +85,10 @@ export class Fighter{
   if(this.tryDash(game))return;
   this.tryJump(game);
   const dx=i.dx;
-  if(!this.grounded){if(this.state!=='air')this.setState('air');this.vx+=(dx*PHYS.airDrift*this.char.walk-this.vx)*(dx?.18:.02);return}
+  if(!this.grounded){if(this.state!=='air')this.setState('air');const C=AIR.ctrl,M=game.melee;
+   this.vx+=(dx*PHYS.airDrift*this.char.walk-this.vx)*(M?(dx?.18:.02):(dx?C.accel:C.brake));
+   if(!M&&i.dy>0&&this.vy>-2&&!this.noGrav)this.vy+=PHYS.gravity*C.fastFall;   // Fast-Fall: Runter halten = schneller sinken
+   return}
   if(i.dy>0){if(this.state!=='crouch')this.setState('crouch');this.vx=0;return}
   if(dx){const rel=dx*this.facing;this.vx=dx*(rel>0?PHYS.walk:PHYS.back)*this.char.walk;if(this.state!=='walk')this.setState('walk')}
   else{this.vx=0;if(this.state!=='idle')this.setState('idle')}}
@@ -99,7 +104,10 @@ export class Fighter{
  tryDash(game){const i=this.input;const dd=i.takeDash(),btn=i.pressed('DASH',3);if(!dd&&!btn)return false;if(btn)i.consume('DASH');
   const dir=dd||(i.dx||this.facing);
   if(this.grounded){this.dashDir=dir;this.vx=dir*PHYS.dash*(this.char.dash||1)*(dir===this.facing?1:.85);this.setState('dash');game.fx.dash(this.x,this.y,dir);game.sfx(dir===this.facing?'dash':'dodge',{rate:.72,vol:.8});return true}
-  if(this.airDashes>0){this.airDashes--;this.dashDir=dir;this.vx=dir*PHYS.airDash*(this.char.dash||1);this.vy=i.dy<0?-3.5:i.dy>0?5:0;this.noGrav=true;this.setState('airdash');game.fx.dash(this.x,this.y-60,dir);game.sfx('dash',{vol:.7,rate:.8});return true}
+  if(this.airDashes>0){this.airDashes--;this.chase=0;this.dashDir=dir;const D=AIR.dash,opp=this.foeRef;this.vx=dir*PHYS.airDash*(this.char.dash||1);this.vy=i.dy<0?D.up:i.dy>0?D.down:0;
+   if(!i.dy&&!game.melee&&opp&&dir===this.facing)this.vy=Math.max(-D.homeMax,Math.min(D.homeMax,(opp.y-60-(this.y-60))*D.home));   // ohne Hoch/Runter: zielt auf die Höhe des Gegners (Position korrigieren)
+   if(i.dy&&i.dx===0&&!game.melee)this.vx*=.35;   // reines Hoch/Runter: fast senkrechter Dash
+   this.noGrav=true;this.setState('airdash');game.fx.dash(this.x,this.y-60,dir);game.sfx('dash',{vol:.7,rate:.8});return true}
   return false}
  tickDash(game){if(this.sf>4&&(this.tryAttack(game)))return;if(this.sf>3&&this.tryJump(game))return;
   if(this.sf>=PHYS.dashFrames){this.vx*=.3;this.setState('idle')}}
@@ -116,16 +124,27 @@ export class Fighter{
   if(t>R.frames){this.noGrav=false;this.airJumps=0;this.airDashes=0;this.setState('air');return}   // Aufstieg vorbei: hilflos weiterfallen
   this.vy=R.vy+R.decay*t;this.vx+=(i.dx*R.vx-this.vx)*.25;if(i.dx)this.facing=i.dx;
   if(t%3===1)game.fx.ps.ring(this.x,this.y-60,this.char.glow||'#fff',46)}
- tickAirDash(game){if(this.sf>5&&this.tryAttack(game)){this.noGrav=false;return}
-  if(this.sf>=PHYS.airDashFrames){this.noGrav=false;this.vx*=.5;this.setState('air')}}
+ tickAirDash(game){if(this.sf>(game.melee?5:AIR.dash.atk)&&this.tryAttack(game)){this.noGrav=false;return}
+  if(this.sf>=PHYS.airDashFrames){this.noGrav=false;this.vx*=.5;if(!game.melee)this.vy*=.4;this.setState('air')}}
+ // Luft-Assist: Hover-Timer + Super-Jump-Magnet (zieht beim Hinterherspringen horizontal zum Gegner, solange man nicht zurückhält)
+ airAssist(opp,game){if(game.melee)return;
+  if(this.hoverF>0)this.hoverF--;
+  if(this.chase>0){const C=this.chaseK,st=this.state;this.chase--;
+   if(st==='air'||(st==='attack'&&this.move&&this.move.air)){
+    if(this.input.dx*this.facing>=0&&opp&&opp.state!=='ko'){const tx=opp.x-this.facing*C.gap,want=Math.max(-C.max,Math.min(C.max,(tx-this.x)*C.k));this.vx+=(want-this.vx)*C.blend;
+     if(!opp.grounded&&(opp.state==='airhit'||opp.state==='tumble')){const dy=opp.y+10-this.y;   // Höhen-Lock: auf Höhe des Gegners bleiben, solange er fliegt
+      if(dy>-C.near){this.vy+=(Math.max(AIR.chase.vy,opp.vy+dy*C.ky)-this.vy)*C.lock;if(this.vy<AIR.chase.vy)this.vy=AIR.chase.vy}}}}
+   else this.chase=0}}
  // ---------- Moves ----------
  select(b){const i=this.input,g=this.grounded,rel=i.dx*this.facing;this._btn=b;
-  if(b==='SUP')return'super';
+  if(b==='SUP')return g?'super':'airsuper';
   if(b==='S'){if(!g)return'airsp';return rel>0?'rising':rel<0?'back':i.dy>0?'rush':'fireball'}
   if(g){const mo=i.motion('dp',this.facing)?'rising':i.motion('qcf',this.facing)?'fireball':i.motion('qcb',this.facing)?'rush':null;
    if(mo){this._mo=1;return mo}
    if(i.dy<=0&&rel>0&&(b==='M'||b==='H'))return'6'+b; // Command-Normal: vorwärts + K / L
    return(i.dy>0?'2':'5')+b}
+  if(b==='H'&&this.moves.j8H&&i.dy<0)return'j8H';   // ↑ + L in der Luft: Sky-Launcher (Hoch + L gleichzeitig hat Vorrang vor dem Doppelsprung)
+  if(b==='H'&&this.moves.j2H&&i.dy>0)return'j2H';                                    // ↓ + L in der Luft: Meteor-Spike
   return'j'+b}
  canUse(n){const m=this.moves[n];if(!m)return false;if(m.cost&&this.meter<m.cost)return false;if(m.air&&this.grounded)return false;return true}
  rank(n){const m=this.moves[n];if(m.special)return m.super?30:20;return RANK[n.slice(-1)]||0}
@@ -153,6 +172,9 @@ export class Fighter{
   if(m.fx==='breath'&&this.mf>=m.su&&this.mf<m.su+m.ac&&(this.mf-m.su)%10===0){game.fx.ps.ring(this.x+this.facing*64,this.y-158,'#ffc531',70);game.sfx('whoosh_heavy',{vol:.4,rate:.7+Math.random()*.2})}   // Drachen-Feuersturm: Rauschen + Druckring am Maul
   if(m.lunge){if(this.mf<=m.su+m.ac)this.vx=this.facing*m.lunge;else this.vx*=.6}
   else if(!m.air&&this.grounded)this.vx*=.7;
+  else if(m.air&&!m.dive&&!game.melee){const C=AIR.ctrl,dx=this.input.dx;this.vx+=(dx*PHYS.airDrift*this.char.walk*C.atk-this.vx)*(dx?C.atkAccel:C.atkBrake)}   // Luftangriff: weiter steuerbar (Position korrigieren)
+  if(m.super&&m.air&&!game.melee){if(this.mf<=m.su+m.ac){this.vy=0;this.noGrav=true}else this.noGrav=false}
+  if(m.fx==='sky'&&this.mf>=m.su&&this.mf<m.su+m.ac&&(this.mf-m.su)%5===0){const gl=this.char.glow||'#fff';game.fx.ps.ring(this.x+this.facing*(60+(this.mf%10)*5),this.y-80,gl,70+this.mf%3*18);game.fx.ps.slash(this.x+this.facing*80,this.y-80,'#ffffff',this.facing>0?(this.mf%2?.5:-.5):(this.mf%2?Math.PI-.5:Math.PI+.5),150,8,5);game.sfx('whoosh_light',{vol:.5,rate:1+(this.mf%3)*.12})}   // Himmelsbrecher: Schlagregen   // Air-Hyper: schwebt während des Schlagregens
   if(m.dive&&this.mf===m.su){this.vx=this.facing*m.dive.vx;this.vy=m.dive.vy}
   if(m.tp&&this.mf===m.su)this.teleport(m.tp,opp,game);
   if(m.proj)for(const d of[].concat(m.proj))if(this.mf===d.frame)game.spawnProjectile(this,m,d);
@@ -161,26 +183,32 @@ export class Fighter{
  // Cancels (nur nach Kontakt): Chain mit steigendem Rang UND Stance-Wechsel (5L→2L→5M→2M→5H ...), Special-/Hyper-Cancel,
  // Jump-Cancel (Launcher), in der Luft Doppelsprung-/Air-Dash-Cancel für lange Mehrfach-Combos. chainLen begrenzt Endlos-Ketten.
  tryCancel(game){const i=this.input,m=this.move,B=PHYS.cancelBuffer;
-  if(m.jc&&(i.dy<0||i.pressed('UP',B))){i.consume('UP');this.move=null;this.vy=(m.launch?PHYS.superJumpV:PHYS.hopV)*(this.char.jump||1);this.vx=i.dx*PHYS.walk*1.2;   // Launcher: hoher Sprung; normale Treffer: Sprungabbruch in Reichweite des gefederten Gegners
-   this.y=GROUND-1;
-   this.airJumps=this.maxAJ;this.airDashes=1;this.setState('air');game.fx.jump(this.x,GROUND);return true}
+  if((m.jc||(m.launch&&!m.super&&!m.air&&!m.multi&&!game.melee))&&(i.dy<0||i.pressed('UP',B))&&this.grounded){i.consume('UP');this.move=null;const L=!!m.launch,C=L?AIR.chase:AIR.hop;
+   this.vy=(L?AIR.chase.vy:PHYS.hopV)*(this.char.jump||1);this.vx=i.dx*PHYS.walk*1.2;   // Launcher: Super Jump (schnell + hoch, zieht zum Gegner); normale Treffer: Sprungabbruch in Reichweite des gefederten Gegners
+   this.y=GROUND-1;this.chase=game.melee?0:C.frames;this.chaseK=C;this.hoverF=0;
+   this.airJumps=this.maxAJ;this.airDashes=1;this.setState('air');game.fx.jump(this.x,GROUND);if(L&&!game.melee){game.fx.superJump(this.x,GROUND,this.char.glow||'#fff');game.sfx('whoosh_heavy',{vol:.75,rate:1.35})}return true}
   if(m.air){
-   if(this.airJumps>0&&i.pressed('UP',3)){i.consume('UP');this.move=null;this.vy=PHYS.airJumpV*(this.char.jump||1);this.vx=i.dx*PHYS.walk*1.1*this.char.walk;this.airJumps--;
+   const sky=i.dy<0&&i.pressed('H',B)&&this.moves.j8H&&!this.spamLocked('H');   // Hoch + L gleichzeitig = Sky-Launcher, kein Doppelsprung
+   if(!sky&&this.airJumps>0&&i.pressed('UP',3)){i.consume('UP');this.move=null;this.vy=PHYS.airJumpV*(this.char.jump||1);this.vx=i.dx*PHYS.walk*1.1*this.char.walk;this.airJumps--;if(!game.melee){this.chase=AIR.hop.frames;this.chaseK=AIR.hop}   // Doppelsprung nach Luft-Treffer: Verfolgung wieder aktiv (zweite Combo-Stufe)
     this.setState('air');game.fx.ps.ring(this.x,this.y-10,'#9a8bff',40);return true}
-   if(this.airDashes>0&&(i.pressed('DASH',4)||i.dashEv)){this.move=null;if(this.tryDash(game))return true;this.move=m}}
+   if(!sky&&this.airDashes>0&&(i.pressed('DASH',4)||i.dashEv)){this.move=null;if(this.tryDash(game))return true;this.move=m}}
   for(const b of['SUP','H','M','L','S']){if(!i.pressed(b,B))continue;if(this.spamLocked(b))continue;const n=this.select(b);if(!n||!this.canUse(n))continue;const nm=this.moves[n];
-   let ok;if(nm.special)ok=m.special?(nm.super&&m.spc):m.spc;
-   else{const rn=this.rank(n),rc=this.rank(this.moveName);ok=!m.special&&nm.air===m.air&&this.chainLen<6&&(rn>rc||(rn===rc&&n!==this.moveName&&this.chainLen<3))}
-   if(ok){i.consume(b);this.startMove(n,game,true);return true}}return false}
+   let ok,fresh=false;if(nm.special)ok=m.special?(nm.super&&m.spc):m.spc;
+   else{const rn=this.rank(n),rc=this.rank(this.moveName);ok=!m.special&&!m.fin&&nm.air===m.air&&this.chainLen<6&&(rn>rc||(rn===rc&&n!==this.moveName&&this.chainLen<3))
+    if(!ok&&m.relaunch&&nm.air&&!nm.relaunch&&!game.melee&&this.fresh<AIR.freshMax&&this.foeRef&&this.foeRef.relaunch>0){ok=true;fresh=true}}   // Sky-Launcher: danach startet direkt eine frische Luft-Kette (zweite Combo-Stufe)
+   if(ok){i.consume(b);if(fresh)this.fresh++;this.startMove(n,game,!fresh);return true}}return false}
  // Teleport: rel 'opp' = relativ zum Gegner (off>0 = auf die abgewandte Seite, flip = dreht sich um), rel 'self' = relativ zu sich (off<0 = zurück)
  teleport(t,opp,game){const gl=this.char.glow||'#fff';game.fx.ps.ring(this.x,this.y-80,gl,90);game.sfx('whoosh_heavy',{rate:.8,vol:.6});
   let nx=(t.rel==='opp'?opp.x:this.x)+this.facing*t.off;nx=Math.max(game.arena.l,Math.min(game.arena.r,nx));this.x=nx;if(t.flip)this.facing=-this.facing;
   game.fx.ps.ring(this.x,this.y-80,gl,90)}
- endMove(){this.move=null;this.setState(this.grounded?'idle':'air')}
- endCombo(){if(this.comboHits>0)this.comboShow={hits:this.comboHits,dmg:this.comboDmg,t:100};this.comboHits=0;this.comboDmg=0;this.juggle=0}
+ endMove(){this.move=null;this.noGrav=false;this.setState(this.grounded?'idle':'air')}
+ endCombo(){if(this.comboHits>0)this.comboShow={hits:this.comboHits,dmg:this.comboDmg,t:100,air:this.airHits};this.comboHits=0;this.comboDmg=0;this.juggle=0;this.airHits=0;this.relaunch=0;this.slams=0;this.slam=false}
  // ---------- Physik ----------
  physics(game){const M=game.melee;
-  if(!this.noGrav&&(!this.grounded||this.vy<0))this.vy+=this.state==='airhit'?PHYS.gravity*(this.pop?BOUNCE.grav:.8):PHYS.gravity;
+  if(!this.noGrav&&(!this.grounded||this.vy<0)){let g=PHYS.gravity;
+   if(this.state==='airhit')g*=this.pop?BOUNCE.grav:.8*(M?1:1+AIR.juggle.gravRamp*this.juggle);   // Juggle: je mehr Treffer, desto schneller fällt der Gegner
+   else if(this.hoverF>0&&!M)g*=AIR.hover.grav;                                                       // Angreifer hängt nach einem Lufttreffer kurz
+   this.vy+=g}
   if(M&&this.vy>26)this.vy=26;   // Fallgeschwindigkeit begrenzen
   const px=this.x;this.x+=this.vx;this.y+=this.vy;
   if(M)this.onStage=this.x>=MELEE.pl&&this.x<=MELEE.pr;
@@ -192,7 +220,7 @@ export class Fighter{
    if(this.y>=GROUND&&this.onStage&&!this.under){const fall=this.vy>0;this.y=GROUND;if(fall)this.land(game);this.vy=0}
    else if(this.y>GROUND+1)this.under=true;
    if(this.y<GROUND)this.under=false}
-  else if(this.y>=GROUND){const fall=this.vy>0;this.y=GROUND;if(fall)this.land(game);this.vy=0}}
+  else if(this.y>=GROUND){const fall=this.vy>0;this.y=GROUND;const bounce=fall&&this.land(game)===true;if(bounce)this.y=GROUND-1;else this.vy=0}}
  // Melee: nach einem Stock-Verlust zurück ins Spiel – schwebt über der Mitte, kurz unverwundbar, mit allen Sprüngen
  respawn(x,y,facing){Object.assign(this,{x,y,vx:0,vy:0,facing,state:'air',sf:0,mf:0,move:null,moveName:'',hitDone:false,contact:false,hitCd:0,stun:0,launched:false,hard:false,noGrav:true,
   comboHits:0,comboDmg:0,juggle:0,pct:0,dead:0,hover:MELEE.hover,inv:MELEE.inv,onStage:true,under:false,recUsed:false,airJumps:this.maxAJ,airDashes:1,landLag:0,blockCrouch:false,meter:Math.min(this.meter,100)});
@@ -206,13 +234,16 @@ export class Fighter{
  land(game){const s=this.state;
   if(s==='airhit'&&this.pop&&!this.launched&&this.hp>0){   // Pop-up ohne Launcher/Knockdown: weich landen, kurze Erholung statt Knockdown
    this.pop=false;this.vx=0;this.stun=BOUNCE.land;this.setState('hit');game.fx.land(this.x,GROUND,false);game.sfx('land',{vol:.5});return}
+  if(s==='airhit'&&this.slam&&this.hp>0){   // Meteor-Spike / Air-Hyper: Boden-Prall, der Gegner federt einmal zurück (Finisher-Spektakel)
+   this.slam=false;this.vx*=.4;this.vy=AIR.slam.bounceVy;this.sf=0;this.juggle=Math.min(this.juggle,Math.max(0,PHYS.juggleMax-AIR.slam.juggleLeft));this.hard=true;
+   game.fx.slam(this.x,GROUND,this.char.glow||'#fff');game.sfx('ground_slam',{vol:1});game.sfx('heavy_hit_impact',{vol:.7});game.shake=Math.max(game.shake,13);game.camera.kick(.05);game.flash=Math.max(game.flash,4);game.flashColor='#ffffff';game.hitstop=Math.max(game.hitstop,7);return true}
   if(s==='airhit'||s==='tumble'){this.pop=false;this.launched=false;this.endCombo();this.kdFrames=this.hard?52:36;game.sfx(this.hard?'ground_slam':'body_fall',{vol:this.hard?.9:.85});this.hard=false;this.vx=0;this.setState('knockdown');game.fx.land(this.x,GROUND,true);game.shake=Math.max(game.shake,6);return}
   if(s==='ko'){this.vx=0;game.fx.land(this.x,GROUND,true);game.sfx('body_fall',{vol:.7});return}
   if(s==='attack'){const m=this.move;if(m&&m.air){this.move=null;this.landLag=m.land||4;this.setState('idle')}}
   else if(s==='airdash'){this.noGrav=false;this.setState('idle')}
   else if(s==='recover'){this.noGrav=false;this.setState('idle');this.landLag=3}
   else if(s==='air'){this.setState('idle');this.landLag=3}
-  this.recUsed=false;this.airJumps=this.maxAJ;this.airDashes=1;this.vx*=.3;game.fx.land(this.x,GROUND,false);game.sfx('land',{vol:.6})}
+  this.recUsed=false;this.fresh=0;this.airJumps=this.maxAJ;this.airDashes=1;this.vx*=.3;game.fx.land(this.x,GROUND,false);game.sfx('land',{vol:.6})}
  // ---------- Animation (für den Renderer) ----------
  updateAnim(){const s=this.state,m=this.move;this.animU=0;
   switch(s){
@@ -228,7 +259,7 @@ export class Fighter{
    case'wakeup':this.anim='wakeup';this.animU=Math.min(1,this.sf/18);break;
    case'ko':this.anim=this.grounded?(this.char.defeat?'defeat':'kd'):'airhit';this.animU=Math.min(1,this.sf/(this.grounded?16:34));break;
    case'win':this.anim='win';this.animU=Math.min(.999,this.sf/180);break;default:this.anim='idle'}
-  const fast=s==='dash'||s==='airdash'||s==='recover'||(s==='attack'&&m&&m.lunge);
+  const fast=s==='dash'||s==='airdash'||s==='recover'||(s==='attack'&&m&&m.lunge)||(this.chase>0&&s==='air');
   for(const t of this.trail)t.age++;this.trail=this.trail.filter(t=>t.age<14);
   if(fast&&this.sf%3===0)this.trail.push({x:this.x,y:this.y,facing:this.facing,anim:this.anim,animU:this.animU,sf:this.sf,state:s,char:this.char,move:null,age:0})}
 }

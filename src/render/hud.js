@@ -390,52 +390,32 @@ export class Hud {
   }
   // Schräge Platte (Knöpfe, Reiter, Umschalter): on = aktiv (Farbe + Glanz), sonst dunkle Mulde mit Haarlinie
   kPlate(g, x, y, w, h, o = {}) {
-    const { col = ICE, on = false, al = 1, sk = 8, t = 0 } = o;
-    g.save();
-    g.globalAlpha = al;
-    para(g, x, y, w, h, sk);
-    const f = g.createLinearGradient(0, y, 0, y + h);
-    if (on) {
-      f.addColorStop(0, col + "55");
-      f.addColorStop(1, col + "16");
-    } else {
-      f.addColorStop(0, "#0b0c2ad8");
-      f.addColorStop(1, "#05061ad8");
+    const { col = ICE, on = false, al = 1, sk = 9, t = 0 } = o;
+    g.save(); g.globalAlpha = al;
+    // Obsidian-Verbund: tiefe schwarze Mulde, innere Glasreflexion und gefräste Metallkante.
+    para(g,x,y,w,h,sk);
+    const base=g.createLinearGradient(x,y,x,y+h);
+    base.addColorStop(0,on?'rgba(20,43,57,.98)':'rgba(13,19,29,.98)');
+    base.addColorStop(.48,on?'rgba(5,20,31,.97)':'rgba(4,9,17,.98)');
+    base.addColorStop(1,'rgba(1,4,9,.99)');
+    g.fillStyle=base; g.fill();
+    g.save(); para(g,x+1,y+1,w-2,h-2,Math.max(2,sk-1)); g.clip();
+    const sheen=g.createLinearGradient(0,y,0,y+h);
+    sheen.addColorStop(0,'rgba(255,255,255,.13)'); sheen.addColorStop(.16,'rgba(255,255,255,.025)');
+    sheen.addColorStop(.52,'rgba(40,130,160,.025)'); sheen.addColorStop(1,'rgba(0,0,0,.34)');
+    g.fillStyle=sheen; g.fillRect(x,y,w,h);
+    // feine holografische Scanline, die nur über aktive Module läuft
+    if(on){const sx=x+((t*1.7)%(w+70))-35,sg=g.createLinearGradient(sx-18,0,sx+18,0);
+      sg.addColorStop(0,'rgba(80,240,255,0)');sg.addColorStop(.5,'rgba(100,245,255,.22)');sg.addColorStop(1,'rgba(80,240,255,0)');
+      g.fillStyle=sg;g.fillRect(sx-18,y,36,h);
+      g.fillStyle=col+'22';g.fillRect(x,y,w,2);
     }
-    g.fillStyle = f;
-    g.fill();
-    g.lineWidth = 1;
-    g.strokeStyle = on ? col : ICE_DIM;
-    if (on) {
-      g.shadowColor = col;
-      g.shadowBlur = 8 + 3 * Math.sin(t * 0.08);
-    }
-    g.stroke();
-    g.shadowBlur = 0;
-    if (on) {
-      g.save();
-      para(g, x, y, w, h, sk);
-      g.clip();
-      const sh = g.createLinearGradient(0, y, 0, y + h);
-      sh.addColorStop(0, "#ffffff48");
-      sh.addColorStop(0.4, "#ffffff08");
-      sh.addColorStop(1, "#0000");
-      g.fillStyle = sh;
-      g.fillRect(x, y, w + sk, h);
-      const sc = ((t * 0.012) % 1.8) * (w + 80) - 40 + x,
-        sg = g.createLinearGradient(sc - 14, 0, sc + 14, 0);
-      sg.addColorStop(0, "#fff0");
-      sg.addColorStop(0.5, "#ffffff50");
-      sg.addColorStop(1, "#fff0");
-      g.fillStyle = sg;
-      g.fillRect(sc - 14, y, 28, h);
-      g.restore();
-    } else {
-      g.globalAlpha = al * 0.4;
-      g.strokeStyle = ICE_DIM;
-      para(g, x - 3, y - 3, w + 6, h + 6, sk);
-      g.stroke();
-    }
+    g.restore();
+    g.lineWidth=1;g.strokeStyle=on?col:'rgba(105,150,170,.48)';
+    if(on){g.shadowColor=col;g.shadowBlur=8+3*Math.sin(t*.08)} g.stroke();g.shadowBlur=0;
+    // zweite, dunkle Innenfase für die fühlbare Materialtiefe
+    para(g,x+2,y+2,w-4,h-4,Math.max(2,sk-2));g.strokeStyle='rgba(255,255,255,.10)';g.lineWidth=.7;g.stroke();
+    g.globalAlpha=al*.8;g.fillStyle=on?col:'rgba(116,169,190,.65)';g.fillRect(x+sk+3,y+2,Math.min(24,w*.22),1.2);
     g.restore();
   }
   // Glitzerstaub: winzige, harte, kalte Lichtpunkte (Weiß, Eis-Blau, Stahl-Silber) – blitzen kurz auf und verlöschen, einige mit kleinem Kreuzglanz.
@@ -476,62 +456,12 @@ export class Hud {
   }
   // Wertebalken in Glasoptik (Glasröhre: Mulde mit Innenschatten, getönte Füllung, Glanzstreifen, Perle an der Spitze)
   kBar(g, x, y, w, h, v, col, t = 0, sk = 5) {
-    v = hclamp(v, 0, 1);
-    g.save();
-    para(g, x, y, w, h, sk);
-    const tg = g.createLinearGradient(0, y, 0, y + h);
-    tg.addColorStop(0, "rgba(2,3,16,.82)");
-    tg.addColorStop(1, "rgba(30,34,96,.5)");
-    g.fillStyle = tg;
-    g.fill();
-    g.save();
-    para(g, x, y, w, h, sk);
-    g.clip();
-    const fw = w * v;
-    if (fw > 0.5) {
-      const fg = g.createLinearGradient(x, 0, x + fw + sk, 0);
-      fg.addColorStop(0, col + "70");
-      fg.addColorStop(0.8, col + "d8");
-      fg.addColorStop(1, "#ffffff");
-      g.fillStyle = fg;
-      para(g, x, y, fw, h, sk);
-      g.fill();
-      const sh = g.createLinearGradient(0, y, 0, y + h);
-      sh.addColorStop(0, "rgba(255,255,255,.62)");
-      sh.addColorStop(0.46, "rgba(255,255,255,.1)");
-      sh.addColorStop(0.5, "rgba(0,0,0,.12)");
-      sh.addColorStop(1, "rgba(255,255,255,.18)");
-      g.fillStyle = sh;
-      g.fillRect(x, y, fw + sk, h);
-      const sc = ((t * 0.012 + x * 0.01) % 1.9) * (fw + 60) - 30 + x,
-        sg = g.createLinearGradient(sc - 12, 0, sc + 12, 0);
-      sg.addColorStop(0, "#fff0");
-      sg.addColorStop(0.5, "#ffffff70");
-      sg.addColorStop(1, "#fff0");
-      g.fillStyle = sg;
-      g.fillRect(sc - 12, y, 24, h);
-    }
-    g.strokeStyle = "rgba(5,6,26,.35)";
-    g.lineWidth = 1;
-    for (let k = 1; k < 10; k++) {
-      const f = k / 10;
-      g.beginPath();
-      g.moveTo(x + sk + w * f, y);
-      g.lineTo(x + w * f, y + h);
-      g.stroke();
-    }
-    g.fillStyle = "rgba(0,0,0,.45)"; // Innenschatten oben in der Mulde
-    g.fillRect(x, y, w + sk, 1.4);
-    g.restore();
-    para(g, x, y, w, h, sk);
-    const eg = g.createLinearGradient(0, y, 0, y + h);
-    eg.addColorStop(0, "rgba(150,160,230,.5)");
-    eg.addColorStop(1, "rgba(235,242,255,.75)");
-    g.strokeStyle = eg;
-    g.lineWidth = 0.9;
-    g.stroke();
-    if (fw > 3) this.dust(g, x, y, fw + sk, h, t, Math.max(3, Math.round(fw / 16)), x * 0.37 + y * 1.3);   // Glitzerstaub im Balken
-    g.restore();
+    v=hclamp(v,0,1);g.save();para(g,x,y,w,h,sk);g.fillStyle='rgba(1,5,11,.96)';g.fill();
+    g.save();para(g,x+1,y+1,w-2,h-2,Math.max(1,sk-1));g.clip();const fw=w*v;
+    if(fw>1){const fg=g.createLinearGradient(x,y,x+fw,y);fg.addColorStop(0,col+'55');fg.addColorStop(.72,col+'d8');fg.addColorStop(1,'#eaffff');g.fillStyle=fg;g.fillRect(x,y,fw,h);
+      const shine=g.createLinearGradient(0,y,0,y+h);shine.addColorStop(0,'rgba(255,255,255,.62)');shine.addColorStop(.38,'rgba(255,255,255,.12)');shine.addColorStop(1,'rgba(0,0,0,.32)');g.fillStyle=shine;g.fillRect(x,y,fw,h);
+      const sx=x+((t*1.2+x*.03)%(Math.max(1,fw+28)))-14;g.fillStyle='rgba(255,255,255,.35)';g.fillRect(sx,y,2,h)}
+    g.restore();g.strokeStyle='rgba(155,210,225,.62)';g.lineWidth=.8;para(g,x,y,w,h,sk);g.stroke();g.restore();
   }
   // Untertitel mit auslaufenden Haarlinien und Rauten links/rechts (wie „ROUND 1“ im HUD)
   kSub(g, s, cx, y, size, col, sp = 4, t = 0) {
@@ -583,30 +513,8 @@ export class Hud {
     return m ? m.width : s.length * size * 0.55;
   }
   // ---------- Dekor ----------
-  // Kristallgitter als feines Muster (Rauten-Facetten)
-  pattern(g) {
-    if (this.wave) return this.wave;
-    const c = document.createElement("canvas");
-    c.width = 28;
-    c.height = 16;
-    const x = c.getContext("2d");
-    x.strokeStyle = "#b9c4ff1c";
-    x.lineWidth = 0.8;
-    x.beginPath();
-    x.moveTo(0, 0);
-    x.lineTo(28, 16);
-    x.moveTo(28, 0);
-    x.lineTo(0, 16);
-    x.stroke();
-    x.fillStyle = "#ffffff08";
-    x.beginPath();
-    x.moveTo(14, 0);
-    x.lineTo(28, 8);
-    x.lineTo(14, 16);
-    x.closePath();
-    x.fill();
-    return (this.wave = g.createPattern(c, "repeat"));
-  }
+  // Kein Karo-/Rautengitter: Oberflächen bleiben clean, metallisch und ruhig.
+  pattern(g) { return null; }
   // Edelstein (ersetzt das Siegel): facettierte Raute in Eis-/Violett-Verlauf
   seal(g, x, y, s, ch, al = 1, rot = 0) {
     const r = s * 0.62;
@@ -1460,13 +1368,12 @@ export class Hud {
     const tg = g.createLinearGradient(0, 0, 0, 130);
     tg.addColorStop(0, "rgba(4,6,24,.82)");
     tg.addColorStop(1, "rgba(4,6,24,0)");
-    g.fillStyle = tg;
-    g.fillRect(0, 0, W, 130);
-    const bg = g.createLinearGradient(0, H - 110, 0, H);
-    bg.addColorStop(0, "rgba(4,6,24,0)");
-    bg.addColorStop(1, "rgba(4,6,24,.78)");
-    g.fillStyle = bg;
-    g.fillRect(0, H - 110, W, 110);
+    g.fillStyle = tg; g.fillRect(0,0,W,130);
+    const bg=g.createLinearGradient(0,H-110,0,H);bg.addColorStop(0,"rgba(2,7,13,0)");bg.addColorStop(1,"rgba(1,5,10,.82)");g.fillStyle=bg;g.fillRect(0,H-110,W,110);
+    // schlanke Kontrollleisten oben/unten – HUD bleibt lesbar, wirkt aber in die Arena integriert
+    g.fillStyle='rgba(95,220,238,.38)';g.fillRect(24,7,W-48,1);g.fillStyle='rgba(95,220,238,.16)';g.fillRect(24,9,W-48,1);
+    g.fillStyle='rgba(95,220,238,.28)';g.fillRect(24,H-7,W-48,1);
+    for(let x=32;x<W-32;x+=48){g.fillStyle='rgba(120,210,225,.18)';g.fillRect(x,11,12,1);g.fillRect(x,H-11,12,1)}
     g.restore();
     if (game.phase === "ko" && !game.timedOut)
       this.letterbox(
@@ -1541,7 +1448,8 @@ export class Hud {
       this.big(g, num, x, y, 46, cc, al, cc[1], t, false, 1 + pp * 2, 500);
       this.sparks(g, x + (dir * nw) / 2, y - 16, nw / 2 + 20, 22, t, 2 + Math.min(3, c.hits >> 2), 21 + i, cc[1]);
       const hx = x + dir * (nw + 10),
-        lbl = c.hits >= 10 ? "HIT COMBO" : "HITS";
+        airN = v.comboHits >= 2 ? v.airHits : v.comboShow.air | 0,
+        lbl = airN >= 3 ? "AIR COMBO" : c.hits >= 10 ? "HIT COMBO" : "HITS";
       this.fancy(
         g,
         lbl,

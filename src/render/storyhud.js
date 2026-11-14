@@ -13,7 +13,7 @@ export function storyWorld(g,game,t){const x0=LV.x0-400,x1=LV.x1+400,L=(game.sto
   g.translate(x+28,GROUND+6);g.scale(1,.22);const pg=g.createRadialGradient(0,0,4,0,0,130);pg.addColorStop(0,`rgba(${L.lamp},.4)`);pg.addColorStop(1,`rgba(${L.lamp},0)`);g.fillStyle=pg;g.fillRect(-130,-130,260,260);g.restore()}
  g.restore()}
 export function storyMobBars(g,game){const s=game.story;if(!s)return;
- for(const it of s.items||[]){const b=Math.sin(game.frame/12+it.x)*3,x=it.x,y=it.y+b;const pk=it.kind==='pack',c=pk?'#ffd23f':'#7dff9a';g.save();g.shadowColor=c;g.shadowBlur=14;g.fillStyle=pk?'#3a2a08':'#0b3a22';g.strokeStyle=c;g.lineWidth=2.5;g.beginPath();g.roundRect?g.roundRect(x-13,y-30,26,30,6):g.rect(x-13,y-30,26,30);g.fill();g.stroke();
+ for(const it of s.items||[]){const b=Math.sin(game.frame/12+it.x)*3,x=it.x,y=it.y+b;const pk=it.kind==='pack',c=pk?'#72e9f4':'#9a8dff';g.save();g.shadowColor=c;g.shadowBlur=14;g.fillStyle=pk?'#082b37':'#171333';g.strokeStyle=c;g.lineWidth=2.5;g.beginPath();g.moveTo(x-8,y-30);g.lineTo(x+13,y-30);g.lineTo(x+13,y-5);g.lineTo(x+8,y);g.lineTo(x-13,y);g.lineTo(x-13,y-25);g.closePath();g.fill();g.stroke();
   g.fillStyle=c;if(pk){g.beginPath();for(let i=0;i<10;i++){const r=i%2?4:9,a=i*Math.PI/5-Math.PI/2;g.lineTo(x+Math.cos(a)*r,y-15+Math.sin(a)*r)}g.fill()}else{g.fillRect(x-3,y-24,6,18);g.fillRect(x-9,y-18,18,6)}g.restore()}
  for(const m of s.alive()){const z=m.char.size||1,w=52*z,x=m.x-w/2,y=m.y-168*z,a=m.char.id==='mantisAlpha';if(m.char.storyBoss||(!a&&m.hp>=m.maxHp))continue;
   g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x-1,y-1,w+2,7);g.fillStyle=a?'#ff7a3a':'#8dff6a';g.fillRect(x,y,w*Math.max(0,m.hp/m.maxHp),5)}}
@@ -24,7 +24,7 @@ export function drawStoryHud(g,hud,game,t,cv){const s=game.story,p=game.p1,A=gam
  const wv=Math.min(s.enc+(s.state==='fight'?1:0),E.length);hud.txt(g,`KAPITEL ${s.ch}  ·  WELLE ${wv}/${E.length}`,W-24,20,13,'#ffffff','right',ACC);hud.txt(g,`BESIEGT: ${s.kills}`,W-24,40,12,'#c9d0ff','right');hud.txt(g,`BOOSTER ${LOOT.packs}  ·  COINS ${LOOT.coins}`,W-24,60,12,'#ffd23f','right');
  const px=300,pw=360,py=22;g.fillStyle='rgba(255,255,255,.25)';g.fillRect(px,py,pw,3);
  for(let i=0;i<E.length;i++){const x=px+(E[i].x-LV.start)/(LV.x1-LV.start)*pw;g.fillStyle=i<s.cp?'#7dff9a':E[i].boss?'#ff7a3a':'#ffffff';g.fillRect(x-3,py-4,6,11)}
- g.fillStyle='#7fe8ff';g.beginPath();g.arc(px+Math.max(0,Math.min(1,(p.x-LV.start)/(LV.x1-LV.start)))*pw,py+1.5,5,0,7);g.fill();
+ g.fillStyle='#63e5ee';g.beginPath();g.arc(px+Math.max(0,Math.min(1,(p.x-LV.start)/(LV.x1-LV.start)))*pw,py+1.5,5,0,7);g.fill();
  if(s.msg){const m=s.msg,a=Math.min(1,m.t/25,(170-Math.min(170,m.t))/12+.2);g.globalAlpha=Math.max(0,Math.min(1,a));hud.txt(g,m.title,W/2,150,38,'#ffffff','center',ACC);hud.txt(g,m.say,W/2,182,16,'#e8ecff','center');g.globalAlpha=1}
  if(s.state==='walk'&&s.goT>70&&s.enc<E.length&&Math.floor(t*2)%2===0)hud.txt(g,'WEITER  ➜',W-110,250,26,'#ffffff','center',ACC);
  const bo=s.alive().find(m=>m.char.storyBoss);   // Boss-Leiste (oben Mitte): Name, Lebensbalken, Marke bei 50 % (Wutphase)

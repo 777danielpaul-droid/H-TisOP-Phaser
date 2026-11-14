@@ -1,7 +1,7 @@
 // Figurenspezifische Movesets. Jede Figur überschreibt die Basis-Moves aus moves.js (nur die Felder, die sich ändern).
 // Normals: norm({su,rc,dmg,reach}) = Startup/Recovery-Offset, Schadensfaktor, Reichweiten-Offset für alle Normals.
 // Specials: eigene Werte + `info` (Kurztext im Menü) + optional v:{L,M,H} (Variante je nach Taste; Special-Taste U zählt als M).
-const NORMALS=['5L','5M','5H','2L','2M','2H','jL','jM','jH'];
+const NORMALS=['5L','5M','5H','2L','2M','2H','jL','jM','jH','j8H','j2H'];
 const norm=({su=0,rc=0,dmg=1,reach=0})=>{const o={};
  for(const k of NORMALS)o[k]=m=>({su:Math.max(2,m.su+su),rc:Math.max(3,m.rc+rc),dmg:Math.round(m.dmg*dmg),box:[m.box[0],m.box[1],Math.max(40,m.box[2]+reach),m.box[3]]});
  return o};
@@ -82,4 +82,10 @@ const cyberdemon={...norm({su:1,rc:1,dmg:1.15,reach:16}),
  '6H':{label:'Dämonenhieb',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:15,ac:4,rc:20,dmg:92,lv:'high',lunge:7,box:[10,-190,140,80],hs:26,bs:16,glow:1},
  super:{label:'Blutrausch',info:'HYPER: Klauenhagel mit beiden Händen – 8 Treffer + Launcher',anim:'hyper',beam:0,glow:1,dmg:26,su:22,ac:46,rc:28,multi:5,minScale:.5,box:[20,-190,330,170],launch:{vx:5,vy:-13},inv:[0,30],hstop:2,shake:6,cost:100}};
 
+// Air-Hyper je Figur: nur Name/Beschreibung (Werte stehen in moves.js `airsuper`); reicht für unterscheidbare Hyper-Banner
+tiger.airsuper={label:'Klauen-Sturm',info:'HYPER in der Luft: Klauenhagel, am Ende rammt H!T den Gegner zu Boden'};
+st3g0.airsuper={label:'Drachen-Sturz',info:'HYPER in der Luft: Schlagregen, Finale = Boden-Prall',dmg:32};
+kitsune.airsuper={label:'Neunschwanz-Wirbel',info:'HYPER in der Luft: Schweif-Wirbel, Finale = Boden-Prall'};
+anubis.airsuper={label:'Himmelsgericht',info:'HYPER in der Luft: Richterspruch aus der Höhe, Finale = Boden-Prall',dmg:32};
+cyberdemon.airsuper={label:'Höllenregen',info:'HYPER in der Luft: Klauenregen, Finale = Boden-Prall',dmg:33};
 export const MODS={tiger,st3g0,kitsune,anubis,cyberdemon};

@@ -12,7 +12,7 @@ export const MANTIS_MODS={
  fireball:{label:'Sprungtritt',info:'Springender Tritt',anim:'kick',su:12,ac:6,rc:20,dmg:55,hs:24,bs:14,box:[10,-120,140,60],lunge:8,proj:undefined,glow:0},
  rising:{label:'Wirbel',info:'Drehangriff, trifft auch hinter ihm',anim:'heavy',su:9,ac:8,rc:22,dmg:60,hs:26,bs:16,box:[-90,-140,200,100],launch:null,inv:null,rise:undefined,glow:0},
  rush:{label:'Sprintschlag',info:'Stürmt vor',anim:'punch',su:8,ac:6,rc:16,dmg:50,box:[10,-124,110,60],lunge:8,glow:0},
- super:{cost:9999}};
+ super:{cost:9999},airsuper:{cost:9999}};
 export const ALPHA_MODS={...MANTIS_MODS,'5H':{dmg:110,box:[5,-132,140,50]},'5M':{dmg:65,box:[10,-105,120,40]}};
 // Neue Kämpfer: einfach hier eintragen. Moves/Werte je Figur: movesets.js.
 // Werte: hp, walk (Lauftempo), dmg (Schadensfaktor), def (erlittener Schaden: <1 = zäher), jump/dash (Faktoren), airJumps (Luft-Sprünge), meter (Meter-Gewinn),

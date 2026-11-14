@@ -2,10 +2,11 @@
 // hs=Hitstun, bs=Blockstun, pb/pbb=Pushback bei Treffer/Block, lv=Trefferhöhe (mid/low/high),
 // armor=[von,bis] Rüstungs-Frames (steckt Treffer ein, kein Hitstun), dive=Sturzflug {vx,vy}, tp=Teleport {rel:'opp'|'self',off,flip},
 // v={L,M,H}=Varianten je nach gedrückter Taste, label/key/info=Anzeige im Menü.
-// launch=Launcher-Vektor, hard=harter Knockdown, jc=Jump-Cancel erlaubt, spc=Special-Cancel erlaubt, inv=unverwundbare Frames.
+// Luftkampf: relaunch=Luft-Launcher (schleudert einen Gegner in der Luft erneut hoch, begrenzt durch AIR.relaunchMax), slam={vx,vy}=Gegner wird nach unten gerammt und federt am Boden zurück (Meteor-Spike/Air-Hyper),
+// fin=Finisher (danach keine Kette mehr). launch=Launcher-Vektor, hard=harter Knockdown, jc=Jump-Cancel erlaubt, spc=Special-Cancel erlaubt, inv=unverwundbare Frames.
 const DEF={hstop:7,shake:0,lv:'mid',pb:3,pbb:4,bs:10,hs:16,launch:null,hard:false,spc:true,jc:false,inv:null,glow:0,air:false,
  special:false,super:false,lunge:0,multi:0,minScale:0,crouch:false,box:null,cost:0,dmg:0,rc:0,
- armor:null,dive:null,tp:null,v:null,label:'',key:'',info:''};
+ armor:null,dive:null,tp:null,v:null,label:'',key:'',info:'',slam:null,relaunch:false,fin:false};
 const mv=o=>({...DEF,...o});
 export const BASE_MOVES={
  // --- Boden-Normals (Magic Series: L -> M -> H, auch Stance-Wechsel) ---
@@ -18,7 +19,10 @@ export const BASE_MOVES={
  // --- Luft-Normals ---
  'jL':mv({label:'Luft-Schlag',key:'J in der Luft',anim:'jpunch',air:true,su:3,ac:8,dmg:28,hs:30,bs:10,box:[10,-112,62,38],hstop:4}),
  'jM':mv({label:'Luft-Tritt',key:'K in der Luft',anim:'jkick',air:true,su:4,ac:8,dmg:50,hs:30,bs:12,box:[5,-88,86,46],hstop:5}),
- 'jH':mv({label:'Luft-Hammer (Knockdown)',key:'L in der Luft',anim:'jheavy',air:true,su:7,ac:8,dmg:85,hs:32,bs:16,box:[0,-112,88,72],hard:true,hstop:8,shake:5,glow:1}), // harter Knockdown
+ 'jH':mv({label:'Luft-Hammer (Knockdown)',key:'L in der Luft',anim:'jheavy',air:true,su:7,ac:8,dmg:85,hs:32,bs:16,box:[0,-112,88,72],hard:true,fin:true,hstop:8,shake:5,glow:1}), // harter Knockdown (Finisher)
+ 'j8H':mv({label:'Sky-Launcher',key:'↑ + L in der Luft',anim:'upper',air:true,su:6,ac:7,rc:6,dmg:55,hs:30,bs:14,box:[0,-152,74,122],launch:{vx:1.6,vy:-17},relaunch:true,hstop:8,shake:4,glow:1,info:'Schleudert den Gegner in der Luft erneut hoch (1× pro Combo) – danach Doppelsprung/Air-Dash und weiter'}), // Luft-Launcher: zweite Combo-Stufe
+ 'j2H':mv({label:'Meteor-Spike',key:'↓ + L in der Luft',anim:'jheavy',air:true,su:9,ac:7,rc:8,dmg:80,hs:32,bs:16,box:[-8,-64,86,122],slam:{vx:1.4,vy:19},fin:true,hstop:10,shake:7,glow:1,info:'Rammt den Gegner senkrecht zu Boden – er federt einmal zurück (Finisher)'}), // Finisher: Boden-Prall
+ airsuper:mv({fx:'sky',label:'Himmelsbrecher',key:'I in der Luft (1 Balken)',anim:'jheavy',special:true,super:true,air:true,cost:100,su:8,ac:28,rc:20,dmg:30,hs:20,bs:16,box:[0,-150,170,180],multi:4,minScale:.5,lunge:5,slam:{vx:2,vy:21},inv:[0,36],hstop:2,shake:6,glow:1,spc:false,fin:true,info:'HYPER in der Luft: Schlagregen, am Ende rammt er den Gegner zu Boden'}),
  // --- Specials (QCF/DP/QCB + Angriff, oder Special-Taste: neutral / vorwärts / unten) ---
  // --- Neue Slots: Command-Normals (→ + K / → + L), Rück-Special (← + U), Luft-Special (U in der Luft) ---
  '6M':mv({label:'Überkopfschlag',key:'→ + K',anim:'kick',su:12,ac:4,rc:12,dmg:60,hs:22,bs:14,pb:3,lv:'high',box:[10,-150,92,50],jc:true,hstop:6,lunge:2}),
@@ -41,5 +45,5 @@ export const MOVE_LIST=[
  ['Hyper','I (1 Balken)','Je Figur anders'],
  ['Dash / Air-Dash','O  oder  Doppeltipp ←/→','Auch in der Luft (1×)'],
  ['Doppelsprung','W/Space in der Luft','1× pro Luftphase']];
-const ORDER_KEYS=['5L','5M','5H','2L','2M','2H','6M','6H','fireball','rising','rush','back','airsp','super'];
+const ORDER_KEYS=['5L','5M','5H','2L','2M','2H','6M','6H','fireball','rising','rush','back','airsp','j8H','j2H','super','airsuper'];
 export function charMoves(char){const mv=buildMoves(char);return ORDER_KEYS.filter(k=>mv[k]).map(k=>[mv[k].label,mv[k].key,mv[k].info||''])}

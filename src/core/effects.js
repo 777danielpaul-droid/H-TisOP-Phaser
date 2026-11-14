@@ -25,6 +25,18 @@ export class Effects{
   this.ps.burst(x,y-2,{count:big?14:6,speed:big?5:2.5,color:'#8a7fb8',life:22,size:3,angle:-Math.PI/2,spread:3.4,gravity:-.01,streak:.4});if(big)this.ps.glitter(x,y-4,{count:10,speed:4,life:36,size:3,colors:['#ffffff','#b9a8ff'],angle:-Math.PI/2,spread:2.6})}
  jump(x,y){this.land(x,y,false)}
  dash(x,y,dir){this.ps.burst(x,y-8,{count:6,speed:3,color:'#9a8bff',life:16,size:2.4,angle:dir>0?Math.PI:0,spread:1.2,gravity:0});this.ps.glitter(x,y-8,{count:5,speed:3.4,life:32,size:2.8,colors:GLITTER_PAL,angle:dir>0?Math.PI:0,spread:1.4,gravity:.02})}
+ // Launcher: Druckwelle am Boden + Lichtsäule nach oben (Gegner startet in den Luftkampf)
+ launch(x,y,color){const ps=this.ps;ps.shock(x,y,color,210,22);ps.ring(x,y-20,'#ffffff',90);ps.ring(x,y-60,color,120);
+  ps.burst(x,y-30,{count:18,speed:9,color:'#ffffff',life:26,size:3,angle:-Math.PI/2,spread:.7,gravity:-.05,streak:2.2});
+  ps.glitter(x,y-30,{count:22,speed:8,life:54,size:4,colors:[color,...GLITTER_PAL],gravity:-.03,angle:-Math.PI/2,spread:.8})}
+ // Super Jump: Staubring am Boden + senkrechte Streifen (Verfolgungssprung)
+ superJump(x,y,color){const ps=this.ps;ps.shock(x,y,color,150,16);ps.ring(x,y-10,'#ffffff',70);
+  ps.burst(x,y-10,{count:12,speed:8,color,life:22,size:2.8,angle:-Math.PI/2,spread:.5,gravity:-.04,streak:2.4})}
+ // Boden-Prall (Meteor-Spike / Air-Hyper-Finale): große Druckwelle, Splitter, Blitze
+ slam(x,y,color){const ps=this.ps;ps.shock(x,y,color,420,30);ps.shock(x,y,'#ffffff',260,22);ps.ring(x,y-10,color,200);ps.ring(x,y-10,'#ffffff',130);
+  ps.burst(x,y-6,{count:34,speed:11,color:'#ffffff',life:34,size:3.6,angle:-Math.PI/2,spread:3.0,gravity:.2});
+  ps.glitter(x,y-6,{count:40,speed:9,life:70,size:5,colors:[color,...GLITTER_PAL],gravity:.08,angle:-Math.PI/2,spread:3.2});
+  for(let i=0;i<6;i++)ps.bolt(x,y-6,i%2?color:'#7df9ff',-Math.PI/2+(i-2.5)*.5,130+i*14,7)}
  // Combo-Effekt: skaliert mit der Trefferzahl, farbig nach Charakter
  combo(x,y,hits,color,dir){const n=10+hits*4,ps=this.ps,h=Math.min(hits,12);
   ps.burst(x,y,{count:n,speed:6+hits*2,color:'#ffffff',life:20,size:3});

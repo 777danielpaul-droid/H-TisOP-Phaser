@@ -21,7 +21,7 @@ const nhMixS=(h,s)=>{s=String(s);for(let i=0;i<s.length;i++)h=nhMix(h,s.charCode
 export function netHash(g){let h=2166136261;
  h=nhMix(h,g.round);h=nhMix(h,g.timeFrames);h=nhMix(h,g.pf);h=nhMix(h,g.hitstop);h=nhMix(h,g.superFlash);h=nhMixS(h,g.phase);h=nhMix(h,g.frame);
  for(const f of g.fighters){for(const v of[f.x,f.y,f.vx,f.vy,f.hp,f.meter])h=nhMix(h,Math.round(v*64));
-  h=nhMix(h,f.wins);h=nhMix(h,f.stun);h=nhMix(h,f.mf);h=nhMix(h,f.sf);h=nhMix(h,f.comboHits);h=nhMix(h,f.facing);h=nhMixS(h,f.state);h=nhMixS(h,f.moveName)}
+  h=nhMix(h,f.wins);h=nhMix(h,f.stun);h=nhMix(h,f.mf);h=nhMix(h,f.sf);h=nhMix(h,f.comboHits);h=nhMix(h,f.facing);h=nhMixS(h,f.state);h=nhMixS(h,f.moveName);h=nhMix(h,f.chase|0);h=nhMix(h,f.hoverF|0);h=nhMix(h,f.relaunch|0);h=nhMix(h,f.juggle|0);h=nhMix(h,f.slam?1:0);h=nhMix(h,f.slams|0);h=nhMix(h,f.fresh|0)}
  h=nhMix(h,g.projectiles.length);for(const p of g.projectiles)h=nhMix(h,Math.round(p.x*64));
  return h}
 export class Lockstep{

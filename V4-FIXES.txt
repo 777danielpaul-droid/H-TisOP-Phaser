@@ -1,0 +1,15 @@
+HITisOP – V4 UI refinement
+
+Änderungen:
+- Shop-/Booster-/Coins-Anzeigen oben rechts kompakter; Klickflächen passend angepasst.
+- Demo-Fight: zusätzliche Abdunklung entfernt und Partikel-/Staubschleier reduziert.
+- Kristall-/Rautengitter aus dem Canvas-HUD entfernt.
+- Titelmenü-Buttons: stärkere cyan/violette Leuchtkanten, metallische Tiefe, schräge asymmetrische Silhouette und animierte Lichtschiene.
+
+Installation:
+- Vollprojekt: ZIP entpacken, im Ordner npm install und npm run build.
+- Patch: im Projektordner entpacken und Dateien überschreiben; danach npm run build.
+
+Prüfung:
+- Build erfolgreich.
+- 28 von 29 Node-Testdateien erfolgreich. Online-Test konnte in dieser Umgebung nicht starten, da das Paket "ws" nicht installiert war; package.json/package-lock.json bleiben unverändert.

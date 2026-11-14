@@ -96,3 +96,6 @@ Zusatzfelder: `armor:[von,bis]` (Rüstung), `unb` (Griff), `dive`, `tp`, `heal`,
 ## Eigener Hintergrund (render/backdrop.js, render/bgpanel.js)
 `Backdrop` (`renderer.bd`) hält je Bereich (`all`, `title`, `select`, `fight`) ein Medium (Video-Element, Bitmap-Frames oder verkleinertes Canvas); `resolveSlot()` wählt Einzel-Bereich > `all` > Original. `Backdrop.draw(g,W,H,bereich,{cam,dimAdd})` zeichnet im Bildschirmraum (cover/contain, Abdunkeln, Parallaxe zur Kamera) und liefert `false`, wenn nichts gilt oder das Medium noch lädt – dann zeichnet der Renderer das Original. Der Renderer ruft es in `drawDemo` (Titelmenü), `drawSelect` und `draw` (Kampf, vor `cam.apply`) auf. `BgPanel` ist reine DOM-Oberfläche (Panel, Knopf, globales Drag & Drop, Toast) und kennt nur `Backdrop` und die Hooks `blocked/onOpen/onClose` aus `main.js`.
 
+
+## Luftkampf (v21)
+Launcher → Super Jump (`AIR.chase`: Magnet + Höhen-Lock) → Luft-Kette jL/jM/jH mit Hover → Sky-Launcher (`j8H`, 1×) → Finisher `jH` / `j2H` (Slam mit Rückprall) / `airsp` / `airsuper`. Logik: `fighter.js` (`airAssist`, `select`, `tryCancel`, `land`), `combat.js` (`hit`: Juggle-Dämpfung, relaunch, slam, Hover), Werte `AIR` in `config.js`. Tests: `node tests/air.test.js`.

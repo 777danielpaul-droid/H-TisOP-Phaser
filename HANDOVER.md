@@ -358,3 +358,20 @@
 
 ## Controller-Support (PS4/PS5/Xbox)
 `src/core/gamepad.js`: `readPad` (Standard- + rohe Sony-Belegung → Namen cross/circle/…), `padLabel`, `PadNav` (Flanken + Wiederholung), `menuKey` (Pad-Taste → Tastaturcode je Bildschirm). `input.js`: `PAD_ACTIONS`, `pollPad`, `syncPad` (gehaltene Tasten nach Menü/Kampfstart verschlucken). `main.js`: `padMenu` (synthetische Key-Events für alle Menüs, `padPause` für das DOM-Pausenmenü), Verbindungs-Toast, Pause bei Trennung. Rohe Sony-Belegung (Firefox) ist ungetestet an echter Hardware.
+
+## Update v21: Air-Combat-System (MvC2-Stil)
+**Fluss:** Launcher (`2H`, Rising, Launcher-Specials) → Super Jump (↑ nach Kontakt) → Luft-Kette J→K→L → Finisher → harter Knockdown. Optional zweite Stufe per Sky-Launcher.
+- **Konfiguration:** alles in `AIR` (`src/core/config.js`, kommentiert): Luftsteuerung, Hover, Chase/Hop, Air-Dash, Juggle, Relaunch, Slam.
+- **Super Jump / Chase:** Jump-Cancel gilt jetzt für jeden Launcher (nicht Multi-Hit, nicht Melee). `AIR.chase`: schneller Sprung (vy −23,5), horizontaler Magnet zum Gegner (nicht beim Zurückhalten) und Höhen-Lock auf die Flugbahn des Gegners (`Fighter.airAssist`). Normale Pop-up-Treffer nutzen schwächeres `AIR.hop`. Doppelsprung nach Treffer aktiviert die Verfolgung erneut.
+- **Luftsteuerung:** schnellere Beschleunigung/Umkehr, Drehen zum Gegner in der Luft, Steuerung auch während Luftangriffen, Fast-Fall (↓). Melee bleibt unverändert.
+- **Air-Dash:** ↑/↓ diagonal, neutral zielt er auf die Höhe des Gegners, Angriff ab Frame 3.
+- **Neue Moves (`moves.js`):** `j8H` Sky-Launcher (↑+L in der Luft, `relaunch`, 1× pro Combo), `j2H` Meteor-Spike (↓+L, `slam`: Boden-Prall + einmal Rückprall), `airsuper` Himmelsbrecher (I in der Luft, 1 Balken, schwebt, Finale = Slam). `jH` bleibt Hammer-Knockdown. Finisher (`fin`) beenden die Kette. Neue Move-Felder: `relaunch`, `slam`, `fin`.
+- **Juggle:** Auftrieb nimmt je Treffer ab, Schwerkraft wächst (`gravRamp`), horizontale Dämpfung hält den Gegner in Reichweite, Höhen-Cap; Angreifer „hängt“ nach Lufttreffer (`AIR.hover`).
+- **KI:** `AI_LEVELS[].air` (0/.35/.7/1): Launcher→Super Jump, Luftsteuerung, Air-Dash, Sky-Launcher, Meteor-Spike, Air-Hyper.
+- **Feedback:** `Effects.launch/superJump/slam`, HUD zeigt „AIR COMBO“ ab 3 Lufttreffern (`comboShow.air`).
+- **Online:** neue Zustände (`chase, hoverF, relaunch, juggle, slam`) sind im `netHash`; keine Zufallswerte in der Logik.
+- **Tests:** neu `tests/air.test.js` (in `npm test`). Im echten Chromium geprüft (Launcher→Chase→Sky-Launcher→6er-Luftkombo→Spike→Rückprall, keine Konsolenfehler). Nicht geprüft: Balancing/Spielgefühl mit echten Spielern, Sprite-Posen für `j8H`/`j2H`/`airsuper` (nutzen vorhandene Anims `upper`/`jheavy`). Bekannt (vorher schon): `hyper.test.js` scheitert für `mantis`, `smoke.cjs` bricht am DOM-Stub ab, `online.test.js` braucht `npm i`.
+
+### Update v21b: Feinschliff Air-Combat
+- Nach dem Sky-Launcher startet direkt eine frische Luft-Kette (`AIR.freshMax`, kein Puffer-Timing nötig); Boden-Prall nur 1× pro Combo (`AIR.slamMax`, verhindert Spike-Loops); Super-Jump-Sound; Himmelsbrecher mit Schlagregen-Effekt (`fx:'sky'`) und eigenem Namen je Figur (`movesets.js`).
+- Tests: `tests/air.test.js` deckt jetzt auch gespiegelte Seite (P2 rechts), Ressourcen-Spam (jede Kette endet, < 50 % HP) und Leerschläge ab.

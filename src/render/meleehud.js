@@ -2,7 +2,7 @@ import{GROUND,H,MELEE,W}from'../core/config.js';
 
 
 // Melee-Modus: Bühne (offene Plattform über dem Abgrund), Respawn-Plattform und HUD (Prozent, Stocks, Pfeile für Kämpfer außerhalb des Bildes).
-export const MC=['#6fe3ff','#c28bff'];
+export const MC=['#63e5ee','#a18dff'];
 export const mclamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const mix=(a,b,u)=>a+(b-a)*u;
 export const hex=(r,g,b)=>'#'+[r,g,b].map(v=>Math.round(mclamp(v,0,255)).toString(16).padStart(2,'0')).join('');
@@ -51,7 +51,7 @@ export function drawMeleeHud(g,hud,game,t){const cam=game.camera,mx=game.melee&&
   const sh=hud._ms[i]>0?(Math.random()-.5)*hud._ms[i]*.7:0;
   g.save();g.translate(sh,Math.abs(sh)*.4);
   // Plakette
-  const px=cx-128,py=H-134,pw=256,ph=84;g.fillStyle='#080a1ccc';g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=14;g.lineWidth=2;g.beginPath();g.moveTo(px+12,py);g.lineTo(px+pw,py);g.lineTo(px+pw-12,py+ph);g.lineTo(px,py+ph);g.closePath();g.fill();g.stroke();g.shadowBlur=0;
+  const px=cx-128,py=H-134,pw=256,ph=84;g.fillStyle='rgba(3,13,21,.94)';g.strokeStyle=col;g.shadowColor=col;g.shadowBlur=14;g.lineWidth=1.5;g.beginPath();g.moveTo(px+12,py);g.lineTo(px+pw,py);g.lineTo(px+pw-12,py+ph);g.lineTo(px,py+ph);g.closePath();g.fill();g.stroke();g.shadowBlur=0;g.strokeStyle='rgba(210,255,255,.18)';g.lineWidth=1;g.beginPath();g.moveTo(px+18,py+5);g.lineTo(px+pw-8,py+5);g.stroke();
   const gr=g.createLinearGradient(px,py,px+pw,py);gr.addColorStop(0,col+'33');gr.addColorStop(1,col+'00');g.fillStyle=gr;g.fill();
   hud.txt(g,`P${i+1}  ·  ${f.char.name}`,px+16,py+19,12,col,'left');
   // Prozent (groß, Farbe steigt mit dem Wert)

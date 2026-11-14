@@ -41,10 +41,10 @@ export class Renderer{
   const st=this.stages[0],T=this.selT/60;if(!this.bd.draw(g,W,H,'select',{dimAdd:.2})){st.draw(g,T);g.fillStyle='#05020ccc';g.fillRect(0,0,W,H)}   // eigener Hintergrund (Bild/Video) oder Stage 1
   this.post.beams(g,W,H,T,'#7a5cff');this.post.dust(g,W,H,T,'#c9b8ff',60,.8);st.overlay(g);this.sel.draw(g,A,this.selT,W,H);
   if(this.useGL)this.glFinish({bloom:.5*GFX.bloom,ab:0,vc:[0,0,.03],va:0,grain:GFX.grain?.06:0,t:this.selT});else{this.post.bloom(g,this.cv,.5);this.post.grain(g,this.cv,.06)}
-  const u=this.g;u.setTransform(s,0,0,s,0,0);if(!this.sel.launching){const h=this.hud,t=this.selT,pw=122,ph=26,gap=6,y=14,x2=W-18-pw,x1=x2-gap-pw,pk=LOOT.packs>0;   // Booster + Coins oben rechts (Anzahl der gesammelten)
-   h.kPlate(u,x1,y,pw,ph,{col:'#ffd23f',on:pk,sk:8,t});h.txt(u,'BOOSTER  '+LOOT.packs,x1+pw/2+4,y+18,13,pk?'#ffffff':'#d6c8a0','center',pk?'#ffd23f':null);
-   h.kPlate(u,x2,y,pw,ph,{col:'#7fe8ff',on:false,sk:8,t});h.txt(u,'COINS  '+LOOT.coins,x2+pw/2+4,y+18,13,'#d6f6ff','center');
-   if(!A.pvp){const sb=shopSelRect();h.kPlate(u,sb.x,sb.y,sb.w-6,sb.h,{col:'#7dff9a',on:false,sk:8,t});h.txt(u,'SHOP',sb.x+(sb.w-6)/2+4,sb.y+18,13,'#d8ffe2','center');   // Shop-Knopf neben dem Booster-Zähler
+  const u=this.g;u.setTransform(s,0,0,s,0,0);if(!this.sel.launching){const h=this.hud,t=this.selT,pw=82,ph=26,gap=5,y=14,x2=W-18-pw,x1=x2-gap-pw,pk=LOOT.packs>0;   // Booster + Coins oben rechts (Anzahl der gesammelten)
+   h.kPlate(u,x1,y,pw,ph,{col:'#ffd23f',on:pk,sk:8,t});h.txt(u,'BOOSTER '+LOOT.packs,x1+pw/2+2,y+18,10,pk?'#ffffff':'#d6c8a0','center',pk?'#ffd23f':null);
+   h.kPlate(u,x2,y,pw,ph,{col:'#7fe8ff',on:false,sk:8,t});h.txt(u,'COINS '+LOOT.coins,x2+pw/2+2,y+18,10,'#d6f6ff','center');
+   if(!A.pvp){const sb=shopSelRect();h.kPlate(u,sb.x,sb.y,sb.w-6,sb.h,{col:'#62dfff',on:false,sk:8,t});h.txt(u,'SHOP',sb.x+(sb.w-6)/2+4,sb.y+18,13,'#e8faff','center','#62dfff');   // Shop-Knopf neben dem Booster-Zähler
     h.txt(u,'B – BOOSTER ÖFFNEN  ·  P – SHOP',W-18,y+ph+16,10,pk?'#ffd23f':'#8f95d8','right')}}
   drawLoot(u,this.hud,this.lootUi);this.hov.draw(u)}
  draw(game){if(this.useGL&&!this.glp.ok)this.applyGfx();if(game.arcade&&game.arcade.state==='select')return this.drawSelect(game);
@@ -74,7 +74,7 @@ export class Renderer{
   drawEndBtns(ui,this.hud,this.endBtns,this.endHot,game.frame);drawLoot(ui,this.hud,this.lootUi);this.hov.draw(ui);
   if(game.debug)this.debugText(ui,game)}
 // Demokampf im Hintergrund der Startseite: nur die beiden Fighter + Projektile + Partikel, kein Hintergrund/HUD/Häuser
-drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);if(!this.bd.draw(g,W,H,'title',{dimAdd:.1})){g.fillStyle='#020312';g.fillRect(0,0,W,H)}const cam=game.camera;g.save();cam.apply(g);game.particles.drawFw(g);this.celeb(g,game);for(const f of[...game.fighters].filter(f=>!(f.dead>0)).sort((a,b)=>drawPri(a)-drawPri(b)||a.y-b.y))drawFighter(g,f,game.frame/60,1,GROUND);this.celeb(g,game,true);for(const p of game.projectiles)this.projectile(g,p,p.owner);game.particles.draw(g,true);g.restore();if(this.useGL){this.glFinish({bloom:.3*GFX.bloom,ab:0,vc:[0,0,.02],va:.1,grain:GFX.grain?.03:0,t:game.frame})}else this.post.dust(g,this.cv,game.frame/60,'#cdbbff',26,.4)}
+drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);if(!this.bd.draw(g,W,H,'title',{dimAdd:0})){g.fillStyle='#020312';g.fillRect(0,0,W,H)}const cam=game.camera;g.save();cam.apply(g);game.particles.drawFw(g);this.celeb(g,game);for(const f of[...game.fighters].filter(f=>!(f.dead>0)).sort((a,b)=>drawPri(a)-drawPri(b)||a.y-b.y))drawFighter(g,f,game.frame/60,1,GROUND);this.celeb(g,game,true);for(const p of game.projectiles)this.projectile(g,p,p.owner);game.particles.draw(g,true);g.restore();if(this.useGL){this.glFinish({bloom:.3*GFX.bloom,ab:0,vc:[0,0,.02],va:.1,grain:GFX.grain?.03:0,t:game.frame})}else this.post.dust(g,this.cv,game.frame/60,'#55eaff',12,.18)}
  // Eigener Hintergrund im Kampf: weicher dunkler Verlauf ab der Fußlinie (Weltraum), damit die Figuren nicht im Bild schweben
  floorShade(g){const w=WORLD,gr=g.createLinearGradient(0,GROUND-60,0,GROUND+90);gr.addColorStop(0,'rgba(4,2,10,0)');gr.addColorStop(.45,'rgba(4,2,10,.34)');gr.addColorStop(1,'rgba(4,2,10,.62)');g.fillStyle=gr;g.fillRect(w.x0,GROUND-60,w.x1-w.x0,w.y1-GROUND+60)}
  // Spritesheet-Aura laden (window.__AURA__[id]={meta,atlas}); null solange das Bild noch lädt oder keine Aura-Sprites da sind

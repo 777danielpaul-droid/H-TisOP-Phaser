@@ -1,4 +1,4 @@
-import{BARRIER,BOUNCE,COMBO_SCALE,EFFECT,GROUND,METER,PHYS}from'./config.js';
+import{AIR,BARRIER,BOUNCE,COMBO_SCALE,EFFECT,GROUND,METER,PHYS}from'./config.js';
 import{meleeHit}from'./melee.js';
 
 import{hitSounds}from'./sfx.js';
@@ -30,6 +30,8 @@ export function hit(game,a,b,mv,rect,isProj){
  const def=b.char.def||1,mtr=a.char.meter||1;
  const power=mv.hstop>=11?3:mv.hstop>=8?2:1;
  if(game.melee)return meleeHit(game,a,b,mv,sx,sy,col,power,isProj);   // Melee: Prozent + Rückstoß statt HP
+ // ---- Luftkampf: Angreifer hängt nach Kontakt kurz in der Luft (flüssige Luft-Ketten, kein Absinken) ----
+ if(mv.air&&!mv.dive&&!mv.super&&!a.grounded&&a.state==='attack'){a.vy=Math.min(a.vy,AIR.hover.vy);a.hoverF=AIR.hover.frames}
  // ---- Rüstung: steckt den Treffer ein (60 % Schaden), kein Hitstun, Move läuft weiter ----
  if(b.state==='attack'&&b.move&&b.move.armor&&b.mf>=b.move.armor[0]&&b.mf<=b.move.armor[1]){
   const ad=Math.max(1,Math.round(mv.dmg*a.dmgMul()*def*.6*COMBO_SCALE[Math.min(b.comboHits,COMBO_SCALE.length-1)]));
@@ -48,21 +50,29 @@ export function hit(game,a,b,mv,rect,isProj){
  // ---- Treffer: Schadensskalierung pro Combo-Treffer ----
  const scale=Math.max(COMBO_SCALE[Math.min(b.comboHits,COMBO_SCALE.length-1)],mv.minScale||0);
  const dmg=Math.max(1,Math.round(mv.dmg*a.dmgMul()*scale*def));
- b.hp-=dmg;b.comboHits++;b.comboDmg+=dmg;b.comboShow={hits:b.comboHits,dmg:b.comboDmg,t:100};b.comboFlash=10;
+ b.hp-=dmg;b.comboHits++;b.comboDmg+=dmg;b.comboFlash=10;
+ const air=!b.grounded;if(air)b.airHits++;b.comboShow={hits:b.comboHits,dmg:b.comboDmg,t:100,air:b.airHits};
  a.meter=Math.min(METER.max,a.meter+dmg*.28*mtr);b.meter=Math.min(METER.max,b.meter+dmg*.14);
- const air=!b.grounded;
  b.move=null;b.noGrav=false;
  const lastMulti=!mv.multi||a.mf>=mv.su+mv.ac-mv.multi;
- const launch=mv.launch&&lastMulti?mv.launch:null;
- if(launch||air||mv.hard){
+ let launch=mv.launch&&lastMulti?mv.launch:null;
+ let slam=mv.slam&&lastMulti?mv.slam:null;
+ if(slam&&b.slams>=AIR.slamMax)slam=null;   // Boden-Prall nur 1× pro Combo (kein Spike-Loop auf den Rückprall)
+ if(launch&&mv.relaunch&&air&&b.relaunch>=AIR.relaunchMax)launch=null;   // Sky-Launcher nur 1× pro Combo, danach normaler Treffer
+ if(launch||air||mv.hard||slam){
   b.juggle=air?b.juggle+1:1;
+  if(launch&&mv.relaunch&&air){b.relaunch++;b.juggle=Math.max(1,b.juggle-AIR.relaunchJuggle)}   // zweite Combo-Stufe: Juggle-Punkte zurück
   let vy=launch?launch.vy*(air?.8:1):-9,vx=launch?launch.vx:3;
   if(!launch&&!mv.hard&&b.pop){const bn=bounceOf(mv,isProj);vy=bn.vy*Math.max(.2,1-(GROUND-b.y)/BOUNCE.cap);vx=bn.vx}   // Treffer im Pop-up: sanfter Nachschub, kein Hochschaukeln
+  if(!launch&&!mv.hard&&!b.pop&&air){const J=AIR.juggle,h=GROUND-b.y;   // Juggle: jeder weitere Treffer hebt weniger, ab großer Höhe kaum noch -> kein Verschwinden nach oben
+   vy*=Math.max(J.minF,1-J.decay*(b.juggle-1));if(h>J.cap)vy*=Math.max(0,1-(h-J.cap)/110)}
+  if(slam){vy=slam.vy;vx=slam.vx;b.slam=true;b.slams++;b.pop=false}   // Meteor-Spike: senkrecht nach unten, Boden-Prall (fighter.land)
   if(b.juggle>PHYS.juggleMax)vy=Math.max(vy,2); // Juggle-Limit: danach fällt der Gegner
-  if(launch||mv.hard)b.launched=true;           // Launcher/harter Treffer: keine Luft-Erholung mehr -> Knockdown bei der Landung
+  if(slam)vy=slam.vy;
+  if(launch||mv.hard||slam)b.launched=true;           // Launcher/harter Treffer: keine Luft-Erholung mehr -> Knockdown bei der Landung
   b.state='airhit';b.stun=b.launched?9999:Math.max(mv.hs,34); // großzügiger Luft-Hitstun für Mehrfach-Combos
   if(mv.hard){b.state='tumble';vy=11;vx=3.2;b.hard=true}
-  if(launch||mv.hard)b.pop=false;
+  if(launch||mv.hard||slam)b.pop=false;
   b.sf=0;b.vx=a.facing*vx;b.vy=vy;b.y=Math.min(b.y,GROUND-1)}
  else{ // Normaler Bodentreffer: Feder-Effekt -> Gegner hüpft in die Luft (Pop-up), Combo geht in der Luft weiter
   const bn=bounceOf(mv,isProj);
@@ -71,6 +81,9 @@ export function hit(game,a,b,mv,rect,isProj){
  let broke=false;
  if(pinned&&b.hp>0){const heavy=launch||mv.hard?BARRIER.heavyMul:1;broke=A.hitWall(game,b,mv.dmg*a.dmgMul()*BARRIER.hitMul*heavy)}     // Wand nimmt Schaden; bricht sie, fliegt b hindurch
  if(!air&&pinned&&!broke&&!mv.multi)a.vx=-a.facing*mv.pb;
+ if(launch&&!air&&!game.melee){game.fx.launch(b.x,GROUND,col);game.sfx('heavy_hit_whoosh',{vol:.9,rate:.9})}                       // Launcher-Start: Druckwelle + Lichtsäule
+ if(launch&&air&&mv.relaunch){game.fx.launch(b.x,b.y,col);game.sfx('heavy_hit_whoosh',{vol:.8,rate:1.1})}   // Sky-Launcher
+ if(slam){game.camera.kick(.05);game.kickY+=6}
  game.hitstop=Math.max(game.hitstop,mv.hstop);game.shake=Math.max(game.shake,b.comboHits>=2?EFFECT.comboShake:mv.shake||power*1.5);
  game.fx.hit(sx,sy,power,col,a.facing);game.hitFeel(sx,sy,a.facing,power,dmg,col,{launch:!!launch,hard:!!mv.hard,hits:b.comboHits});
  game.sfxList(hitSounds(mv,{launch:!!launch,proj:isProj}));
