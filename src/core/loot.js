@@ -36,17 +36,25 @@ export function buyPack(i){const o=SHOP[i];if(!o||LOOT.coins<o.price)return fals
 export const prizeTier=r=>!r?0:r.type==='coins'?(r.n>=35?1:0):r.type==='card'?[1,2,4][r.r]||1:3;
 export const cardsOwned=()=>CARDS.filter(c=>LOOT.cards[c.id]>0).length;
 export const pick=(a,rnd)=>a[Math.floor(rnd()*a.length)];
-export function rollOne(rnd){const x=rnd();
- if(x<.5)return{type:'coins',n:10+Math.floor(rnd()*31)};
- if(x<.85){const rr=rnd(),r=rr<.6?0:rr<.9?1:2,c=pick(CARDS.filter(c=>c.r===r),rnd);return{type:'card',id:c.id,name:c.name,r:c.r,isNew:!(LOOT.cards[c.id]>0)}}
- const free=[...SKIN_POOL.filter(([id,k])=>!ownsSkin(id,k)).map(([id,k])=>['skin',id,k]),...STAGE_POOL.filter(i=>!ownsStage(i)).map(i=>['stage',i])];   // Freischaltbares: Farben + Stages
- if(!free.length)return{type:'coins',n:50};
+// Pro Booster höchstens EINE gute Belohnung (Tier >= 2: seltene/epische Karte, neue Farbe, neue Stage). Der Rest sind Coins und ab und zu ein gewöhnliches Sammelbild.
+// Feinjustierung: GOOD_CHANCE = Wahrscheinlichkeit, dass ein Booster überhaupt etwas Gutes enthält; GOOD_MIX = Verteilung darunter; FILLER_COIN = Anteil Coins bei den übrigen Plätzen.
+export const GOOD_CHANCE=.22,GOOD_MIX={epic:.15,rare:.40},FILLER_COIN=.78;   // GOOD_MIX: Rest (~45 %) = neue Farbe/Stage, solange es noch welche gibt
+export const isGood=r=>prizeTier(r)>=2;
+const mkCard=(c,rnd)=>({type:'card',id:c.id,name:c.name,r:c.r,isNew:!(LOOT.cards[c.id]>0)});
+// Füllplatz: meist wenig Coins (6-26), selten ein dicker Coin-Treffer (35-50), sonst eine gewöhnliche Karte
+export function rollFiller(rnd){
+ if(rnd()<FILLER_COIN)return{type:'coins',n:rnd()<.08?35+Math.floor(rnd()*16):6+Math.floor(rnd()*21)};
+ return mkCard(pick(CARDS.filter(c=>c.r===0),rnd),rnd)}
+// Der seltene gute Platz: epische Karte, seltene Karte oder etwas Freischaltbares (Farben + Stages)
+export function rollGood(rnd){const x=rnd(),card=r=>mkCard(pick(CARDS.filter(c=>c.r===r),rnd),rnd);
+ if(x<GOOD_MIX.epic)return card(2);if(x<GOOD_MIX.epic+GOOD_MIX.rare)return card(1);
+ const free=[...SKIN_POOL.filter(([id,k])=>!ownsSkin(id,k)).map(([id,k])=>['skin',id,k]),...STAGE_POOL.filter(i=>!ownsStage(i)).map(i=>['stage',i])];
+ if(!free.length)return card(1);   // alles freigeschaltet -> seltene Karte
  const f=pick(free,rnd);if(f[0]==='stage')return{type:'stage',idx:f[1],name:STAGE_NAMES[f[1]],isNew:true};
  const[,id,k]=f;return{type:'skin',char:id,idx:k,name:skinName(id,k),col:SKINS[id][k].col,isNew:true}}
-// Booster öffnen: 3 Belohnungen (Coins / Karte / Skin). null, wenn kein Booster da ist.
-export function openPack(rnd=Math.random){if(LOOT.packs<1)return null;LOOT.packs--;const out=[];
- for(let i=0;i<3;i++){let r=rollOne(rnd);
-  if((r.type==='skin'&&out.some(o=>o.type==='skin'&&o.char===r.char&&o.idx===r.idx))||(r.type==='stage'&&out.some(o=>o.type==='stage'&&o.idx===r.idx)))r={type:'coins',n:50};
+// Booster öffnen: 3 Belohnungen (meist Coins, ab und zu eine gewöhnliche Karte, selten EIN guter Treffer). null, wenn kein Booster da ist.
+export function openPack(rnd=Math.random){if(LOOT.packs<1)return null;LOOT.packs--;const out=[],good=rnd()<GOOD_CHANCE,slot=Math.floor(rnd()*3);   // der gute Treffer (falls vorhanden) landet auf einem zufälligen Platz
+ for(let i=0;i<3;i++){const r=good&&i===slot?rollGood(rnd):rollFiller(rnd);
   if(r.type==='coins')LOOT.coins+=r.n;else if(r.type==='card')LOOT.cards[r.id]=(LOOT.cards[r.id]|0)+1;else if(r.type==='stage')LOOT.stages.push(r.idx);else(LOOT.skins[r.char]=LOOT.skins[r.char]||[]).push(r.idx);
   out.push(r)}
  saveLoot();return out}

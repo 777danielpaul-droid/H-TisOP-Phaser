@@ -13,3 +13,11 @@ Installation:
 Prüfung:
 - Build erfolgreich.
 - 28 von 29 Node-Testdateien erfolgreich. Online-Test konnte in dieser Umgebung nicht starten, da das Paket "ws" nicht installiert war; package.json/package-lock.json bleiben unverändert.
+
+---
+Neue Card-Packs + seltenere Belohnungen
+- Booster-Päckchen sind jetzt Pixel-Art-Sprites aus assets/packs/CardPacks.png (9 Farben x 20 Motive, 84x154 px je Pack).
+  Beim Öffnen wird Motiv + Farbe zufällig gewählt; im Shop haben 1/3/5 Booster feste Motive (SHOP_STYLE in src/render/lootui.js).
+  Der Build bettet das Sheet als window.__PACKS__ ein (tools/build.mjs). Fehlt das Sheet, greift das alte Vektor-Päckchen als Fallback.
+- Pro Booster höchstens EINE gute Belohnung (seltene/epische Karte, neue Farbe, neue Stage). Rest: meist Coins, ab und zu ein gewöhnliches Sammelbild.
+  Stellschrauben oben in src/core/loot.js: GOOD_CHANCE (.22), GOOD_MIX, FILLER_COIN. Ergebnis: ca. 22 % der Booster enthalten etwas Gutes, ca. 39 Coins pro Booster.

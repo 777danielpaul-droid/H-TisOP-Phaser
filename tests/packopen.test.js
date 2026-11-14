@@ -8,7 +8,7 @@ const COIN=n=>({type:'coins',n}),CARD=r=>({type:'card',id:'x',name:'X',r,isNew:t
 {assert.equal(prizeTier(COIN(10)),0);assert.equal(prizeTier(COIN(34)),0);assert.equal(prizeTier(COIN(35)),1);assert.equal(prizeTier(COIN(50)),1);
  assert.deepEqual([0,1,2].map(r=>prizeTier(CARD(r))),[1,2,4]);assert.equal(prizeTier(SKIN),3);assert.equal(prizeTier(STAGE),3);assert.equal(prizeTier(null),0);
  ok('Wertigkeit: wenig Coins 0 · viele Coins/gewöhnlich 1 · selten 2 · Farbe/Stage 3 · episch 4')}
-{LOOT.packs=0;addPack(200);const seen=new Set();for(let i=0;i<200;i++){const rw=openPack();assert.equal(rw.length,3);for(const r of rw){const t=prizeTier(r);assert.ok(t>=0&&t<=4);seen.add(t)}}assert.ok(seen.size>=4,'echte Booster liefern verschiedene Wertigkeiten: '+[...seen]);ok('echte Booster-Preise haben gültige Wertigkeiten ('+[...seen].sort()+')')}
+{LOOT.packs=0;addPack(1500);const seen=new Set();for(let i=0;i<1500;i++){const rw=openPack();assert.equal(rw.length,3);for(const r of rw){const t=prizeTier(r);assert.ok(t>=0&&t<=4);seen.add(t)}}assert.ok(seen.size>=4,'echte Booster liefern verschiedene Wertigkeiten: '+[...seen]);ok('echte Booster-Preise haben gültige Wertigkeiten ('+[...seen].sort()+')')}
 function run(po,f,max=3000){let n=0;while(!f()&&n++<max)po.update(1);assert.ok(n<max,'Zeitüberschreitung bei '+po.ph+' pt='+po.pt);return n}
 {const S=[],po=new PackOpen([COIN(10),SKIN,CARD(2)],(n,o)=>S.push(n));
  assert.equal(po.ph,'idle');for(let i=0;i<600;i++)po.update(1);assert.equal(po.ph,'idle','das Päckchen wartet auf ENTER (kein Auto-Weiter)');

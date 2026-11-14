@@ -50,8 +50,22 @@ export const shopBtnRect=()=>({x:W-168,y:16,w:150,h:28});   // „SHOP“-Knopf 
 export function hitShopCard(lx,ly){for(let i=0;i<SHOP.length;i++)if(inR(shopCardRect(i),lx,ly))return i;return -1}
 export const hitShopBack=(lx,ly)=>inR(shopBackRect(),lx,ly);
 export const hitShopBtn=(lx,ly)=>inR(shopBtnRect(),lx,ly);
-// Booster-Päckchen (Folie, Zacken oben/unten, Glanzstreifen); n = Anzahl gestapelter Päckchen (max. 3 sichtbar)
-export function boosterArt(g,hud,cx,cy,w,h,col,n,tilt=0){const count=Math.min(3,n);
+// Pack-Sprites (assets/packs/CardPacks.png, vom Build als window.__PACKS__ eingebettet): 9 Farben (Spalten c) x 20 Motive (Zeilen d), je 84x154 Pixel
+export const PACK={cols:9,rows:20,x0:3,y0:3,pw:84,ph:154,gx:95,gy:157};
+export function packImg(){const S=typeof window!=='undefined'&&window.__PACKS__;if(!S||typeof Image==='undefined')return null;
+ if(!packImg.im){packImg.im=new Image();packImg.im.src=S}const im=packImg.im;return im.complete&&im.naturalWidth>0?im:null}
+export const packStyle=(rnd=Math.random)=>({d:Math.floor(rnd()*PACK.rows),c:Math.floor(rnd()*PACK.cols)});   // zufälliges Motiv + Farbe
+// Ein Pack mittig bei (cx,cy), h = Höhe in Pixeln (Breite folgt dem Seitenverhältnis). Ab Faktor 1 pixelscharf, darunter geglättet. false, solange das Sheet noch lädt.
+export function packSprite(g,st,cx,cy,h){const im=packImg();if(!im)return false;const k=h/PACK.ph,w=PACK.pw*k,d=((st&&st.d)|0)%PACK.rows,c=((st&&st.c)|0)%PACK.cols;
+ g.save();g.imageSmoothingEnabled=k<1;g.imageSmoothingQuality='high';g.drawImage(im,PACK.x0+c*PACK.gx,PACK.y0+d*PACK.gy,PACK.pw,PACK.ph,cx-w/2,cy-h/2,w,h);g.restore();return true}
+// Booster-Päckchen (Sprite aus dem Pack-Sheet); n = Anzahl gestapelter Päckchen (max. 3 sichtbar), h = Höhe, w wird nur vom Fallback genutzt
+export function boosterArt(g,hud,cx,cy,w,h,col,n,tilt=0,st=null,alpha=1){if(!packImg())return boosterArtVector(g,hud,cx,cy,w,h,col,n,tilt);
+ const count=Math.min(3,n),s0=st||{d:0,c:0},pw=PACK.pw*h/PACK.ph;
+ for(let j=count-1;j>=0;j--){const o=j-(count-1)/2;g.save();g.translate(cx+o*pw*.46,cy+Math.abs(o)*3);g.rotate(tilt+o*.1);if(alpha<1){g.filter='grayscale(.75) brightness(.7)'}   // nicht leistbar: gedimmt statt durchsichtig (Safari ignoriert den Filter)
+  
+  g.shadowColor=col;g.shadowBlur=alpha>=1?14:0;packSprite(g,{d:s0.d,c:s0.c+j*2},0,0,h);g.restore()}}
+// Altes Vektor-Päckchen (Fallback, solange das Sprite-Sheet fehlt)
+export function boosterArtVector(g,hud,cx,cy,w,h,col,n,tilt=0){const count=Math.min(3,n);
  for(let j=count-1;j>=0;j--){g.save();g.translate(cx+(j-(count-1)/2)*w*.34,cy+Math.abs(j-(count-1)/2)*3);g.rotate(tilt+(j-(count-1)/2)*.09);
   const x=-w/2,y=-h/2,cut=Math.max(5,w*.075);
   // Thick sealed alloy foil with crimped edges, not a flat coloured wrapper.
@@ -68,11 +82,12 @@ export function boosterArt(g,hud,cx,cy,w,h,col,n,tilt=0){const count=Math.min(3,
   hud.txt(g,'H!T',0,y+h*.32,Math.round(w*.28),'#efffff','center',col);hud.txt(g,'XENOS / SUPPLY',0,y+h*.72,Math.max(7,Math.round(w*.09)),'#b6d7dc','center');
   g.restore()}}
 
+export const SHOP_PACK_H=118,SHOP_STYLE=[{d:2,c:8},{d:17,c:2},{d:18,c:6}];   // Motiv/Farbe der Packs im Shop (1 / 3 / 5 Booster)
 export function drawShop(g,hud,u){const sel=u.sel|0;
  SHOP.forEach((o,i)=>{const r=shopCardRect(i),on=i===sel,ok=canBuy(i),col=ok?'#65e5ed':'#536d78',cx=r.x+r.w/2;
   g.save();g.translate(cx,r.y+r.h/2);const sc=on?1.05+.012*Math.sin(u.t*.12):.97;g.scale(sc,sc);g.translate(-cx,-(r.y+r.h/2));g.globalAlpha=on?1:.88;
   g.shadowColor=on?'#58ddeb':'#000';g.shadowBlur=on?22:10;g.fillStyle='#02070c';hud.kChamfer(g,r.x,r.y,r.w,r.h,15);g.fill();g.shadowBlur=0;const shell=g.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);shell.addColorStop(0,'#647b83');shell.addColorStop(.16,'#172a33');shell.addColorStop(.7,'#050d13');shell.addColorStop(1,'#344b54');g.fillStyle=shell;hud.kChamfer(g,r.x+2,r.y+2,r.w-4,r.h-4,13);g.fill();g.strokeStyle=on?'#9dfaff':'rgba(145,197,205,.42)';g.lineWidth=on?1.8:1;hud.kChamfer(g,r.x+4,r.y+4,r.w-8,r.h-8,11);g.stroke();g.fillStyle='rgba(255,255,255,.18)';g.fillRect(r.x+15,r.y+7,r.w*.3,1.5);g.strokeStyle='rgba(132,217,225,.18)';hud.kChamfer(g,r.x+9,r.y+9,r.w-18,r.h-18,8);g.stroke();
-  boosterArt(g,hud,cx,r.y+88,76,100,ok?'#69e9ef':'#596c83',o.n,on?-.05:0);
+  boosterArt(g,hud,cx,r.y+88,76,SHOP_PACK_H,ok?'#69e9ef':'#596c83',o.n,on?-.05:0,SHOP_STYLE[i%SHOP_STYLE.length],ok?1:.5);
   hud.txt(g,o.n===1?'1 BOOSTER':o.n+' BOOSTER',cx,r.y+170,19,'#ffffff','center',on?col:null);
   if(o.n>1)hud.txt(g,'SPARE '+Math.round((1-o.price/(o.n*SHOP[0].price))*100)+' %',cx,r.y+188,11,'#7dff9a','center');
   hud.txt(g,o.price+' CREDITS',cx,r.y+222,20,ok?'#a9faff':'#78909a','center',ok&&on?'#65e5ed':null);
