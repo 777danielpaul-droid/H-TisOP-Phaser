@@ -44,3 +44,7 @@ export class NetClient{
  stopPing(){if(this.pt){clearInterval(this.pt);this.pt=null}}
  close(){this.stopPing();if(this.ws){try{this.ws.close()}catch(e){}}}
 }
+
+// Verbindungsaufbau mit Geduld: Ein schlafender Gratis-Server (Render) braucht bis zu ~1 Minute. Wiederholt den Versuch, bis er antwortet, maxMs vorbei ist oder abgebrochen wird.
+export async function connectPatient(c,o={}){const maxMs=o.maxMs||100000,pause=o.pause||3000,now=o.now||Date.now,sleep=o.sleep||(ms=>new Promise(r=>setTimeout(r,ms))),gone=()=>!!(o.cancelled&&o.cancelled()),t0=now();
+ for(;;){try{await c.connect();return}catch(e){if(e.message==='nourl'||gone()||now()-t0>=maxMs)throw e;if(e.message!=='timeout')await sleep(pause);if(gone())throw e}}}

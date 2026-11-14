@@ -8,7 +8,7 @@ import{CHARACTERS,ROSTER}from'./core/characters.js';
 import{MOVE_LIST,charMoves}from'./core/moves.js';
 import{SPEED,GFX,GFX_PRESETS,setGfx}from'./core/config.js';
 import{openPack,buyPack,canBuy,LOOT,SHOP,ownsSkin,ownedStages}from'./core/loot.js';
-import{NetClient,netServerUrl}from'./core/netclient.js';
+import{NetClient,netServerUrl,connectPatient}from'./core/netclient.js';
 import{NetMatch}from'./core/netmatch.js';
 import{NetInput,NET,encInput}from'./core/netplay.js';
 import{NetUi,netMessage}from'./render/netui.js';
@@ -229,8 +229,10 @@ async function netConnect(){if(netClient&&netClient.state!=='closed')return netC
  const c=new NetClient({url}).on('state',s=>{if(s==='paired')netPaired(c);netUi.render()}).on('error',m=>{netUi.say(netMessage(m.code)||m.msg||'Fehler',true);netUi.render()})
   .on('rtt',()=>netBarUpdate()).on('close',()=>{if(netClient===c){netClient=null;if(!netMatch)netUi.say(netMessage('disconnected'),true);netUi.render()}});
  netClient=c;
- try{await c.connect()}catch(e){if(netClient===c)netClient=null;netBusy=false;if(netUi.isOpen){netUi.say(netMessage(e.message==='nourl'?'nourl':e.message==='timeout'?'timeout':'closed'),true);netUi.render()}return null}
- netBusy=false;netUi.render();return c}
+ // Erst jetzt (beim ersten Online-Klick) wird der Server kontaktiert; schläft er noch, kommt nach kurzer Zeit eine Wartemeldung und es wird automatisch weiter versucht
+ const wt=setTimeout(()=>{if(netClient===c&&netBusy&&c.state!=='open'&&netUi.isOpen){netUi.say(netMessage('waking'));netUi.render()}},2500);
+ try{await connectPatient(c,{cancelled:()=>netClient!==c||!netUi.isOpen})}catch(e){clearTimeout(wt);if(netClient===c)netClient=null;netBusy=false;if(netUi.isOpen){netUi.say(netMessage(e.message==='nourl'?'nourl':e.message==='timeout'?'timeout':'closed'),true);netUi.render()}return null}
+ clearTimeout(wt);netBusy=false;netUi.say('');netUi.render();return c}
 async function netAct(a,v){switch(a){
  case'quick':case'host':case'join':{
   if(a==='join'){v=String(v||'').toUpperCase().replace(/[^A-Z]/g,'');if(v.length!==4){netUi.say('Bitte den 4-stelligen Code eingeben.',true);return}}
