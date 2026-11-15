@@ -17,6 +17,11 @@ for(const f of fs.existsSync(md)?fs.readdirSync(md).sort():[])if(f.endsWith('.og
 // Sicherheitsnetz: fehlt Musik, lieber laut abbrechen als still ohne Menü-/Kampfmusik zu deployen (passiert z. B. wenn *.ogg in .gitignore steht)
 const missing=['menu','fight'].filter(n=>!fs.existsSync(path.join(md,n+'.ogg')));
 if(missing.length){console.error('FEHLER: music/'+missing.join('.ogg, music/')+'.ogg fehlt (nicht im Repository?). Bitte hinzufügen: git add music/*.ogg');if(process.env.RENDER||process.env.CI)process.exit(1)}
+// Sicherheitsnetz 2: Booster-Design + Figuren-Atlanten sind Pflicht. Fehlen sie (typisch: *.png/*.webp stehen in .gitignore, GitHub Desktop nimmt sie dann nicht mit), bricht der Render-Build mit einer klaren Liste ab,
+// statt ein Spiel mit grauen Boostern und fehlenden Figuren zu veröffentlichen.
+{const need=['assets/packs/CardPacks.png'];for(const id of fs.existsSync(ad)?fs.readdirSync(ad):[]){if(fs.existsSync(path.join(ad,id,'meta.json'))||fs.existsSync(path.join(ad,id,'meta.js')))need.push('assets/'+id+'/atlas.webp','assets/'+id+'/meta.json')}
+ const gone=need.filter(f=>!fs.existsSync(path.join(root,f)));
+ if(gone.length){console.error('\n=== FEHLER: Diese Spiel-Dateien fehlen im Build (nicht im Git-Repository?) ===\n  '+gone.join('\n  ')+'\nLösung: git add -f assets/   (die .gitignore darf *.png/*.webp unter assets/ nicht ausschließen), committen, pushen.\n');if(process.env.RENDER||process.env.CI)process.exit(1)}}
 const fd=path.join(root,'assets/fonts'),fo=[];   // Schriften (assets/fonts/<name>.woff2) als Data-URI einbetten (Canvas + Menü, offline)
 for(const f of fs.existsSync(fd)?fs.readdirSync(fd).sort():[])if(f.endsWith('.woff2'))fo.push(`${JSON.stringify(f.slice(0,-6))}:"data:font/woff2;base64,${fs.readFileSync(path.join(fd,f)).toString('base64')}"`);
 const ud=path.join(root,'assets/aura'),au=[];   // Sieger-Auren (assets/aura/<id>.webp + .json) als Data-URI einbetten
