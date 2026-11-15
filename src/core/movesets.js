@@ -101,6 +101,6 @@ const rabe={...norm({su:0,rc:-1,dmg:1.02,reach:6}),
  airsp:{label:'Sturzflug',info:'Steiler Sturzangriff, Knockdown',su:5,dmg:80,box:[-10,-70,100,100],dive:{vx:3.3,vy:17},hard:true,land:12,hstop:8,shake:5},
  '6M':{label:'Krallenstoß',info:'Schneller Vorstoß-Poke',anim:'punch',su:7,ac:3,rc:13,dmg:52,lv:'mid',box:[10,-124,108,44],lunge:6,hs:21,bs:12},
  '6H':{label:'Schnabelhieb',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:13,ac:4,rc:19,dmg:84,lv:'high',lunge:7,box:[10,-162,116,66],hs:26,bs:16,glow:1},
- super:{label:'Rabenschwarm',info:'HYPER: Ein Schwarm aus Schatten stürzt nach vorn – 9 Treffer + Launcher',anim:'hyper',beam:0,glow:1,dmg:30,su:20,ac:50,rc:26,multi:6,minScale:.5,box:[-20,-200,460,220],launch:{vx:5,vy:-13},inv:[0,34],hstop:2,shake:6}};
+ super:{label:'Rabenschwarm',info:'HYPER: Ein Schwarm aus Schatten stürzt nach vorn – 9 Treffer + Launcher',anim:'hyper',beam:0,fx:'swarm',glow:1,dmg:30,su:20,ac:50,rc:26,multi:6,minScale:.5,box:[-20,-200,460,220],launch:{vx:5,vy:-13},inv:[0,34],hstop:2,shake:6}};
 
 export const MODS={tiger,st3g0,kitsune,anubis,cyberdemon,rabe};
