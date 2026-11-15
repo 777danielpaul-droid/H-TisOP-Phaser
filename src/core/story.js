@@ -50,7 +50,9 @@ export class Story{
  // Start / Neustart (Game.startRound): am letzten Checkpoint
  begin(){const g=this.g,p=g.p1;this.mobs=[];this.items=[];g.fighters=[p];this.queue=[];this.state='walk';this.enc=this.cp;this.ft=0;this.sd=0;this.goT=0;this.doneT=0;this.msg=null;this.att=[];this.rage=false;
   p.x=this.cp?this.encs[this.cp-1].x+140:LV.start;p.facing=1;this.setBounds(LV.x0,LV.x1);
-  this.dealer=this.cfg.npc?new Dealer(this,this.cfg.npc):null}   // Händler: bei jedem (Neu-)Start frisch (Gespräch geschlossen)
+  this.dealer=this.cfg.npc?new Dealer(this,this.cfg.npc):null;if(this.dealer&&this.cp)this.dealer.place(this.dealerSpot())}   // Händler: bei jedem (Neu-)Start frisch (Gespräch geschlossen)
+ // Händler steht ein Stück vor dem Spieler, aber noch vor dem nächsten Wellen-Auslöser (Checkpoint/Wellenende)
+ dealerSpot(){const p=this.g.p1,e=this.encs[this.enc],lim=e?e.x-130:LV.x1-80;return Math.max(LV.x0+80,Math.min(lim,p.x+170))}
  setBounds(l,r){this.l=l;this.r=r;this.g.arena.setOpen(l,r)}
  engage(e){this.state='fight';this.setBounds(Math.max(LV.x0,e.x-LV.half),Math.min(LV.x1,e.x+LV.half));
   this.queue=[];for(let i=0;i<e.n;i++)this.queue.push({side:i%2?-1:1,elite:false});
@@ -63,7 +65,7 @@ export class Story{
   if(boss){g.shake=Math.max(g.shake,10);g.flash=Math.max(g.flash,8);g.flashColor=c.glow}}
  clear(){const g=this.g,p=g.p1;this.cp=this.enc+1;this.enc++;this.drop(p.x+(p.facing>0?140:-140),.35);p.hp=Math.min(p.maxHp,p.hp+p.maxHp*.3);p.meter=Math.min(300,p.meter+60);g.sfx('ui_round_start',{vol:.6,rate:1.3});
   if(this.enc>=this.encs.length){this.state='done';this.doneT=0;this.msg={t:240,title:this.cfg.win.title,say:this.cfg.win.say};g.celeb={f:p,t:0};g.flash=10;g.flashColor='#ffffff'}
-  else{this.state='walk';this.goT=0;this.setBounds(LV.x0,LV.x1);this.msg={t:130,title:'GESCHAFFT',say:'Weiter nach rechts ➜'}}}
+  else{this.state='walk';this.goT=0;this.setBounds(LV.x0,LV.x1);this.msg={t:130,title:'GESCHAFFT',say:'Weiter nach rechts ➜'};if(this.dealer)this.dealer.place(this.dealerSpot())}}
  mobDown(v,a,quiet){const g=this.g;this.kills++;v.state='ko';v.sf=0;v.vy=-9;v.vx=a.facing*6;v.noGrav=false;v.move=null;v.koT=0;v.pop=false;
   g.fx.ps.ring(v.x,v.y-80,v.char.glow,130);g.sfx('fw_finale',{vol:.35,rate:1.3});if(quiet)return;g.shake=Math.max(g.shake,7);g.hitstop=Math.max(g.hitstop,9);g.camera.kick(.02);
   if(v.char.storyBoss){   // Boss besiegt: Zeitlupe, Belohnung (2 Booster + Heilung), der restliche Schwarm bricht zusammen

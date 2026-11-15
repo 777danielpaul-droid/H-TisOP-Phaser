@@ -157,7 +157,9 @@ export const CYBERDEMON_ANIMS={
 //  i_0-i_3: aufrecht (Idle-Bogen) | t_0-t_7: Sprech-Gesten des NPC (t_0 Hand an der Hüfte, t_1 Hand offen, t_2 beide Hände hoch, t_3 Kinn, t_4 hält ein Booster-Pack, t_5 Geste, t_6 Zeigefinger, t_7 Arme verschränkt)
 //  c_0 Deckung | c_1 tiefe Deckung | c_2 Jab | c_3 hoher Tritt | c_4 geduckte Krallen | c_5 Sprung-Krallen | c_6 Sichelschwung (violette Spur) | c_7 Deckung + Sichel-Abschuss
 //  c_8 Aura aufladen | c_9 Boden-Dornen (Hocke) | c_10 Dash-Ausfall | c_11 Brüllen/Power-Pose
-// NOCH BEHELFE (Bögen fehlen): Treffer (tiefe Deckung geneigt), Luft-Treffer (Sprung-Pose), Knockdown/Aufstehen/Besiegt (aufrechte Idle-Pose, gedreht), Duck-Angriffe (geduckte Krallen).
+//  f_0-f_6 Fallen (f_0-f_2 noch in der Luft, f_3-f_6 schlägt auf / liegt) | u_0-u_7 Aufstehen (hockend -> aufrecht)
+//  j_0-j_16 Sprung mit magischen Flügeln: j_0-j_2 Ausgangshaltung/Hocke (ungenutzt, kein Sprungabdruck-Zustand), j_3-j_5 Absprung, j_6-j_11 Flügel öffnen + gespreizt, j_12-j_15 Flügel falten, j_16 Landehocke (ungenutzt)
+// NOCH BEHELFE (Bögen fehlen): Treffer (tiefe Deckung geneigt), Duck-Angriffe (geduckte Krallen), Luft-Angriffe (Sprung-Klauen ohne Flügel).
 // Frame-Maßstab Rabe: Die Kampfposen (c_*) sind im Gemini-Bogen kleiner und geduckt gezeichnet als die aufrechte Idle-Pose (i_*, t_*), dadurch schrumpfte KORVUS beim Gehen/Kämpfen.
 // Wert > 1 vergrößert den Frame (Idle/Sprechen/Liegepose bleiben 1). 'a'-Varianten erben vom Basis-Frame. Feinjustierung hier.
 export const RABE_FRAME_SC={c_0:1.18,c_1:1.26,c_2:1.12,c_3:1.2,c_4:1.24,c_5:1.16,c_6:1.14,c_7:1.14,c_8:1.1,c_9:1.2,c_10:1.18,c_11:1.1};
@@ -165,7 +167,7 @@ export const RABE_ANIMS={
  idle:{frames:['i_0','i_1','i_2','i_1'],loop:1,fps:3},
  walk:{frames:['c_0','c_1','c_0','c_1'],loop:1,fps:8,bob:3,lean:.03},
  crouch:{frames:['c_1'],squash:.9},cblock:{frames:['c_1'],squash:.88},
- air:{frames:['c_5a'],lean:.05},
+ air:{frames:['j_3a','j_4a','j_5a','j_6a','j_7a','j_8a','j_9a','j_10a','j_11a','j_12a','j_13a','j_14a','j_15a'],lean:.03},   // Sprung (Frame nach Flugbahn, siehe Fighter.updateAnim): Absprung -> violette Flügel öffnen -> am Scheitel gespreizt -> Flügel falten
  dash:{frames:['c_10'],lean:.05},airdash:{frames:['c_10a'],lean:.14},
  punch:{frames:['c_0','c_2','c_2','c_0']},cpunch:{frames:['c_1','c_4','c_4'],squash:.94},jpunch:{frames:['c_5a','c_5a']},
  kick:{frames:['c_0','c_3','c_3','c_0']},ckick:{frames:['c_4','c_4','c_1']},jkick:{frames:['c_3a','c_3a']},
@@ -173,17 +175,17 @@ export const RABE_ANIMS={
  upper:{frames:['c_4','c_6','c_6','c_6','c_0']},
  special:{frames:['c_1','c_1','c_7','c_7','c_0']},   // Schattensichel: Ausholen -> Abschuss (Sichel fliegt los) -> zurück
  hyper:{frames:['c_8','c_8','c_9','c_9','c_11','c_6','c_6','c_11','c_11','c_0']},   // Rabenschwarm: Aura laden -> Dornen -> Brüllen -> Sichelschwung
- hit:{frames:['c_1'],lean:-.16,shiftX:-12},airhit:{frames:['c_5a','c_4a']},
+ hit:{frames:['c_1'],lean:-.16,shiftX:-12},airhit:{frames:['f_0a','f_1a','f_2a']},   // Luft-Treffer: nach hinten kippen (Frames f_0-f_2 des Fall-Bogens)
  block:{frames:['c_0']},
- kd:{frames:['i_3'],lying:1},wakeup:{frames:['i_3','c_1','c_0'],lying:1,rise:1},
- win:{frames:['c_11','c_8'],loop:1,fps:2},defeat:{frames:['i_3'],lying:1}};
+ kd:{frames:['f_3','f_4','f_5','f_6']},wakeup:{frames:['u_0','u_1','u_2','u_3','u_4','u_5','u_6','u_7']},   // Aufschlagen -> liegen bleiben | Aufstehen (hockend -> aufrecht)
+ win:{frames:['c_11','c_8'],loop:1,fps:2},defeat:{frames:['f_3','f_4','f_5','f_6']}};
 export const SPRITE_CHARS={
  cyberdemon:{anims:CYBERDEMON_ANIMS,fist:[200,-125],height:215,fightScale:1,lie:['i_3']},
  mantis:{anims:MANTIS_ANIMS,fist:[120,-130],height:190,fightScale:.88,lie:['p_4_1']},
  tiger:{anims:TIGER_ANIMS,fist:[108,-122],height:190,fightScale:.85,fullAnims:['win','defeat'],profileAnim:'win',lie:['t_neu_treffer_103','t_neu_aufstehen_00']},
  st3g0:{anims:ST3G0_ANIMS,fist:[135,-150],height:190,fightScale:.92,lie:['p_3_1','p_3_2','p_3_3'],pose:POSE_ST3G0},
  anubis:{anims:ANUBIS_ANIMS,fist:[113,-137],height:215,fightScale:1,lie:['p_4_2','p_4_3']},
- rabe:{anims:RABE_ANIMS,fist:[112,-132],height:205,fightScale:.96,lie:['i_3'],frameSc:RABE_FRAME_SC},
+ rabe:{anims:RABE_ANIMS,fist:[112,-132],height:205,fightScale:.96,lie:['f_3'],frameSc:RABE_FRAME_SC},
  kitsune:{anims:KITSUNE_ANIMS,fist:[100,-121],height:190,fightScale:.83,lie:['p_9_3','p_11_0'],pose:POSE_KITSUNE,frameSc:KITSUNE_FRAME_SC}};   // fightScale: Kampfposen kleiner als die Sieg-/Niederlagen-Pose (fullAnims bleiben in voller Größe)
 // Eigene Figur (Upload im Startmenü): Sprite-Definition zur Laufzeit eintragen; Atlas liefert window.__SPRITES__[id]={meta,img}
 export function registerSpriteChar(id,def){SPRITE_CHARS[id]=def}

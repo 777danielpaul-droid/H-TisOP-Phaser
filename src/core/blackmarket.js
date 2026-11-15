@@ -4,7 +4,7 @@ import{CHAR_SHOP,LOOT,SHOP,buyChar,buyPack,charPrice,ownsChar,saveLoot}from'./lo
 // Schwarzmarkthändler KORVUS (anthropomorpher Rabe): interaktiver NPC im Story-Modus. Derselbe Rabe ist als Kämpfer (CHARACTERS.rabe) im Shop kaufbar.
 // Rein logisch (kein DOM) -> headless testbar (tests/blackmarket.test.js). Darstellung: render/storyhud.js (drawDealer, drawDealerUi), Tasten/Klicks: main.js.
 // Angebote: Booster-Packs = SHOP (core/loot.js, gleiche Preise wie der Ingame-Shop), Gegenstände = ITEM_SHOP (sofort benutzt), Kämpfer = CHAR_SHOP (Preis zentral: CHAR_PRICE in core/loot.js).
-export const DEALER={id:'rabe',name:'KORVUS',title:'SCHWARZMARKT',reach:170};   // reach = Ansprechweite (px)
+export const DEALER={id:'rabe',name:'KORVUS',title:'SCHWARZMARKT',reach:210};   // reach = Ansprechweite (px)
 // Gegenstände: werden beim Kauf sofort benutzt (Heilung in % der Maximal-HP bzw. Hyper-Meter). Preise hier justierbar.
 export const ITEM_SHOP=[
  {id:'drink',name:'ENERGIEDRINK',info:'+25 % Leben',price:25,kind:'heal',v:.25},
@@ -47,6 +47,8 @@ export function wrapText(s,n=58){const out=[];let line='';for(const w of String(
 export class Dealer{
  constructor(story,cfg={}){this.s=story;this.x=cfg.x===undefined?-480:cfg.x;this.reset()}
  get g(){return this.s.g}
+ // Standort wechseln (Story: nach jeder Welle bzw. am Checkpoint steht er wieder vor dem Spieler, sonst war er nur am Level-Anfang erreichbar)
+ place(x){this.x=x;this.near=false}
  reset(){this.active=false;this.alpha=1;this.near=false;this.node='menu';this.sel=0;this.say='';this.mood='idle';this.shown=0;this.t=0;this.facing=-1;this.opts=[];this.bought=0;this.greet=false}
  // Kann angesprochen werden? Nur zwischen den Wellen, Spieler lebt und steht am Boden
  get canTalk(){const s=this.s,p=s.g.p1;return s.state==='walk'&&s.g.phase==='fight'&&p.hp>0}

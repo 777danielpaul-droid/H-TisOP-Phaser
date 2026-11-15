@@ -32,6 +32,11 @@ for(const n of names)assert(meta.frames[n],'Frame fehlt im Atlas: '+n);
 assert(SPRITE_CHARS.rabe&&SPRITE_CHARS.rabe.anims===RABE_ANIMS);
 for(const k of['idle','walk','crouch','air','dash','airdash','punch','kick','heavy','upper','special','hyper','hit','airhit','block','kd','wakeup','win','defeat','cpunch','ckick','jpunch','jkick','jheavy','cblock'])assert(RABE_ANIMS[k],'Animation fehlt: '+k);
 console.log('  ✓ Sprites:',names.size,'Frames, alle im Atlas; Kampf-/Sprech-Animationen vollständig');
+// Fall-/Aufsteh-/Sprung-Bögen (Flügel-Sprung): Frames im Atlas und in den Animationen verdrahtet
+for(let i=0;i<7;i++)assert(meta.frames['f_'+i],'Fall-Frame f_'+i);for(let i=0;i<8;i++)assert(meta.frames['u_'+i],'Aufsteh-Frame u_'+i);for(let i=0;i<17;i++)assert(meta.frames['j_'+i],'Sprung-Frame j_'+i);
+assert(RABE_ANIMS.air.frames.length>=12&&RABE_ANIMS.air.frames.every(f=>/^j_\d+a$/.test(f)&&meta.frames[f]),'Sprung nutzt die Flügel-Frames (an der Körpermitte verankert)');
+assert(RABE_ANIMS.kd.frames.every(f=>/^f_/.test(f))&&RABE_ANIMS.wakeup.frames.length===8&&RABE_ANIMS.wakeup.frames.every(f=>/^u_/.test(f)),'Fallen + Aufstehen aus den neuen Bögen');
+console.log('  ✓ Sprung mit Flügeln, Fallen und Aufstehen verdrahtet');
 // ---- Story: Händler ----
 resetDealerMemory();
 const kb=new InputBuffer(),dummy=new AIController(0);

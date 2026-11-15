@@ -33,3 +33,11 @@ Glitzer-Effekte im Kampf (Treffer, Siegesstoß, Siegespose)
 - src/render/renderer.js (Aura der Siegespose): aufsteigende Energie-Streifen großteils durch blinkende Funkelsterne ersetzt, dazu Glanzpunkte mit Kreuzglanz an der Körperkontur.
 - Leistung: Funkelsterne sind gedeckelt (1100 x GFX.fx), Mengen skalieren mit der Qualitätsstufe (GFX.fx).
 - Neuer Test: tests/sparkle.test.js (in npm test eingetragen).
+
+---
+Corvus: Flügel-Sprung, Fallen/Aufstehen, Schwarzmarkt erreichbar
+- Neue Sheets: assets/rabe/sheets/fall.png (7 Fall- + 8 Aufsteh-Posen, Beschriftungsbalken werden beim Import entfernt) und sprung.png (17 Sprung-Posen mit violetten Magieflügeln).
+  Import: python3 tools/import-rabe-sheets.py (erzeugt Frames f_0-f_6, u_0-u_7, j_0-j_16 im Atlas assets/rabe/atlas.webp). Vorschau: assets/rabe/sheets/_vorschau.png.
+- Sprung (anim 'air'): Frame nach Flugbahn -> Absprung, Flügel öffnen, am Scheitel gespreizt, beim Fallen falten. Doppelsprung startet die Flügel-Animation neu.
+- Fallen: Luft-Treffer = f_0-f_2, Aufprall/Liegen = f_3-f_6 (kd + Besiegt), Aufstehen = u_0-u_7 (wakeup). Die alten Behelfe (gedrehte Idle-Pose) sind ersetzt.
+- Schwarzmarkt (Korvus, Story): war nur am Level-Anfang ansprechbar (bei Checkpoint-Neustart oder nach der ersten Welle stand er außer Reichweite). Jetzt steht er nach jeder Welle und an jedem Checkpoint wieder kurz vor dem Spieler (Story.dealerSpot), Ansprechweite 170 -> 210 px.
