@@ -23,13 +23,22 @@ export const THEMES=[
   layers:[],signs:[],floor:['#2a1608','#0a0502'],grid:'#ff8a3a',line:'#ff9a3f',lights:['#ff7a1a','#ffb347','#ff3a20'],crowd:20}];
 export class Stage{
  constructor(W,H,floor,world,theme=THEMES[0]){this.W=W;this.H=H;this.floor=floor;this.world=world;this.theme=theme;this.cache=null;this.cacheT=null}
- build(noSky){const{W,H,world:w,theme:T}=this,S=1.5,c=document.createElement('canvas');c.width=Math.round((w.x1-w.x0)*S);c.height=Math.round((w.y1-w.y0)*S);
+ build(noSky,noCrowd){const{W,H,world:w,theme:T}=this,S=1.5,c=document.createElement('canvas');c.width=Math.round((w.x1-w.x0)*S);c.height=Math.round((w.y1-w.y0)*S);
   const g=c.getContext('2d');g.scale(S,S);g.translate(-w.x0,-w.y0);const R=rnd(T.seed),X0=w.x0,X1=w.x1,Y0=w.y0,fl=this.floor,lab=T.style==='labyrinth';
   if(!noSky){   // bei eigenem Hintergrund (Bild/Video) entfällt der Himmel samt Sternen und Mond
-  const sky=g.createLinearGradient(0,Y0,0,H);[0,.5,.73,.88,1].forEach((p,i)=>sky.addColorStop(p,T.sky[i]));g.fillStyle=sky;g.fillRect(X0,Y0,X1-X0,H-Y0);
-  for(let i=0;i<220;i++){g.fillStyle=lab?'#ffcf8a':'#fff';g.globalAlpha=.12+R()*.5;g.fillRect(X0+R()*(X1-X0),Y0+R()*(300-Y0),R()<.15?2:1,R()<.15?2:1)}g.globalAlpha=1;
-  const mg=g.createRadialGradient(W/2,190,10,W/2,190,260);mg.addColorStop(0,T.moon[0]+'55');mg.addColorStop(.4,T.moon[0]+'22');mg.addColorStop(1,'#0000');g.fillStyle=mg;g.fillRect(W/2-300,Y0,600,H-Y0);
-  const MR=T.moonR||70;g.fillStyle=T.moon[1];g.beginPath();g.arc(W/2,T.style==='temple'?230:190,MR,0,7);g.fill();g.strokeStyle=T.moon[0];g.lineWidth=2;g.stroke();if(T.style==='temple'){g.fillStyle=T.moon[0]+'33';g.beginPath();g.arc(W/2,230,MR,0,7);g.fill()}
+  // Himmel = eigene Ebenen unter der Skyline: Farbverlauf (1 px breit, wird gedehnt), Mond (kleines Bild) und dynamische Sterne/Sternschnuppen (skyFx)
+  const sc=document.createElement('canvas');sc.width=2;sc.height=Math.max(2,Math.round(H-Y0));const sg=sc.getContext('2d');
+  const sky=sg.createLinearGradient(0,0,0,sc.height);[0,.5,.73,.88,1].forEach((p,i)=>sky.addColorStop(p,T.sky[i]));sg.fillStyle=sky;sg.fillRect(0,0,2,sc.height);this.sky=sc;
+  const MR=T.moonR||70,HR=MR+230,mc=document.createElement('canvas'),MS=1.5;mc.width=mc.height=Math.round(HR*2*MS);const m=mc.getContext('2d');m.scale(MS,MS);m.translate(HR,HR);
+  const mx=(a,b,k)=>{const pa=parseInt(a.slice(1),16),pb=parseInt(b.slice(1),16),f=(sh)=>Math.round(((pa>>sh)&255)*(1-k)+((pb>>sh)&255)*k);return'#'+((1<<24)|(f(16)<<16)|(f(8)<<8)|f(0)).toString(16).slice(1)};
+  const hg=m.createRadialGradient(0,0,MR*.6,0,0,HR);hg.addColorStop(0,T.moon[0]+'66');hg.addColorStop(.35,T.moon[0]+'26');hg.addColorStop(1,T.moon[0]+'00');m.fillStyle=hg;m.fillRect(-HR,-HR,HR*2,HR*2);   // weiches Leuchten
+  const bg=m.createRadialGradient(-MR*.38,-MR*.38,MR*.1,0,0,MR*1.05);bg.addColorStop(0,mx(T.moon[0],'#ffffff',.6));bg.addColorStop(.5,T.moon[0]);bg.addColorStop(1,mx(T.moon[0],T.moon[1],.85));
+  m.save();m.beginPath();m.arc(0,0,MR,0,7);m.clip();m.fillStyle=bg;m.fillRect(-MR,-MR,MR*2,MR*2);
+  for(let k=0;k<7;k++){const a=R()*6.283,d=R()*MR*.6;m.fillStyle=mx(T.moon[0],T.moon[1],.7)+'30';m.beginPath();m.ellipse(Math.cos(a)*d,Math.sin(a)*d,MR*(.14+R()*.2),MR*(.1+R()*.16),R()*3,0,7);m.fill()}   // dunkle Meere
+  for(let k=0;k<20;k++){const a=R()*6.283,d=Math.sqrt(R())*MR*.9,r=MR*(.03+R()*.075),cx=Math.cos(a)*d,cy=Math.sin(a)*d;m.fillStyle=mx(T.moon[0],T.moon[1],.6)+'66';m.beginPath();m.arc(cx,cy,r,0,7);m.fill();m.strokeStyle=mx(T.moon[0],'#ffffff',.7)+'88';m.lineWidth=1;m.beginPath();m.arc(cx-r*.15,cy-r*.15,r,2.5,5.2);m.stroke()}   // Krater mit Lichtkante
+  const sh=m.createLinearGradient(-MR*.7,-MR*.7,MR*.9,MR*.9);sh.addColorStop(0,'#0000');sh.addColorStop(.55,'#0000');sh.addColorStop(1,T.moon[1]+'cc');m.fillStyle=sh;m.fillRect(-MR,-MR,MR*2,MR*2);   // Schattenseite unten rechts
+  m.restore();m.save();m.shadowColor=T.moon[0];m.shadowBlur=18;m.strokeStyle=mx(T.moon[0],'#ffffff',.5)+'cc';m.lineWidth=1.6;m.beginPath();m.arc(0,0,MR,0,7);m.stroke();m.restore();
+  this.moonImg=mc;this.moonHR=HR;this.moonPos=[W/2,T.style==='temple'?230:190];this.stars=null;
   }
   this.dyn={lant:[],blink:[],torch:[],search:null};const D=this.dyn,ST=T.style,hash=k=>{const q=Math.sin(k*12.9898)*43758.5453;return q-Math.floor(q)};
   if(!noSky){   // Skyline/Kulissen ganz hinten gehören zum Hintergrundbild -> bei eigenem Hintergrund weglassen (nur Boden bleibt)
@@ -52,12 +61,13 @@ export class Stage{
     const fg=g.createRadialGradient(tx,ty-8,2,tx,ty-8,70);fg.addColorStop(0,'#ffe09a');fg.addColorStop(.25,'#ff8a1a88');fg.addColorStop(1,'#0000');g.fillStyle=fg;g.beginPath();g.arc(tx,ty-8,70,0,7);g.fill();
     g.fillStyle='#ffcf5a';g.beginPath();g.ellipse(tx,ty-8,6,12,0,0,7);g.fill()}
    g.fillStyle='#0a0402';g.fillRect(X0,fl-40,X1-X0,6)}
-  if(!lab)for(let x=X0;x<X1;x+=15.5){const xx=x+R()*6,y=372+R()*14;g.fillStyle=`hsl(${T.crowd+R()*40},40%,${(ST==='city'?5:3)+R()*5}%)`;g.beginPath();g.arc(xx,y,8+R()*4,0,7);g.fill();g.fillRect(xx-9,y,18,46)}
+  if(!lab&&!noCrowd)for(let x=X0;x<X1;x+=15.5){const xx=x+R()*6,y=372+R()*14;   // Publikum-Silhouetten (im Story-Modus aus: wirkten wie ein Zaun vor den Häusern)
+   g.fillStyle=`hsl(${T.crowd+R()*40},40%,${(ST==='city'?5:3)+R()*5}%)`;g.beginPath();g.arc(xx,y,8+R()*4,0,7);g.fill();g.fillRect(xx-9,y,18,46)}
   }
   const fg=g.createLinearGradient(0,fl-40,0,H);fg.addColorStop(0,T.floor[0]);fg.addColorStop(1,T.floor[1]);g.fillStyle=fg;g.fillRect(X0,fl-40,X1-X0,H-fl+40);
   this.buildFloor(g,T,fl,X0,X1,H,W,R,ST);
   g.save();g.shadowColor=T.line;g.shadowBlur=16;g.strokeStyle=T.line;g.lineWidth=3;g.beginPath();g.moveTo(X0,fl-40);g.lineTo(X1,fl-40);g.stroke();g.restore();
-  if(noSky)this.cacheT=c;else this.cache=c;
+  if(noCrowd&&!noSky)this.cacheS=c;else if(noSky)this.cacheT=c;else this.cache=c;
   const s=document.createElement('canvas');s.width=4;s.height=4;const sg=s.getContext('2d');sg.fillStyle='#0000002a';sg.fillRect(0,0,4,1);this.scan=s}
  // ---- Boden je Level-Stil ----
  buildFloor(g,T,fl,X0,X1,H,W,R,ST){const y0=fl-40,hgt=H-y0,cx=W/2;
@@ -115,7 +125,26 @@ export class Stage{
   for(let x=X0+30;x<X1-60;){const cw=62+R()*30,mid=x>-40&&x<1000,lv=1+((R()*(mid?1.4:3.2))|0);for(let k=0;k<lv;k++){const y=PY-26*(k+1);g.fillStyle=pal2[(R()*pal2.length)|0];g.fillRect(x,y,cw,25);g.fillStyle='#00000050';for(let q=4;q<cw-3;q+=5)g.fillRect(x+q,y+2,2,21);g.fillStyle='#00000099';g.fillRect(x,y,cw,2);g.fillStyle='#ffffff10';g.fillRect(x,y+23,cw,2)}x+=cw+4+R()*70}
   for(let x=X0+120;x<X1;x+=300+R()*160){g.fillStyle='#1f6a44';g.fillRect(x-12,PY-34,24,34);g.fillStyle='#00000055';g.fillRect(x-12,PY-24,24,3);g.fillRect(x-12,PY-12,24,3);g.fillStyle='#e6ff5a';g.beginPath();g.moveTo(x,PY-30);g.lineTo(x+6,PY-20);g.lineTo(x-6,PY-20);g.fill();g.save();g.globalCompositeOperation='lighter';const gl=g.createRadialGradient(x,PY-20,2,x,PY-20,46);gl.addColorStop(0,'#52ffa855');gl.addColorStop(1,'#0000');g.fillStyle=gl;g.fillRect(x-46,PY-66,92,92);g.restore()}
   g.strokeStyle='#6affd0';g.globalAlpha=.16;g.lineWidth=1;for(let i=0;i<260;i++){const x=X0+R()*(X1-X0),y=WY+4+R()*(PY-WY-8),l=10+R()*40;g.beginPath();g.moveTo(x,y);g.lineTo(x+l,y);g.stroke()}g.globalAlpha=1}
- draw(g,t,noSky){if(noSky){if(!this.cacheT)this.build(true)}else if(!this.cache)this.build();const w=this.world,T=this.theme,ST=T.style,D=this.dyn,hh=k=>{const q=Math.sin(k*12.9898)*43758.5453;return q-Math.floor(q)},W0=w.x1-w.x0;g.drawImage(noSky?this.cacheT:this.cache,w.x0,w.y0,W0,w.y1-w.y0);
+ skyFx(g,t){const{world:w,theme:T}=this,X0=w.x0,X1=w.x1,Y0=w.y0,[MX,MY]=this.moonPos,MR=T.moonR||70,lab=T.style==='labyrinth';
+  const hh=k=>{const q=Math.sin(k*12.9898+4.1)*43758.5453;return q-Math.floor(q)};
+  if(!this.stars){const PAL=lab?['#ffe3b0','#ffcf8a','#fff3d6']:['#ffffff','#cfe8ff','#ffeec2','#e6d4ff'],N=Math.round((X1-X0)/960*170),a=[];
+   for(let i=0;i<N;i++){const x=X0+hh(i*1.7)*(X1-X0),y=-70+hh(i*2.9)*400;if(Math.hypot(x-MX,y-MY)<MR+12)continue;a.push({x,y,k:hh(i*5.3),ph:hh(i*8.1)*40,sp:1+hh(i*3.7)*2.6,c:PAL[Math.floor(hh(i*6.1)*PAL.length)],f:1-Math.max(0,(y-170)/160)*.8})}this.stars=a}
+  g.save();g.globalCompositeOperation='lighter';
+  for(const s of this.stars){const tw=.5+.5*Math.sin(t*s.sp+s.ph),a=(.25+.75*tw*tw)*s.f;g.fillStyle=s.c;
+   if(s.k<.70){g.globalAlpha=Math.min(1,a*1.1);g.fillRect(s.x,s.y,1.8,1.8)}
+   else if(s.k<.90){g.globalAlpha=a*.28;g.beginPath();g.arc(s.x,s.y,4.2,0,7);g.fill();g.globalAlpha=a;g.fillRect(s.x-1.1,s.y-1.1,2.4,2.4)}
+   else{const L=(9+9*(s.k-.90)/.10)*(.45+.55*tw);g.globalAlpha=a*.16;g.beginPath();g.arc(s.x,s.y,L*.8,0,7);g.fill();g.globalAlpha=a;g.fillRect(s.x-L,s.y-.6,L*2,1.2);g.fillRect(s.x-.6,s.y-L,1.2,L*2);g.fillRect(s.x-1.2,s.y-1.2,2.4,2.4);
+    g.save();g.translate(s.x,s.y);g.rotate(Math.PI/4+Math.sin(t*.4+s.ph)*.25);g.globalAlpha=a*.7;g.fillRect(-L*.55,-.5,L*1.1,1);g.fillRect(-.5,-L*.55,1,L*1.1);g.restore()}}   // Glitzerkreuze: pulsieren und drehen leicht
+  const SL=3.4,i0=Math.floor(t/SL);   // Sternschnuppen: zufällig, aber ohne Zustand (aus der Zeit abgeleitet)
+  for(let q=i0-1;q<=i0;q++){if(hh(q*7.1)>.62)continue;const st=q*SL+hh(q*3.3)*(SL-1.2),u=(t-st)/1.0;if(u<0||u>1)continue;
+   const dir=hh(q*2.2)<.5?-1:1,sx=60+hh(q*9.7)*840,sy=-20+hh(q*5.1)*150,len=300,dx=dir*.88,dy=.4,hx=sx+dx*len*u,hy=sy+dy*len*u,tl=Math.min(1,u*4)*130*(1-.4*u),fd=Math.sin(Math.PI*u);
+   const gr=g.createLinearGradient(hx,hy,hx-dx*tl,hy-dy*tl);gr.addColorStop(0,'rgba(255,255,255,'+fd+')');gr.addColorStop(.3,'rgba(190,225,255,'+fd*.5+')');gr.addColorStop(1,'rgba(190,225,255,0)');
+   g.globalAlpha=1;g.strokeStyle=gr;g.lineWidth=2.2;g.lineCap='round';g.beginPath();g.moveTo(hx,hy);g.lineTo(hx-dx*tl,hy-dy*tl);g.stroke();
+   g.fillStyle='#fff';g.globalAlpha=fd;g.beginPath();g.arc(hx,hy,2,0,7);g.fill();g.globalAlpha=fd*.3;g.beginPath();g.arc(hx,hy,6,0,7);g.fill()}
+  g.restore()}
+ draw(g,t,noSky,noCrowd){if(noSky){if(!this.cacheT)this.build(true)}else if(noCrowd){if(!this.cacheS)this.build(false,true)}else if(!this.cache)this.build();const w=this.world,T=this.theme,ST=T.style,D=this.dyn,hh=k=>{const q=Math.sin(k*12.9898)*43758.5453;return q-Math.floor(q)},W0=w.x1-w.x0;if(!noSky&&this.sky){g.drawImage(this.sky,w.x0,w.y0,W0,this.sky.height);const ox=((this.camX==null?this.W/2:this.camX)-this.W/2)*.88;g.save();g.translate(ox,0);   // Parallaxe: Mond & Sterne laufen (fast) mit der Kamera, auch im langen Story-Level
+  g.drawImage(this.moonImg,this.moonPos[0]-this.moonHR,this.moonPos[1]-this.moonHR,this.moonHR*2,this.moonHR*2);this.skyFx(g,t);g.restore()}
+  g.drawImage(noSky?this.cacheT:noCrowd?this.cacheS:this.cache,w.x0,w.y0,W0,w.y1-w.y0);
   if(noSky){g.save();g.globalCompositeOperation='lighter';g.globalAlpha=.25+Math.sin(t*3)*.1;g.strokeStyle=T.line;g.lineWidth=2;g.beginPath();g.moveTo(w.x0,this.floor-40);g.lineTo(w.x1,this.floor-40);g.stroke();g.restore();return}
   g.save();g.globalCompositeOperation='lighter';
   if(ST!=='docks')for(let i=0;i<3;i++){const x=this.W*(.2+.3*i)+Math.sin(t*.6+i*2)*60,l=g.createLinearGradient(x,w.y0,x,this.floor),col=T.lights[i];l.addColorStop(0,'#0000');l.addColorStop(.6,col+'33');l.addColorStop(1,col+'33');

@@ -61,15 +61,15 @@ export function storyMobBars(g,game){const s=game.story;if(!s)return;
 export const bar=(g,x,y,w,h,v,c0,c1)=>{g.fillStyle='rgba(0,0,0,.6)';g.fillRect(x-2,y-2,w+4,h+4);const gr=g.createLinearGradient(x,0,x+w,0);gr.addColorStop(0,c0);gr.addColorStop(1,c1);g.fillStyle=gr;g.fillRect(x,y,w*Math.max(0,Math.min(1,v)),h)};
 export function drawStoryHud(g,hud,game,t,cv){const s=game.story,p=game.p1,A=game.arcade;if(!s)return;const E=s.encs,L=s.cfg.look,ACC=L.acc;
  g.save();
- hud.txt(g,p.char.name,24,20,13,'#ffffff','left','#7fe8ff');bar(g,24,28,340,16,p.hp/p.maxHp,'#ff4a5a','#ffd23f');bar(g,24,50,200,6,p.meter/300,'#ffd23f','#ffffff');
- const wv=Math.min(s.enc+(s.state==='fight'?1:0),E.length);hud.txt(g,`KAPITEL ${s.ch}  ·  WELLE ${wv}/${E.length}`,W-24,20,13,'#ffffff','right',ACC);hud.txt(g,`BESIEGT: ${s.kills}`,W-24,40,12,'#c9d0ff','right');hud.txt(g,`BOOSTER ${LOOT.packs}  ·  COINS ${LOOT.coins}`,W-24,60,12,'#ffd23f','right');
- const px=300,pw=360,py=22;g.fillStyle='rgba(255,255,255,.25)';g.fillRect(px,py,pw,3);
- for(let i=0;i<E.length;i++){const x=px+(E[i].x-LV.start)/(LV.x1-LV.start)*pw;g.fillStyle=i<s.cp?'#7dff9a':E[i].boss?'#ff7a3a':'#ffffff';g.fillRect(x-3,py-4,6,11)}
- g.fillStyle='#63e5ee';g.beginPath();g.arc(px+Math.max(0,Math.min(1,(p.x-LV.start)/(LV.x1-LV.start)))*pw,py+1.5,5,0,7);g.fill();
+ hud.storyBase(g,game,game.frame);   // gleiche Leiste wie in den anderen Modi
+ const wv=Math.min(s.enc+(s.state==='fight'?1:0),E.length);hud.lab(g,`KAPITEL ${s.ch}  ·  WELLE ${wv}/${E.length}`,W-28,30,12,'#ffffff','right',3,ACC);hud.lab(g,`BESIEGT  ${s.kills}`,W-28,50,10,'#b9c4ff','right',3);hud.lab(g,`BOOSTER ${LOOT.packs}   ·   COINS ${LOOT.coins}`,W-28,68,10,'#ffd23f','right',3);
+ const px=W/2-40,pw=260,py=30;g.fillStyle='rgba(185,196,255,.28)';g.fillRect(px,py,pw,2);
+ for(let i=0;i<E.length;i++){const x=px+(E[i].x-LV.start)/(LV.x1-LV.start)*pw;g.fillStyle=i<s.cp?'#7dff9a':E[i].boss?'#ff7a3a':'#ffffff';g.save();g.translate(x,py+1);g.rotate(Math.PI/4);g.fillRect(-3.5,-3.5,7,7);g.restore()}
+ g.save();g.fillStyle='#63e5ee';g.shadowColor='#6fe3ff';g.shadowBlur=10;g.beginPath();g.arc(px+Math.max(0,Math.min(1,(p.x-LV.start)/(LV.x1-LV.start)))*pw,py+1,4.5,0,7);g.fill();g.restore();
  if(s.msg){const m=s.msg,a=Math.min(1,m.t/25,(170-Math.min(170,m.t))/12+.2);g.globalAlpha=Math.max(0,Math.min(1,a));hud.txt(g,m.title,W/2,150,38,'#ffffff','center',ACC);hud.txt(g,m.say,W/2,182,16,'#e8ecff','center');g.globalAlpha=1}
  if(s.state==='walk'&&s.goT>70&&s.enc<E.length&&!(s.dealer&&s.dealer.active)&&Math.floor(t*2)%2===0)hud.txt(g,'WEITER  ➜',W-110,250,26,'#ffffff','center',ACC);
  const bo=s.alive().find(m=>m.char.storyBoss);   // Boss-Leiste (oben Mitte): Name, Lebensbalken, Marke bei 50 % (Wutphase)
- if(bo&&game.phase==='fight'){const bw=480,bx=W/2-bw/2,by=92;hud.txt(g,bo.char.name,W/2,78,15,'#ffffff','center',bo.char.glow);bar(g,bx,by,bw,14,bo.hp/bo.maxHp,'#ff2a44','#ffb04a');g.fillStyle='rgba(255,255,255,.7)';g.fillRect(bx+bw/2-1,by-3,2,20);if(s.rage&&Math.floor(t*3)%2===0)hud.txt(g,'WUT',bx+bw+34,by+13,12,'#ff6a7a','center')}
+ if(bo&&game.phase==='fight'){const bw=480,bx=W/2-bw/2,by=92;hud.lab(g,bo.char.name,W/2,78,14,'#ffffff','center',5,bo.char.glow);hud.kBar(g,bx,by,bw,12,bo.hp/bo.maxHp,'#ff4a5a',game.frame,8);g.fillStyle='rgba(255,255,255,.7)';g.fillRect(bx+bw/2-1,by-3,2,18);if(s.rage&&Math.floor(t*3)%2===0)hud.txt(g,'WUT',bx+bw+34,by+13,12,'#ff6a7a','center')}
  if(game.phase==='fight'&&s.cp===0&&s.ft<420&&s.state==='walk')hud.txt(g,'A / D laufen · W springen · J K L Angriff · U Special · O Dash',W/2,H-24,13,'#c9d0ff','center');
  if(game.phase==='intro'&&s.cp===0){const a=game.pf<190?1:Math.max(0,1-(game.pf-190)/70);g.globalAlpha=.78*a;g.fillStyle='#04020a';g.fillRect(0,0,W,H);g.globalAlpha=a;
   hud.txt(g,'KAPITEL '+s.ch,W/2,190,16,ACC,'center');hud.txt(g,s.cfg.name,W/2,240,s.cfg.name.length>14?40:50,'#ffffff','center',ACC);

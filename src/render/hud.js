@@ -962,7 +962,7 @@ export class Hud {
     this.seal(g, cx + m * r * 0.82, cy + r * 0.9, 13, P.kan, 1, m * 0.1);
   }
   // ---------- Spieler-Block ----------
-  player(g, i, f, t) {
+  player(g, i, f, t, noWins = false) {
     const { W } = this,
       P = HPAL[i],
       p = f.hp / f.maxHp,
@@ -1027,7 +1027,7 @@ export class Hud {
     g.fill();
     g.restore();
     // Rundensiege: Totenköpfe (gewonnen = leuchtend, noch offen = dunkle Umrisse)
-    for (let k = 0; k < ROUND.wins; k++) {
+    for (let k = 0; k < (noWins ? 0 : ROUND.wins); k++) {
       const on = k < f.wins,
         px = mx(HB.x + HB.w - 10 - k * 22);
       this.skull(g, px, 60, 19, on, P, m * (k ? 0.05 : -0.06));
@@ -1404,6 +1404,26 @@ export class Hud {
     }
     this.combos(g, game, t);
     this.banners(g, game, t);
+  }
+  // ---------- Story-Modus: gleiche Spieler-Leiste wie in den anderen Modi (Porträt, Name, HP-Leiste mit Nachlauf, Hyper-Anzeige) ----------
+  storyBase(g, game, t) {
+    const { W, H } = this, f = game.p1, p = f.hp / f.maxHp;
+    if (p < this.prev[0] - 0.001) { this.hitFlash[0] = 1; this.hold[0] = 22; }
+    this.prev[0] = p;
+    this.hitFlash[0] = Math.max(0, this.hitFlash[0] - 0.07);
+    if (this.hold[0] > 0) this.hold[0]--; else this.lag[0] = Math.max(p, this.lag[0] - 0.006);
+    if (this.lag[0] < p) this.lag[0] = p;
+    g.save();
+    const tg = g.createLinearGradient(0, 0, 0, 130);
+    tg.addColorStop(0, "rgba(4,6,24,.82)"); tg.addColorStop(1, "rgba(4,6,24,0)");
+    g.fillStyle = tg; g.fillRect(0, 0, W, 130);
+    const bg = g.createLinearGradient(0, H - 110, 0, H); bg.addColorStop(0, "rgba(2,7,13,0)"); bg.addColorStop(1, "rgba(1,5,10,.82)"); g.fillStyle = bg; g.fillRect(0, H - 110, W, 110);
+    g.fillStyle = 'rgba(95,220,238,.38)'; g.fillRect(24, 7, W - 48, 1); g.fillStyle = 'rgba(95,220,238,.16)'; g.fillRect(24, 9, W - 48, 1);
+    g.fillStyle = 'rgba(95,220,238,.28)'; g.fillRect(24, H - 7, W - 48, 1);
+    for (let x = 32; x < W - 32; x += 48) { g.fillStyle = 'rgba(120,210,225,.18)'; g.fillRect(x, 11, 12, 1); g.fillRect(x, H - 11, 12, 1) }
+    g.restore();
+    this.player(g, 0, f, t, true);
+    this.hyper(g, 0, f, t);
   }
   // ---------- Combo-Zähler (clean, ohne Boxen) ----------
   combos(g, game, t) {

@@ -49,13 +49,13 @@ export class Renderer{
     h.txt(u,'B – BOOSTER ÖFFNEN  ·  P – SHOP',W-18,y+ph+16,10,pk?'#ffd23f':'#8f95d8','right')}}
   drawLoot(u,this.hud,this.lootUi);this.hov.draw(u)}
  draw(game){if(this.useGL&&!this.glp.ok)this.applyGfx();if(game.arcade&&game.arcade.state==='select')return this.drawSelect(game);
-  const g=this.gs,ui=this.g,s=this.scale,t=game.frame/60,cam=game.camera;this.stage=this.stages[(game.stageIndex||0)%this.stages.length];for(const st of this.stages)if(st!==this.stage&&st!==this.stages[0]){st.cache=null;st.cacheT=null} // Speicher sparen: nur aktuelles Level + Menü-Hintergrund halten
+  const g=this.gs,ui=this.g,s=this.scale,t=game.frame/60,cam=game.camera;this.stage=this.stages[(game.stageIndex||0)%this.stages.length];this.stage.camX=cam.x;for(const st of this.stages)if(st!==this.stage&&st!==this.stages[0]){st.cache=null;st.cacheT=null;st.cacheS=null} // Speicher sparen: nur aktuelles Level + Menü-Hintergrund halten
   if(this.useGL)this.uiClear();g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);
   g.save();                                              // --- Screen-Space: Shake ---
   g.translate((game.kickX||0)+(game.shake>0?(Math.random()-.5)*game.shake*1.6:0),(game.kickY||0)+(game.shake>0?(Math.random()-.5)*game.shake*1.6:0));
   const cbg=this.bd.has('fight');if(cbg)this.bd.draw(g,W,H,'fight',{cam});   // eigener Hintergrund: im Bildschirmraum, mit leichter Parallaxe zur Kamera
   g.save();cam.apply(g);                                 // --- Welt: alles unter derselben Kamera-Matrix ---
-  if(cbg){if(!game.melee&&!game.story)this.stage.draw(g,t,true)}else this.stage.draw(g,t);game.particles.drawFw(g);   // Feuerwerk: vor dem Himmel, hinter den Häusern
+  if(cbg){if(!game.melee&&!game.story)this.stage.draw(g,t,true)}else this.stage.draw(g,t,false,!!game.story);game.particles.drawFw(g);   // Feuerwerk: vor dem Himmel, hinter den Häusern
   const ML=!!game.melee,ST=!!game.story;if(ST)storyWorld(g,game,t);else if(ML){meleeStage(g,this.stage.theme,t,cbg);for(const f of game.fighters)meleeHalo(g,f,t)}else if(!cbg||this.bd.opts.houses)this.house(g,game,t);   // Melee: offene Plattform über dem Abgrund statt Gasse mit Häusern
   for(const f of game.fighters)if(!ML||(f.onStage&&!f.under&&!(f.dead>0)))this.post.floorGlow(g,f,GROUND,t);
   this.celeb(g,game);
