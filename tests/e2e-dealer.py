@@ -44,7 +44,7 @@ with sync_playwright() as p:
     pg.evaluate("__game.p1.hp=__game.p1.maxHp*.4");c0=pg.evaluate("__renderer&&JSON.parse(localStorage.getItem('hitisop.loot')).coins")
     pg.keyboard.press('Enter');pg.wait_for_timeout(500)
     ok(pg.evaluate("JSON.parse(localStorage.getItem('hitisop.loot')).coins")==c0-25,'Energiedrink: 25 Coins abgebucht und gespeichert')
-    ok(pg.evaluate("__game.p1.hp/__game.p1.maxHp")>.6,'Energiedrink heilt')
+    ok(pg.evaluate("JSON.parse(localStorage.getItem('hitisop.loot')).items.drink")>=1,'Energiedrink liegt im Beutel (nicht sofort benutzt)')
     pg.keyboard.press('Escape');pg.keyboard.press('ArrowDown');pg.keyboard.press('ArrowDown');pg.keyboard.press('Enter');pg.wait_for_timeout(1500)
     ok(pg.evaluate("__game.story.dealer.node")=='hire','Anheuern-Knoten')
     pg.screenshot(path='5_dialog_hire.png')

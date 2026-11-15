@@ -1,11 +1,11 @@
 import{CHARACTERS}from'./characters.js';
 import{GROUND}from'./config.js';
-import{CHAR_SHOP,LOOT,SHOP,buyChar,buyPack,charPrice,ownsChar,saveLoot}from'./loot.js';
+import{CHAR_SHOP,LOOT,SHOP,addItem,buyChar,buyPack,charPrice,itemCount,ownsChar,saveLoot}from'./loot.js';
 // Schwarzmarkthändler KORVUS (anthropomorpher Rabe): interaktiver NPC im Story-Modus. Derselbe Rabe ist als Kämpfer (CHARACTERS.rabe) im Shop kaufbar.
 // Rein logisch (kein DOM) -> headless testbar (tests/blackmarket.test.js). Darstellung: render/storyhud.js (drawDealer, drawDealerUi), Tasten/Klicks: main.js.
 // Angebote: Booster-Packs = SHOP (core/loot.js, gleiche Preise wie der Ingame-Shop), Gegenstände = ITEM_SHOP (sofort benutzt), Kämpfer = CHAR_SHOP (Preis zentral: CHAR_PRICE in core/loot.js).
 export const DEALER={id:'rabe',name:'KORVUS',title:'SCHWARZMARKT',reach:210};   // reach = Ansprechweite (px)
-// Gegenstände: werden beim Kauf sofort benutzt (Heilung in % der Maximal-HP bzw. Hyper-Meter). Preise hier justierbar.
+// Gegenstände: werden beim Kauf in den Beutel gelegt (LOOT.items, Taste 1/2/3 im Story-Kampf, siehe core/items.js) – nichts wird sofort verbraucht, Kauf geht also immer. Preise hier justierbar.
 export const ITEM_SHOP=[
  {id:'drink',name:'ENERGIEDRINK',info:'+25 % Leben',price:25,kind:'heal',v:.25},
  {id:'elixir',name:'SCHATTENELIXIER',info:'+70 % Leben',price:55,kind:'heal',v:.7},
@@ -29,7 +29,7 @@ export const LINES={
  again:['Na, wieder da? Dein Gefieder sieht zerzaust aus. Ich kann helfen – gegen Münzen, versteht sich.','Krah! Der Mutige mit den Fäusten. Schau dich um, solange es ruhig ist.','Die Ware ist frisch, der Preis ist fair. Meistens.'],
  more:['Noch etwas, Freundchen?','Sonst noch ein Wunsch? Ich habe Zeit. Die Käfer haben sie nicht.','Nur zu. Ich beiße nicht. Meistens nicht.'],
  booster:'Booster-Packs. Drei Überraschungen pro Päckchen – Karten, Farben, Münzen. Ich schwöre, ich habe sie nicht geöffnet. Nicht oft.',
- items:'Für den kleinen Notfall: Drinks, Elixier, ein Kristall für den großen Auftritt. Alles gebrauchsfertig. Gebraucht? Nein. Fast nie.',
+ items:'Für den kleinen Notfall: Drinks, Elixier, ein Kristall für den großen Auftritt. Ich packe sie dir in den Beutel – benutzen kannst du sie jederzeit im Kampf, Tasten 1, 2, 3.',
  chat:['Die Käfer kommen nachts aus den Gullys. Ich habe gesehen, wie sie Laternen fressen. Laternen! Wer frisst Laternen?','Der Alpha? Zwei Köpfe größer als du, aber Chitin splittert wie billiges Glas. Triff ihn, wenn er springt.','Wer blockt, verliert weniger. Wer ausweicht, verliert nichts. Wer zahlt, verliert Münzen. Ich bevorzuge Letzteres.','Im Hafen glüht etwas rot unter der Haut der Welt. Ich verkaufe nichts, was ich dort unten gefunden habe. Noch nicht.','Jeder Kämpfer hat einen Preis. Meiner liegt erstaunlich niedrig. Frag mich ruhig.'],
  bought:['Krah! Ein Vergnügen, mit dir Geschäfte zu machen.','Abgemacht. Keine Rückgabe, keine Fragen, keine Zeugen.','Gute Wahl. Das hat schon mal jemand überlebt.'],
  poor:['Münzen fehlen, Freundchen. Besiege ein paar Käfer, öffne ein paar Booster – dann reden wir.','Mein Herz ist weich, mein Gefieder auch. Meine Preise nicht. Komm mit mehr Münzen wieder.'],
@@ -80,7 +80,7 @@ export class Dealer{
    o.push({label:'PLAUDERN',sub:'Gerüchte',ok:true,fn:()=>this.menu(pickR(LINES.chat),'talk')});
    o.push({label:'GEHEN',sub:'',ok:true,fn:()=>this.close()})}
   else if(this.node==='booster'){SHOP.forEach((s,i)=>o.push({label:s.n===1?'1 BOOSTER':s.n+' BOOSTER',sub:s.price+' Coins',ok:coins>=s.price,fn:()=>this.buyBooster(i)}));o.push({label:'ZURÜCK',sub:'',ok:true,fn:()=>this.menu(pickR(LINES.more),'hip')})}
-  else if(this.node==='items'){ITEM_SHOP.forEach((it,i)=>o.push({label:it.name,sub:it.info+' · '+it.price+' Coins',ok:coins>=it.price,fn:()=>this.buyItem(i)}));o.push({label:'ZURÜCK',sub:'',ok:true,fn:()=>this.menu(pickR(LINES.more),'hip')})}
+  else if(this.node==='items'){ITEM_SHOP.forEach((it,i)=>o.push({label:it.name,sub:it.price+' Coins · Beutel '+itemCount(it.id),ok:coins>=it.price,fn:()=>this.buyItem(i)}));o.push({label:'ZURÜCK',sub:'',ok:true,fn:()=>this.menu(pickR(LINES.more),'hip')})}
   else if(this.node==='hire'){const owned=ownsChar(DEALER.id);o.push({label:owned?'SCHON ANGEHEUERT':'ANHEUERN',sub:charPrice(DEALER.id)+' Coins',ok:!owned&&coins>=charPrice(DEALER.id),fn:()=>this.hire()});o.push({label:'ZURÜCK',sub:'',ok:true,fn:()=>this.menu(pickR(LINES.more),'hip')})}
   this.opts=o;this.sel=Math.max(0,Math.min(o.length-1,this.sel))}
  go(node){this.node=node;this.sel=0;
@@ -94,13 +94,10 @@ export class Dealer{
  // Käufe: Münzen/Booster/Heilung laufen über die vorhandenen Systeme (LOOT, saveLoot, buyPack, buyChar) -> sofort gespeichert
  buyBooster(i){const s=SHOP[i];if(!buyPack(i)){this.g.sfx('block_guard',{vol:.5});this.speak(pickR(LINES.poor),'cross');this.rebuild();return false}
   this.bought++;this.g.sfx('fw_rocket',{vol:.6,rate:1.5});this.g.pop(this.x,GROUND-300,'+'+s.n+' BOOSTER','#ffd23f',1.1,{text:true});this.speak(pickR(LINES.bought),'wow');this.rebuild();return true}
- buyItem(i){const it=ITEM_SHOP[i],p=this.g.p1;if(LOOT.coins<it.price){this.speak(pickR(LINES.poor),'cross');this.rebuild();return false}
-  if(it.kind==='heal'&&p.hp>=p.maxHp){this.speak(LINES.full,'hip');return false}   // nichts kaufen, was nichts bringt: keine Abbuchung
-  if(it.kind==='meter'&&p.meter>=300){this.speak(LINES.fullMeter,'hip');return false}
-  LOOT.coins-=it.price;saveLoot();this.bought++;
-  if(it.kind==='heal'){const h=Math.round(p.maxHp*it.v);p.hp=Math.min(p.maxHp,p.hp+h);this.g.pop(p.x,p.y-190,'+'+h,'#7dff9a',1.2)}
-  else{p.meter=Math.min(300,p.meter+it.v);this.g.pop(p.x,p.y-190,'+'+it.v+' METER','#ffd23f',1.1,{text:true})}
-  this.g.fx.ps.ring(p.x,p.y-80,it.kind==='heal'?'#7dff9a':'#ffd23f',110);this.g.sfx('ui_round_start',{vol:.5,rate:1.6});this.speak(pickR(LINES.bought),'wow');this.rebuild();return true}
+ buyItem(i){const it=ITEM_SHOP[i];if(LOOT.coins<it.price){this.g.sfx('block_guard',{vol:.5});this.speak(pickR(LINES.poor),'cross');this.rebuild();return false}
+  LOOT.coins-=it.price;addItem(it.id);this.bought++;   // in den Beutel (gespeichert), Benutzung im Kampf mit Taste 1/2/3
+  this.g.pop(this.g.p1.x,this.g.p1.y-190,'+1 '+it.name,'#ffd23f',1.1,{text:true});this.g.fx.ps.ring(this.g.p1.x,this.g.p1.y-80,'#ffd23f',110);this.g.sfx('ui_round_start',{vol:.5,rate:1.6});
+  this.speak(pickR(LINES.bought),'wow');this.rebuild();return true}
  hire(){if(ownsChar(DEALER.id)){this.speak(LINES.owned,'cross');this.rebuild();return false}
   if(!buyChar(DEALER.id)){this.g.sfx('block_guard',{vol:.5});this.speak(pickR(LINES.poor),'cross');this.rebuild();return false}
   this.bought++;this.g.sfx('fw_finale',{vol:.5});this.g.flash=Math.max(this.g.flash,8);this.g.flashColor=CHARACTERS[DEALER.id].glow;this.g.pop(this.x,GROUND-300,'KORVUS FREIGESCHALTET!','#d6b8ff',1.2,{text:true,life:120});

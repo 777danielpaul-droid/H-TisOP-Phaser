@@ -59,9 +59,9 @@ LOOT.coins=SHOP[0].price+5;d.rebuild();assert(d.opts[0].ok);d.choose(0);assert.e
 assert.equal(JSON.parse(store['hitisop.loot']).packs,1,'Booster gespeichert');
 d.key('Escape');assert.equal(d.node,'menu');
 // Gegenstände
-d.choose(1);assert.equal(d.node,'items');LOOT.coins=100;p1.hp=p1.maxHp*.3;d.rebuild();d.choose(0);assert.equal(LOOT.coins,100-ITEM_SHOP[0].price);assert(Math.abs(p1.hp-p1.maxHp*.55)<2,'Energiedrink heilt 25 %');
-p1.hp=p1.maxHp;const c0=LOOT.coins;d.choose(0);assert.equal(LOOT.coins,c0,'volle Gesundheit: keine Abbuchung');
-p1.meter=0;d.choose(2);assert.equal(p1.meter,100,'Hyper-Kristall +100');assert.equal(LOOT.coins,c0-ITEM_SHOP[2].price);
+d.choose(1);assert.equal(d.node,'items');LOOT.coins=200;LOOT.items={};p1.hp=p1.maxHp;p1.meter=300;d.rebuild();d.choose(0);assert.equal(LOOT.coins,200-ITEM_SHOP[0].price);assert.equal(LOOT.items.drink,1,'Energiedrink im Beutel (auch bei vollem Leben kaufbar)');assert.equal(p1.hp,p1.maxHp,'nicht sofort benutzt');
+LOOT.coins=200;const c0=LOOT.coins;d.rebuild();d.choose(1);assert.equal(LOOT.items.elixir,1,'Schattenelixier im Beutel');d.choose(0);assert.equal(LOOT.items.drink,2,'mehrfach auf Lager');assert.equal(JSON.parse(store['hitisop.loot']).items.drink,2,'gespeichert');
+d.choose(2);assert.equal(LOOT.items.crystal,1);assert.equal(p1.meter,300,'Kristall wird nicht sofort benutzt');assert.equal(LOOT.coins,c0-ITEM_SHOP[1].price-ITEM_SHOP[0].price-ITEM_SHOP[2].price);
 d.key('Escape');
 // Kämpfer anheuern (nur als Rabe-Besitzer: schon vorhanden)
 d.choose(2);assert.equal(d.node,'hire');assert(!d.opts[0].ok,'schon besessen: nicht erneut kaufbar');const c1=LOOT.coins;d.choose(0);assert.equal(LOOT.coins,c1);
