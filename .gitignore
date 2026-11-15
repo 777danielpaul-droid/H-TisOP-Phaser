@@ -1,12 +1,9 @@
-# Generierte Build-Dateien (werden via `npm run build` erzeugt)
+
+# Generierte Build-Dateien
 dist/
 
-# Datenbanken, Logs, temporäre Dateien usw.
+# Datenbanken, Logs und temporäre Dateien
 *.log
-*.sqlite
-*.db
-
-# Datenbanken von Tests
 *.sqlite
 *.db
 
@@ -16,11 +13,6 @@ dist/
 *.swo
 *~
 
-# Vom Webserver erzeugte Dateien
-*.jpg
-*.jpeg
-*.png
-*.webp
-*.ogg
-*.woff2
-.DS_Store
+# Webserver-Dateien nur außerhalb der Spiel-Assets ignorieren
+# (Bilder und andere benötigte Assets bleiben versionierbar)
+
