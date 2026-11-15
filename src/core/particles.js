@@ -1,5 +1,8 @@
 import{W,H,GFX}from'./config.js';
-const qn=n=>Math.max(1,Math.round(n*GFX.fx));   // Partikelmenge je Qualitätsstufe
+const qn=n=>Math.max(1,Math.round(n*GFX.fx));
+// >>> Dezenz-Regler für Treffer-/Sieg-Glitzer (NICHT für das Feuerwerk) <<<  amt = Menge der Funkelsterne, size = Sterngröße, glint = große Glanzsterne, flare = Lichtkern, ring = Sterne auf Ringen/Druckwellen. 1 = wie vorher.
+export const GLT={amt:.38,size:.6,glint:.55,flare:.7,ring:.5};
+const qs=n=>Math.max(1,Math.round(n*GFX.fx*GLT.amt));   // Partikelmenge je Qualitätsstufe
 // Feuerwerk-Parameter (1:1 aus Ghostwriter, Zeiten in Sekunden bzw. Frames bei 60 FPS, Distanzen in logischen Pixeln)
 const FW={rise:[39,57],stars:210,radius:[.24,.36],jitter:.06,depth:.2,drag:1.9,gravity:190,life:[1.7,2.7],size:11,pool:4400};
 const GOLDEN=Math.PI*(3-Math.sqrt(5));
@@ -53,11 +56,11 @@ export class ParticleSystem{
   for(let i=0;i<count;i++){const a=Math.random()*6.283,s=.8+Math.random()*3,l=(50+Math.random()*90)|0;
    this.p.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-.6,life:l,max:l,size:2.5+Math.random()*3.5,color:cols[i%cols.length],g:.025,streak:0,confetti:true})}}
  // Lichtblitz mit 4-Zacken-Stern (Impact-Flare)
- flare(x,y,color,size=60,life=10,rot=0){if(GFX.fx<.5&&size<150)return;this.fl.push({x,y,color,size,life,l0:life,rot})}
+ flare(x,y,color,size=60,life=10,rot=0){if(GFX.fx<.5&&size<150)return;size*=GLT.flare;this.fl.push({x,y,color,size,life,l0:life,rot})}
  // Klingen-/Schlagstreifen entlang der Schlagrichtung
  slash(x,y,color,ang,len=90,life=9,w=7){if(GFX.fx<.5&&len<150&&Math.random()>.5)return;this.sl.push({x,y,color,ang,len,life,l0:life,w})}
  // Flache Bodenwelle (Landung, Wandbruch, Knockdown)
- shock(x,y,color,max=140,life=20){const n=Math.max(4,Math.min(12,Math.round(max/26*GFX.fx)));this.sh.push({x,y,color,r:8,max,life,l0:life,a0:Math.random()*6.283,sp:Array.from({length:n},()=>Math.random()*6.283)})}
+ shock(x,y,color,max=140,life=20){const n=Math.max(3,Math.min(12,Math.round(max/26*GFX.fx*GLT.ring)));this.sh.push({x,y,color,r:8,max,life,l0:life,a0:Math.random()*6.283,sp:Array.from({length:n},()=>Math.random()*6.283)})}
  // ---- Glitzer: funkelnde 4-Zack-Sterne (Farben wechseln, flackern) ----
  glitter(x,y,o={}){if(this.gl.length>1000*GFX.fx)return;const n=qn(o.count||14),cols=o.colors||['#ffffff','#ffe27a','#7df9ff','#ff7ae6'];
   for(let i=0;i<n;i++){const a=(o.angle!==undefined?o.angle:Math.random()*6.283)+(Math.random()-.5)*(o.spread!==undefined?o.spread:6.283),s=(o.speed||6)*(o.exact?1:.25+Math.random()),l=(o.life||40)*(.6+Math.random()*.8);
@@ -89,20 +92,20 @@ export class ParticleSystem{
  _spk(x,y,vx,vy,o,life,cls,z){const cols=o.colors||SPK_COLS,c=cols[(Math.random()*cols.length)|0],bl=o.blink||[.24,.58];let spr=sparkIdx(c);
   if(spr!==36){if(Math.random()<.12)spr=36;else spr=(spr+((Math.random()*3)|0)+35)%36}
   this.tw.push({x:x+(o.jx?(Math.random()-.5)*o.jx:0),y:y+(o.jy?(Math.random()-.5)*o.jy:0),vx,vy,g:o.gravity!==undefined?o.gravity:.05,dr:o.dr!==undefined?o.dr:.95,age:-(o.delay?Math.random()*o.delay:0),life,
-   r:(o.size||10)*.64*(cls===0?.8+Math.random()*.4:cls===1?1.3+Math.random()*.7:2.2+Math.random()*.8),spr,sp:bl[0]+Math.random()*(bl[1]-bl[0]),ph:Math.random()*6.283,gc:o.glint===0?0:cls,z:z||0})}
- sparkle(x,y,o={}){if(this.tw.length>1100*GFX.fx)return;const n=qn(o.count||12);
+   r:(o.size||10)*.64*GLT.size*(cls===0?.8+Math.random()*.4:cls===1?1.3+Math.random()*.7:2.2+Math.random()*.8),spr,sp:bl[0]+Math.random()*(bl[1]-bl[0]),ph:Math.random()*6.283,gc:o.glint===0?0:cls,z:z||0})}
+ sparkle(x,y,o={}){if(this.tw.length>1100*GFX.fx)return;const n=qs(o.count||12);
   for(let i=0;i<n;i++){const a=(o.angle!==undefined?o.angle:Math.random()*6.283)+(Math.random()-.5)*(o.spread!==undefined?o.spread:6.283),s=(o.speed||5)*(o.exact?1:.25+Math.random()*.95),roll=Math.random();
    this._spk(x,y,Math.cos(a)*s,Math.sin(a)*s,o,(o.life||50)*(.65+Math.random()*.7),roll<.6?0:roll<.92?1:2,o.z)}}
  // Kugel aus Funkelsternen (wie die Feuerwerks-Kugel, aber im Vordergrund): R = Endradius in Pixeln
- sparkleBall(x,y,color,R=120,o={}){if(this.tw.length>1100*GFX.fx)return;const N=qn(o.count||80),dr=o.dr||.94,v0=R*(1-dr)/dr,off=Math.random()*6.283,oo={...o,colors:o.colors||[color,color,'#ffffff','#ffe27a'],dr,gravity:o.gravity!==undefined?o.gravity:.035};
+ sparkleBall(x,y,color,R=120,o={}){if(this.tw.length>1100*GFX.fx)return;const N=qs(o.count||80),dr=o.dr||.94,v0=R*(1-dr)/dr,off=Math.random()*6.283,oo={...o,colors:o.colors||[color,color,'#ffffff','#ffe27a'],dr,gravity:o.gravity!==undefined?o.gravity:.035};
   for(let i=0;i<N;i++){const z=1-(2*(i+.5))/N+(Math.random()-.5)*.04,side=Math.sqrt(Math.max(0,1-z*z)),ang=off+i*GOLDEN,v=v0*(1-Math.random()*.08),roll=Math.random();
    this._spk(x,y,Math.cos(ang)*side*v,Math.sin(ang)*side*v,oo,(o.life||80)*(.75+Math.random()*.5),roll<.6?0:roll<.92?1:2,z)}}
  // Ring aus Funkelsternen, der nach außen läuft (flach wie ring(): Höhe = 70 %)
- sparkleRing(x,y,color,R=80,o={}){if(this.tw.length>1100*GFX.fx)return;const N=qn(o.count||Math.round(10+R/7)),dr=o.dr||.9,v0=R*(1-dr)/dr,off=Math.random()*6.283,oo={...o,colors:o.colors||[color,color,'#ffffff'],dr,gravity:o.gravity!==undefined?o.gravity:0};
+ sparkleRing(x,y,color,R=80,o={}){if(this.tw.length>1100*GFX.fx)return;const N=qs(o.count||Math.round(10+R/7)),dr=o.dr||.9,v0=R*(1-dr)/dr,off=Math.random()*6.283,oo={...o,colors:o.colors||[color,color,'#ffffff'],dr,gravity:o.gravity!==undefined?o.gravity:0};
   for(let i=0;i<N;i++){const a=off+i/N*6.2832;this._spk(x,y,Math.cos(a)*v0,Math.sin(a)*v0*.7,oo,(o.life||34)*(.8+Math.random()*.4),Math.random()<.75?0:1,0)}}
  // Glanzstern: großer, spitzer Stern mit weichem Glow, poppt auf und blinkt aus (ersetzt Comic-Zackenstern/Fadenkreuz). delay = Bilder bis zum Erscheinen
- glint(x,y,color,size=60,life=14,delay=0){if(GFX.fx<.5&&size<120)return;this.gn.push({x,y,spr:sparkIdx(color),size,life,l0:life,rot:(Math.random()-.5)*.6,d:delay,sp:.45+Math.random()*.35,ph:Math.random()*6.283})}
- ring(x,y,color,max=60){const n=Math.max(5,Math.min(16,Math.round(max/9*GFX.fx)));this.rings.push({x,y,r:6,max,color,life:14,l0:14,a0:Math.random()*6.283,sp:Array.from({length:n},()=>Math.random()*6.283)})}
+ glint(x,y,color,size=60,life=14,delay=0){if(GFX.fx<.5&&size<120)return;size*=GLT.glint;this.gn.push({x,y,spr:sparkIdx(color),size,life,l0:life,rot:(Math.random()-.5)*.6,d:delay,sp:.45+Math.random()*.35,ph:Math.random()*6.283})}
+ ring(x,y,color,max=60){const n=Math.max(3,Math.min(16,Math.round(max/9*GFX.fx*GLT.ring)));this.rings.push({x,y,r:6,max,color,life:14,l0:14,a0:Math.random()*6.283,sp:Array.from({length:n},()=>Math.random()*6.283)})}
  update(){for(const p of this.p){p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.vx*=.96;p.life--}
   this.p=this.p.filter(p=>p.life>0);
   for(const r of this.rings){r.r+=(r.max-r.r)*.25;r.life--}this.rings=this.rings.filter(r=>r.life>0);
@@ -138,9 +141,9 @@ export class ParticleSystem{
    else{g.lineWidth=Math.max(.8,p.size*a);
     g.beginPath();g.moveTo(p.x,p.y);g.lineTo(p.x-p.vx*p.streak*1.6,p.y-p.vy*p.streak*1.6);g.stroke()}}
   for(const r of this.rings){const u=r.life/r.l0;g.globalAlpha=u*.34;g.strokeStyle=r.color;g.lineWidth=1+1.6*u;g.beginPath();g.ellipse(r.x,r.y,r.r,r.r*.7,0,0,7);g.stroke();   // dünner Leitring, die Sterne darauf sind der eigentliche Effekt
-   if(r.sp){const si=sparkIdx(r.color),n=r.sp.length,sr=(3.2+r.max/42)*(.55+.45*u);for(let i=0;i<n;i++){const an=r.a0+i/n*6.2832,s=.5+.5*Math.sin(this.ft*.5+r.sp[i]),tw=s*s*s;g.globalAlpha=Math.min(1,u*1.7)*(.3+.7*tw);sparkDraw(g,r.x+Math.cos(an)*r.r,r.y+Math.sin(an)*r.r*.7,sr*(.7+.5*tw),si,tw,r.max>150?1:0)}}}
+   if(r.sp){const si=sparkIdx(r.color),n=r.sp.length,sr=(3.2+r.max/42)*GLT.size*(.55+.45*u);for(let i=0;i<n;i++){const an=r.a0+i/n*6.2832,s=.5+.5*Math.sin(this.ft*.5+r.sp[i]),tw=s*s*s;g.globalAlpha=Math.min(1,u*1.7)*(.3+.7*tw);sparkDraw(g,r.x+Math.cos(an)*r.r,r.y+Math.sin(an)*r.r*.7,sr*(.7+.5*tw),si,tw,r.max>150?1:0)}}}
   for(const r of this.sh){const u=r.life/r.l0;g.globalAlpha=u*.55;g.strokeStyle=r.color;g.lineWidth=1+3*u;g.beginPath();g.ellipse(r.x,r.y,r.r,r.r*.16,0,0,7);g.stroke();g.globalAlpha=u*.3;g.strokeStyle='#fff';g.lineWidth=1+1.2*u;g.beginPath();g.ellipse(r.x,r.y,r.r*.96,r.r*.15,0,0,7);g.stroke();
-   if(r.sp){const si=sparkIdx(r.color),n=r.sp.length,sr=(3.6+r.max/60)*(.55+.45*u);for(let i=0;i<n;i++){const an=r.a0+i/n*6.2832,s=.5+.5*Math.sin(this.ft*.45+r.sp[i]),tw=s*s*s;g.globalAlpha=Math.min(1,u*1.6)*(.3+.7*tw);sparkDraw(g,r.x+Math.cos(an)*r.r,r.y+Math.sin(an)*r.r*.16-(1-u)*14*(.3+tw),sr*(.7+.5*tw),si,tw,0)}}}
+   if(r.sp){const si=sparkIdx(r.color),n=r.sp.length,sr=(3.6+r.max/60)*GLT.size*(.55+.45*u);for(let i=0;i<n;i++){const an=r.a0+i/n*6.2832,s=.5+.5*Math.sin(this.ft*.45+r.sp[i]),tw=s*s*s;g.globalAlpha=Math.min(1,u*1.6)*(.3+.7*tw);sparkDraw(g,r.x+Math.cos(an)*r.r,r.y+Math.sin(an)*r.r*.16-(1-u)*14*(.3+tw),sr*(.7+.5*tw),si,tw,0)}}}
   for(const e of this.sl){const u=e.life/e.l0,L=e.len*(1.15-.35*u),w=e.w*u;g.save();g.translate(e.x,e.y);g.rotate(e.ang);
    for(const[c,k,a]of[[e.color,1,.75],['#ffffff',.42,.95]]){g.globalAlpha=a*u;g.fillStyle=c;g.beginPath();g.moveTo(-L/2,0);g.lineTo(0,-w*k);g.lineTo(L/2,0);g.lineTo(0,w*k);g.fill()}g.restore()}
   for(const e of this.fl){const u=e.life/e.l0,S=e.size*(.5+.7*(1-u)),gr=g.createRadialGradient(e.x,e.y,0,e.x,e.y,S);gr.addColorStop(0,'#ffffff');gr.addColorStop(.25,e.color);gr.addColorStop(1,'#0000');

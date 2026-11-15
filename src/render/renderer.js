@@ -123,11 +123,11 @@ drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTr
    if(al>0){g.save();g.imageSmoothingEnabled=true;g.globalAlpha=Math.min(1,k*al*(.82+.18*fl));g.drawImage(AS.img,fi*M.w,0,M.w,M.h,cx-dw/2,gy+8-M.ay*s,dw,dh);g.restore()}}
   // Aufsteigende Funkelsterne (blinken wie die Feuerwerks-Sterne; nur wenige dünne Energie-Streifen bleiben als Hintergrund)
   for(let q=0,N=Math.round(9*fx)+2;q<N;q++){if((q%2===1)!==!!front)continue;const ph=(T*(.8+H(q)*.9)+H(q*3.1))%1,x=cx+(H(q*5.1)-.5)*bw*2.9*(kind==='bolt'?1:SK),y=gy-ph*bh*1.8,len=(30+H(q*2)*50)*sz;g.globalAlpha=k*Math.sin(ph*Math.PI)*.4;g.strokeStyle=P.s[q%3];g.lineWidth=(1+H(q*7)*1.4)*sz;g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.sin(T*3+q)*4,y+len);g.stroke()}
-  for(let q=0,N=Math.round(30*fx)+6;q<N;q++){if((q%2===1)!==!!front)continue;const sp=.55+H(q+40)*.9,ph=(T*sp+H(q*3.7))%1,x=cx+(H(q*5.9)-.5)*bw*2.7*(kind==='bolt'?1:SK)+Math.sin(T*2.4*sp+q)*7*sz,y=gy-ph*bh*1.7,
-    s=.5+.5*Math.sin(T*(9+H(q*2.3)*14)+q*1.9),tw=s*s*s,fade=Math.sin(ph*Math.PI);g.globalAlpha=k*fade*(.25+.75*tw);sparkDraw(g,x,y,(4.5+H(q*7.7)*7)*sz*(.65+.6*tw),q%4===0?36:sparkIdx(P.s[q%3]),tw,1)}
+  for(let q=0,N=Math.round(11*fx)+3;q<N;q++){if((q%2===1)!==!!front)continue;const sp=.55+H(q+40)*.9,ph=(T*sp+H(q*3.7))%1,x=cx+(H(q*5.9)-.5)*bw*2.7*(kind==='bolt'?1:SK)+Math.sin(T*2.4*sp+q)*7*sz,y=gy-ph*bh*1.7,
+    s=.5+.5*Math.sin(T*(9+H(q*2.3)*14)+q*1.9),tw=s*s*s,fade=Math.sin(ph*Math.PI);g.globalAlpha=k*fade*(.25+.75*tw);sparkDraw(g,x,y,(3.2+H(q*7.7)*4.2)*sz*(.65+.6*tw),q%4===0?36:sparkIdx(P.s[q%3]),tw,1)}
   // Glanzpunkte an der Körperkontur: poppen kurz auf (Kreuzglanz) und springen dann an eine neue Stelle
-  for(let q=0,N=Math.round(7*fx)+2;q<N;q++){if((q%2===1)!==!!front)continue;const per=.7+H(q*3+90)*.9,u=T/per+H(q*5+90),cyc=Math.floor(u),ph=u-cyc,a=Math.sin(ph*Math.PI),th=H(q*7+cyc*3.3+90)*6.283,
-    x=cx+Math.cos(th)*bw*1.15,y=gy-bh*(.08+.92*H(q*3+cyc*1.7+90));g.globalAlpha=k*Math.min(1,a*1.6);sparkDraw(g,x,y,(5+H(q*11+cyc)*6)*sz*(.4+.8*a*a),q%2?36:sparkIdx(P.s[q%3]),a*a,2)}
+  for(let q=0,N=Math.round(3*fx)+1;q<N;q++){if((q%2===1)!==!!front)continue;const per=.7+H(q*3+90)*.9,u=T/per+H(q*5+90),cyc=Math.floor(u),ph=u-cyc,a=Math.sin(ph*Math.PI),th=H(q*7+cyc*3.3+90)*6.283,
+    x=cx+Math.cos(th)*bw*1.15,y=gy-bh*(.08+.92*H(q*3+cyc*1.7+90));g.globalAlpha=k*Math.min(1,a*1.6);sparkDraw(g,x,y,(3.4+H(q*11+cyc)*3.6)*sz*(.4+.8*a*a),q%2?36:sparkIdx(P.s[q%3]),a*a,2)}
   // Blitzaura (H!T): zuckende Blitze um den Körper + zwei lange Blitze Fuß→Kopf, alle 3–4 Frames neu gewürfelt
   if(kind==='bolt'&&front){const fi=Math.floor(c.t/2),str=H(fi*.77+3);   // alle 2 Frames neu gewürfelt = Zucken; je Blitz an/aus = Blinken
    for(let q=0,N=Math.round(13*(.5+fx*.5));q<N;q++){const sd=fi*17+q*5.3;if(H(sd+7)<.4)continue;const a0=H(sd)*6.283,rr=(.6+H(sd+1)*.9)*bw,yy=gy-bh*(.05+H(sd+2)*.95);bolt(cx+Math.cos(a0)*rr,yy,a0+(H(sd+3)-.5)*1.2,(40+H(sd+4)*90)*sz,sd,1.2+H(sd+5)*1.6,.65+H(sd+6)*.35)}

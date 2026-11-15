@@ -1,5 +1,5 @@
 // Funkel-Effekte (Hit / Siegesstoß / Siegespose): blinkende Sterne wie beim Feuerwerk statt flacher Formen. Logik + Zeichnen ohne Browser (Attrappen).
-import{ParticleSystem,sparkIdx}from'../src/core/particles.js';
+import{ParticleSystem,sparkIdx,GLT}from'../src/core/particles.js';
 import{Effects}from'../src/core/effects.js';
 let fails=0;const check=(n,ok,i='')=>{console.log((ok?'  ✓ ':'  ✗ ')+n+(ok?'':'  '+i));if(!ok)fails++};
 const run=(ps,n)=>{for(let i=0;i<n;i++)ps.update()};
@@ -10,9 +10,9 @@ check('Ungültige Farbe fällt nicht um',sparkIdx('rot')===36&&sparkIdx(undefine
 
 // --- sparkle: Anzahl, Bewegung, Ablauf
 let ps=new ParticleSystem();ps.sparkle(100,100,{count:40,life:30});
-check('sparkle erzeugt Sterne',ps.tw.length===40,String(ps.tw.length));
+check('sparkle erzeugt Sterne (Menge gedämpft über GLT.amt)',ps.tw.length===Math.max(1,Math.round(40*GLT.amt)),String(ps.tw.length));
 const moved=ps.tw.filter(p=>p.vx||p.vy).length;run(ps,5);
-check('Sterne fliegen auseinander',moved>30&&ps.tw.some(p=>Math.hypot(p.x-100,p.y-100)>5));
+check('Sterne fliegen auseinander',moved>=ps.tw.length-2&&ps.tw.some(p=>Math.hypot(p.x-100,p.y-100)>5));
 run(ps,80);check('Sterne verschwinden wieder (keine Leichen)',ps.tw.length===0,String(ps.tw.length));
 
 // --- delay: Sterne zünden nacheinander, bewegen sich erst danach
@@ -43,12 +43,12 @@ check('Funkelsterne sind gedeckelt (<2000)',ps.tw.length<2000,String(ps.tw.lengt
 // --- Effekte: Treffer, Siegesstoß, Siegespose
 const E=(f)=>{const p=new ParticleSystem(),fx=new Effects(p);f(fx,p);return p};
 const h1=E(fx=>fx.hit(0,0,1,'#3fe0ff',1)),h4=E(fx=>fx.hit(0,0,4,'#3fe0ff',1));
-check('Treffer funkelt (Sterne + Glanzstern), stärker bei mehr Power',h1.tw.length>=6&&h1.gn.length>=1&&h4.tw.length>h1.tw.length&&h4.gn.length>h1.gn.length,h1.tw.length+'/'+h4.tw.length);
+check('Treffer funkelt (Sterne + Glanzstern), stärker bei mehr Power',h1.tw.length>=2&&h4.tw.length>h1.tw.length&&h4.gn.length>h1.gn.length,h1.tw.length+'/'+h4.tw.length);
 check('Treffer ohne flache Comic-Formen (kein Zackenstern/Fadenkreuz/Schlagklinge)',h4.pw.length===0&&h4.mk.length===0&&h4.sl.length===0);
 const ko=E(fx=>fx.ko(0,0,'#ffd23f'));
-check('Siegesstoß (K.O.): große Funkelkugeln + viele Glanzsterne',ko.tw.length>300&&ko.gn.length>=10&&ko.pw.length===0,ko.tw.length+'/'+ko.gn.length);
+check('Siegesstoß (K.O.): große Funkelkugeln + viele Glanzsterne',ko.tw.length>100&&ko.gn.length>=5&&ko.pw.length===0,ko.tw.length+'/'+ko.gn.length);
 const win=E(fx=>fx.win(0,0,'#7dffc8'));
-check('Wechsel in die Siegespose: Funkelkugel, Fontäne, Glitzerregen',win.tw.length>280&&win.gn.length>=8&&win.pw.length===0,win.tw.length+'/'+win.gn.length);
+check('Wechsel in die Siegespose: Funkelkugel, Fontäne, Glitzerregen',win.tw.length>100&&win.gn.length>=5&&win.pw.length===0,win.tw.length+'/'+win.gn.length);
 // Dauer-Effekt der Siegespose: erzeugt laufend Sterne, ohne sich aufzustauen
 {const p=new ParticleSystem(),fx=new Effects(p),f={x:480,y:470,char:{glow:'#ff7ae6',size:1,id:'x'}};let peak=0,gl=0;for(let t=0;t<600;t++){fx.celebrate(f,t,null);p.update();peak=Math.max(peak,p.tw.length);gl+=p.gn.length?1:0}
  check('celebrate: laufend Funkelsterne, Glanzsterne blitzen, kein Aufstauen',peak>40&&peak<900&&gl>20,'Spitze '+peak+', Glanzstern-Frames '+gl)}

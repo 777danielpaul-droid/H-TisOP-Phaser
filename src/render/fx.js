@@ -59,10 +59,10 @@ export class PostFX{
    g.globalAlpha=Math.min(1,u*1.5)*.85*Math.min(1,P);g.fillStyle=gr;g.fillRect(ox-R,oy-R,R*2,R*2)}
   // Glanzstrahlen: dünn, spitz zulaufend, flackern (jeder Strahl blinkt für sich)
   g.fillStyle='#ffffff';
-  for(let i=0,N=Math.round(9*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*5.3+im.seed)*6.283,fl=fhn(i*3.7+im.seed+Math.floor(T*10)),r0=14+fhn(i)*26,L=r0+(30+fhn(i+9)*120)*(.5+.5*T+.2*P),w=1.2+fhn(i*2)*2.4*u,nx=-Math.sin(a),ny=Math.cos(a);
+  for(let i=0,N=Math.round(5*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*5.3+im.seed)*6.283,fl=fhn(i*3.7+im.seed+Math.floor(T*10)),r0=14+fhn(i)*26,L=r0+(30+fhn(i+9)*120)*(.5+.5*T+.2*P),w=1.2+fhn(i*2)*2.4*u,nx=-Math.sin(a),ny=Math.cos(a);
    g.globalAlpha=Math.min(1,u*1.4)*(.25+.75*fl*fl)*.85;g.beginPath();g.moveTo(ox+Math.cos(a)*r0+nx*w,oy+Math.sin(a)*r0*.85+ny*w);g.lineTo(ox+Math.cos(a)*L,oy+Math.sin(a)*L*.85);g.lineTo(ox+Math.cos(a)*r0-nx*w,oy+Math.sin(a)*r0*.85-ny*w);g.closePath();g.fill()}
   // Funkelpunkte, die vom Treffpunkt wegfliegen und blinken
-  for(let i=0,N=Math.round(12*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*7.1+im.seed)*6.283,sp=30+fhn(i*1.3)*140,d=24+sp*T*(.6+.4*(1-T)),s=.5+.5*Math.sin(T*28*(.6+fhn(i*2.9))+i*2.1),tw=s*s*s,r=(2.5+fhn(i*4.4)*4.5)*(.6+.8*tw)*(.4+.6*u);
+  for(let i=0,N=Math.round(5*Math.max(.4,GFX.rays));i<N;i++){const a=fhn(i*7.1+im.seed)*6.283,sp=30+fhn(i*1.3)*140,d=24+sp*T*(.6+.4*(1-T)),s=.5+.5*Math.sin(T*28*(.6+fhn(i*2.9))+i*2.1),tw=s*s*s,r=(1.8+fhn(i*4.4)*3)*(.6+.8*tw)*(.4+.6*u);
    g.globalAlpha=Math.min(1,u*1.6)*(.35+.65*tw);sparkDraw(g,ox+Math.cos(a)*d,oy+Math.sin(a)*d*.85,r,fhn(i)<.45?36:spr,tw,1)}
   g.restore()}
  // Schadenszahlen / Textpops (Welt-Raum)
