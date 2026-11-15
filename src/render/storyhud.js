@@ -1,7 +1,8 @@
 import{DEALER,wrapText}from'../core/blackmarket.js';
 import{CHARACTERS}from'../core/characters.js';
 import{GROUND,H,W}from'../core/config.js';
-import{LOOT}from'../core/loot.js';
+import{ITEMS}from'../core/items.js';
+import{LOOT,itemCount}from'../core/loot.js';
 import{CHAPTERS,LV,Story}from'../core/story.js';
 
 import{Intro}from'./intro.js';
@@ -70,7 +71,7 @@ export function drawStoryHud(g,hud,game,t,cv){const s=game.story,p=game.p1,A=gam
  if(s.state==='walk'&&s.goT>70&&s.enc<E.length&&!(s.dealer&&s.dealer.active)&&Math.floor(t*2)%2===0)hud.txt(g,'WEITER  ➜',W-110,250,26,'#ffffff','center',ACC);
  const bo=s.alive().find(m=>m.char.storyBoss);   // Boss-Leiste (oben Mitte): Name, Lebensbalken, Marke bei 50 % (Wutphase)
  if(bo&&game.phase==='fight'){const bw=480,bx=W/2-bw/2,by=92;hud.lab(g,bo.char.name,W/2,78,14,'#ffffff','center',5,bo.char.glow);hud.kBar(g,bx,by,bw,12,bo.hp/bo.maxHp,'#ff4a5a',game.frame,8);g.fillStyle='rgba(255,255,255,.7)';g.fillRect(bx+bw/2-1,by-3,2,18);if(s.rage&&Math.floor(t*3)%2===0)hud.txt(g,'WUT',bx+bw+34,by+13,12,'#ff6a7a','center')}
- if(game.phase==='fight'&&s.cp===0&&s.ft<420&&s.state==='walk')hud.txt(g,'A / D laufen · W springen · J K L Angriff · U Special · O Dash',W/2,H-24,13,'#c9d0ff','center');
+ if(game.phase==='fight'&&s.cp===0&&s.ft<420&&s.state==='walk')hud.txt(g,'A / D laufen · W springen · J K L Angriff · U Special · O Dash · 1 2 3 Items',W/2,H-24,13,'#c9d0ff','center');
  if(game.phase==='intro'&&s.cp===0){const a=game.pf<190?1:Math.max(0,1-(game.pf-190)/70);g.globalAlpha=.78*a;g.fillStyle='#04020a';g.fillRect(0,0,W,H);g.globalAlpha=a;
   hud.txt(g,'KAPITEL '+s.ch,W/2,190,16,ACC,'center');hud.txt(g,s.cfg.name,W/2,240,s.cfg.name.length>14?40:50,'#ffffff','center',ACC);
   hud.txt(g,s.cfg.intro[0],W/2,290,15,'#e8ecff','center');hud.txt(g,s.cfg.intro[1],W/2,314,15,'#e8ecff','center');g.globalAlpha=1}
@@ -79,5 +80,14 @@ export function drawStoryHud(g,hud,game,t,cv){const s=game.story,p=game.p1,A=gam
   hud.txt(g,v?s.cfg.win.say:'ENTER – weiter ab Checkpoint',W/2,280,18,'#e8ecff','center');
   if(v&&A.hasNextChapter){const nx=CHAPTERS[s.ch];hud.txt(g,`ENTER – Kapitel ${nx.id}: ${nx.name}`,W/2,318,20,'#ffffff','center',nx.look.acc)}
   hud.txt(g,'ESC – Menü'+(LOOT.packs>0?`   ·   B – Booster öffnen (${LOOT.packs})`:''),W/2,v&&A.hasNextChapter?348:308,14,'#9aa4e8','center')}
+ drawItemBar(g,hud,game,t);
  drawDealerUi(g,hud,game,t);
  g.restore()}
+// Item-Leiste unten links: Taste 1/2/3, Name, Anzahl im Beutel (grau = leer, Rahmen = zuletzt gewähltes Item für Q / R3)
+export function drawItemBar(g,hud,game,t){const s=game.story;if(!s||game.phase!=='fight'||s.state==='done'||(s.dealer&&s.dealer.active))return;
+ const w=100,h=42,gap=8,x0=28,y=H-90;
+ ITEMS.forEach((it,i)=>{const n=itemCount(it.id),x=x0+i*(w+gap),on=n>0&&i===s.isel;
+  hud.kPlate(g,x,y,w,h,{col:n?it.col:'#6a6a80',on,sk:6,t,al:n?1:.55});
+  hud.txt(g,String(i+1),x+15,y+26,16,n?'#ffffff':'#8a8aa0','center',n?it.col:null);
+  hud.txt(g,it.short,x+w/2+10,y+17,11,n?'#ffffff':'#8a8aa0','center');
+  hud.txt(g,'x'+n,x+w/2+10,y+34,12,n?'#ffd23f':'#8a8aa0','center')})}

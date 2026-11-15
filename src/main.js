@@ -15,6 +15,7 @@ import{NetUi,netMessage}from'./render/netui.js';
 import{skinCount,skinName}from'./render/skins.js';
 import{THEMES}from'./render/stage.js';
 import{hitDealerOpt}from'./render/storyhud.js';
+import{ITEMS}from'./core/items.js';
 import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel,shopCardRect,shopBackRect,shopBtnRect,shopSelRect,boosterRect,lootOpenRect,lootCloseRect,inR,hitCardGrid,cardFaceAt}from'./render/lootui.js';
 import{endBtnRect}from'./render/hover.js';
 import{Renderer}from'./render/renderer.js';
@@ -301,6 +302,9 @@ addEventListener('keydown',e=>{
  {const dl=game.story&&game.story.dealer;   // Schwarzmarkthändler (Story): E spricht an, im Gespräch gehen die Tasten an den Dialog
   if(dl&&arcade.state==='fight'&&!menuOpen){if(dl.active){if(dl.key(e.code)){e.preventDefault();return}if(e.code==='KeyM'){}else{e.preventDefault();return}}
    else if(e.code==='KeyE'&&dl.open()){e.preventDefault();return}}}
+ {const sty=game.story;   // Sonderitems aus den Boostern (Story): 1/2/3 benutzen, Q = nächstes wählen, 0 (Controller R3) = gewähltes benutzen
+  if(sty&&arcade.state==='fight'&&!menuOpen&&game.phase==='fight'){const di={Digit1:0,Digit2:1,Digit3:2}[e.code];
+   if(di!==undefined||e.code==='Digit0'||e.code==='KeyQ'){e.preventDefault();if(e.repeat)return;if(e.code==='KeyQ')sty.cycleItem();else sty.useItem(ITEMS[di===undefined?sty.isel:di].id);return}}}
  {const u=renderer.lootUi,st=arcade.state,can=lootCan();   // Booster-Overlay (B) mit Shop (P)
   if(u.open||(can&&(e.code==='KeyB'||e.code==='KeyP'))){e.preventDefault();
    if(!u.open){lootOpen(e.code==='KeyP'?'shop':'main');return}

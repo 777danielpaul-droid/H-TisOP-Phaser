@@ -44,7 +44,7 @@ export function menuKey(name,c){
  switch(c.screen){
   case'intro':return name==='cross'||name==='options'||name==='circle'?'Enter':null;
   case'start':return{left:'ArrowLeft',l1:'ArrowLeft',right:'ArrowRight',r1:'ArrowRight',cross:'Enter',triangle:'KeyV'}[name]||null;
-  case'fight':return name==='options'?'KeyM':name==='l2'?'KeyE':null;   // L2 = Händler ansprechen
+  case'fight':return name==='options'?'KeyM':name==='l2'?'KeyE':name==='l3'?'KeyQ':name==='r3'?'Digit0':null;   // L2 = Händler ansprechen
   case'dealer':return{up:'ArrowUp',down:'ArrowDown',cross:'Enter',circle:'Escape',options:'KeyM'}[name]||null;
   case'online':if(name==='options')return'Escape';if(c.ask)return name==='cross'?'Enter':name==='circle'?'Escape':null;return null;
   case'versus':{const p2=c.who===2;

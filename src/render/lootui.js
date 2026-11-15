@@ -1,5 +1,6 @@
 import{H,W}from'../core/config.js';
 import{CHARACTERS}from'../core/characters.js';
+import{isItem}from'../core/items.js';
 import{CARDS,CHAR_SHOP,LOOT,RARITY,SHOP,SKIN_POOL,STAGE_NAMES,STAGE_POOL,canBuy,canBuyChar,cardsOwned,ownsChar,ownsSkin,ownsStage,shopCount}from'../core/loot.js';
 import{drawFullFrame}from'./sprites.js';
 
@@ -109,10 +110,10 @@ export function drawShop(g,hud,u){const sel=u.sel|0;
  const age=u.t-(u.msgAt==null?-999:u.msgAt);if(u.msg&&age<110){g.save();g.globalAlpha=Math.min(1,(110-age)/30);hud.txt(g,u.msg,W/2,H-112,20,u.msgOk?'#7dff9a':'#ff6f7f','center',u.msgOk?'#7dff9a':'#ff6f7f');g.restore()}
  hud.txt(g,'◀ ▶  wählen   ·   ENTER / Klick – kaufen   ·   ESC / P – zurück',W/2,H-34,14,'#ffffff','center')}
 // ---- Karten-Ansicht (Klick auf eine Karte = groß anzeigen) ----
-export const gridGeom=()=>{const n=CARDS.length,cols=n>12?9:6,gx=10,cw=Math.min(112,Math.floor((W-110-(cols-1)*gx)/cols)),ch=Math.round(cw*152/112);return{cols,cw,ch,gx,y0:104,rows:Math.ceil(n/cols)}};   // wächst mit der Kartenzahl, bleibt bei 2 Reihen
+export const gridGeom=()=>{const n=CARDS.length,cols=n>18?10:n>12?9:6,gx=10,cw=Math.min(112,Math.floor((W-110-(cols-1)*gx)/cols)),ch=Math.round(cw*152/112);return{cols,cw,ch,gx,y0:104,rows:Math.ceil(n/cols)}};   // wächst mit der Kartenzahl, bleibt bei 2 Reihen
 export const cardGridRect=i=>{const G=gridGeom(),x0=W/2-(G.cols*G.cw+(G.cols-1)*G.gx)/2;return{x:x0+(i%G.cols)*(G.cw+G.gx),y:G.y0+Math.floor(i/G.cols)*(G.ch+G.gx),w:G.cw,h:G.ch}};
 export function hitCardGrid(lx,ly){for(let i=0;i<CARDS.length;i++)if(inR(cardGridRect(i),lx,ly)&&(LOOT.cards[CARDS[i].id]|0)>0)return i;return -1}   // nur besessene Karten lassen sich ansehen
-export const cardFace=c=>({col:RARITY[c.r].c,t1:c.name,t2:RARITY[c.r].n,t3:'x'+(LOOT.cards[c.id]|0)+' gesammelt',id:c.id});
+export const cardFace=c=>({col:RARITY[c.r].c,t1:c.name,t2:RARITY[c.r].n,t3:'x'+(LOOT.cards[c.id]|0)+' gesammelt'+(isItem(c.id)?' · '+(LOOT.items[c.id]|0)+' im Beutel':''),id:c.id});
 export const cardFaceAt=i=>cardFace(CARDS[i]);
 export function drawZoom(g,hud,u){const z=u&&u.zoom;if(!z)return;u.zt=(u.zt||0)+1;const e=Math.min(1,u.zt/10),k=1-Math.pow(1-e,3),w=300,h=414;
  g.save();g.globalAlpha=.95*k;g.fillStyle='#010409';g.fillRect(0,0,W,H);g.globalAlpha=1;
@@ -131,7 +132,7 @@ export function drawLoot(g,hud,u){if(!u||!u.open)return;u.t=(u.t||0)+1;
  else if(u.mode==='reveal'&&u.rewards){const R=u.rewards,cw=210,ch=290,gap=34,x0=W/2-(cw*3+gap*2)/2;
   R.forEach((r,i)=>{const fl=Math.cos(cl((u.t-i*18)/20,0,1)*Math.PI),x=x0+i*(cw+gap),y=130;
    if(r.type==='coins')card(g,hud,x,y,cw,ch,'#ffd23f','COINS','+'+r.n,'für den Shop',fl);
-   else if(r.type==='card')card(g,hud,x,y,cw,ch,RARITY[r.r].c,r.name,RARITY[r.r].n,r.isNew?'NEU!':'schon gesammelt',fl,cardImg(r.id));
+   else if(r.type==='card')card(g,hud,x,y,cw,ch,RARITY[r.r].c,r.name,RARITY[r.r].n,(r.isNew?'NEU!':'schon gesammelt')+(r.item?' · +1 ITEM':''),fl,cardImg(r.id));
    else if(r.type==='stage')card(g,hud,x,y,cw,ch,'#8f7bff','NEUE STAGE',r.name,'NEU – im 2-Spieler/Melee-Menü',fl);
    else card(g,hud,x,y,cw,ch,r.col,r.char.toUpperCase()+' SKIN',r.name,'NEU – Farbe im Menü mit C',fl)});
   if(u.t>70)hud.txt(g,LOOT.packs>0?`ENTER – weiter (noch ${LOOT.packs} Booster)`:'ENTER – weiter',W/2,H-34,15,'#ffffff','center')}

@@ -395,3 +395,11 @@
 
 ## Update v24: Transfervideo für KORVUS
 - `assets/video/rabe.webm` = Sekunde 2-4 des Raben-Videos (VP9, 1280×720, 30 fps, 2 s, stumm, wie die anderen Figuren; Mitte auf 16:9 zugeschnitten). Läuft zwischen Charakterwahl und Kampf (Arcade/Story/2 Spieler/Melee) über denselben Mechanismus wie die anderen (`SelectScreen.launch`, Build bettet `assets/video/<id>.webm` ein). Schriftzug „NEVERMORE / 永不复返“ in `VTEXT` (`render/select.js`, heller Hintergrund-Modus). Anderes Video: Datei ersetzen und neu bauen.
+
+## Sonderitems aus Boostern (Story-Modus)
+- **Items:** `src/core/items.js` (`ITEMS`): ENERGIEDRINK (+25 % Leben, Taste 1), SCHATTENELIXIER (+70 % Leben, Taste 2), HYPER-KRISTALL (+100 Hyper-Meter, Taste 3). Jede Item-Id hat eine gleichnamige Sammelkarte in `CARDS` (`core/loot.js`); neue Items: in `ITEMS` eintragen + Karte in `CARDS`.
+- **Beutel:** `LOOT.items` (Anzahl je id, gespeichert in `hitisop.loot`). Beim Öffnen eines Boosters legt jede Item-Karte zusätzlich ein Stück in den Beutel (`openPack`); die Sammelkarten-Zählung bleibt unverändert. Alte Spielstände: schon gesammelte Drink-Karten werden beim ersten Laden zu Items. Helfer: `itemCount`, `addItem`, `takeItem`.
+- **Benutzen (nur Story, im Kampf-/Lauf-Abschnitt):** `Story.useItem(id)` in `core/story.js`. Taste **1/2/3** direkt, **Q** wählt das nächste vorhandene Item, **0** benutzt das gewählte; Controller: **L3** wählen, **R3** benutzen (`core/gamepad.js`, Fight-Screen). Verbraucht wird nur, was wirkt (Leben/Meter schon voll → Hinweis, Item bleibt), 40 Frames Abklingzeit, gesperrt im Händler-Gespräch, bei K.O. und nach Kapitelende.
+- **Anzeige:** Item-Leiste unten links (`drawItemBar` in `render/storyhud.js`): Taste, Name, Anzahl; leere Items grau. Booster-Übersicht/Karten-Ansicht zeigen „+1 ITEM“ bzw. „x im Beutel“.
+- **Händler (KORVUS)** verkauft weiterhin Gegenstände, die sofort wirken (`ITEM_SHOP`); sie landen nicht im Beutel.
+- **Test:** `node tests/items.test.js` (in `npm test`). Nicht im echten Browser geprüft: Optik der Item-Leiste (Position/Abstand zum Hinweistext), Gefühl der Tastenbelegung. Karten-Bilder für Elixier/Kristall: `assets/cards/elixir.png`, `crystal.png` (ohne Bild wird die Textkarte gezeigt).

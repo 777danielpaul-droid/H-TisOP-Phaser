@@ -4,7 +4,8 @@ import{CHARACTERS}from'./characters.js';
 import{EFFECT,GROUND,H}from'./config.js';
 import{Fighter}from'./fighter.js';
 import{Game}from'./game.js';
-import{addPack}from'./loot.js';
+import{ITEMS,itemBlock,itemOf}from'./items.js';
+import{addPack,itemCount,takeItem}from'./loot.js';
 
 // Story-Modus: Seitenscroller-Level. Der Spieler läuft nach rechts; an festen Punkten (ENC) wird die Kamera gesperrt und Insektenkrieger
 // (Mantis) springen in Gruppen von beiden Seiten herein. Erst wenn alle besiegt sind, geht es weiter (Checkpoint nach jeder Welle).
@@ -41,7 +42,7 @@ export class MobAI extends AIController{
    this.feed(dist>want+40?fwd:dist<want-60?-fwd:0,0,[],game.hitstop>0);return}
   super.tick(me,opp,game)}}
 export class Story{
- constructor(game,{ai=0,chapter=1}={}){this.g=game;this.lvl=[0,1,1,2][Math.max(0,Math.min(3,ai|0))];this.ch=Math.max(1,Math.min(CHAPTERS.length,chapter|0||1));this.cfg=CHAPTERS[this.ch-1];this.encs=this.cfg.enc;this.rage=false;this.cp=0;this.kills=0;this.att=[];this.mobs=[];this.l=LV.x0;this.r=LV.x1;this.dealer=null}
+ constructor(game,{ai=0,chapter=1}={}){this.g=game;this.lvl=[0,1,1,2][Math.max(0,Math.min(3,ai|0))];this.ch=Math.max(1,Math.min(CHAPTERS.length,chapter|0||1));this.cfg=CHAPTERS[this.ch-1];this.encs=this.cfg.enc;this.rage=false;this.cp=0;this.kills=0;this.att=[];this.mobs=[];this.l=LV.x0;this.r=LV.x1;this.dealer=null;this.itemCd=0;this.isel=0}
  get total(){return this.encs.length}
  alive(){return this.mobs.filter(m=>m.state!=='ko')}
  nearest(f){let b=null,bd=1e9;for(const m of this.alive()){const d=Math.abs(m.x-f.x);if(d<bd){bd=d;b=m}}return b}
@@ -77,7 +78,20 @@ export class Story{
    if(it.kind==='pack'){addPack();g.fx.ps.ring(it.x,GROUND-40,'#ffd23f',110);g.pop(it.x,GROUND-130,'+1 BOOSTER','#ffd23f',1.1,{text:true})}
    else{const h=Math.round(p.maxHp*it.heal);p.hp=Math.min(p.maxHp,p.hp+h);g.fx.ps.ring(it.x,GROUND-40,'#7dff9a',110);g.pop(it.x,GROUND-130,'+'+h,'#7dff9a',1.2)}}}
   this.items=this.items.filter(i=>!i.got&&i.age<1800)}
- update(){const g=this.g,p=g.p1;this.ft++;this.pickups();if(this.dealer)this.dealer.update();
+ // Sonderitems aus den Boostern (LOOT.items, core/items.js): Taste 1/2/3 benutzt direkt, Q wählt das nächste vorhandene, Digit0/R3 benutzt das gewählte.
+ // Ein Stück wird nur verbraucht, wenn es wirkt (Leben/Meter nicht voll). Rückgabe true = benutzt.
+ cycleItem(){const n=ITEMS.length;for(let k=1;k<=n;k++){const i=(this.isel+k)%n;if(itemCount(ITEMS[i].id)>0){this.isel=i;return true}}return false}
+ useItem(id){const g=this.g,p=g.p1,it=itemOf(id);
+  if(!it||g.phase!=='fight'||this.state==='done'||p.hp<=0||p.state==='ko'||(this.dealer&&this.dealer.active)||this.itemCd>0)return false;
+  const no=(txt,col)=>{g.pop(p.x,p.y-190,txt,col||'#ff8a9a',1,{text:true});g.sfx('block_guard',{vol:.4});this.itemCd=20;return false};
+  if(itemCount(id)<1)return no('KEIN '+it.short);
+  const why=itemBlock(p,it);if(why)return no(why,'#ffd23f');
+  if(!takeItem(id))return false;
+  this.itemCd=40;this.isel=ITEMS.indexOf(it);
+  if(it.kind==='heal'){const h=Math.round(p.maxHp*it.v),b=p.hp;p.hp=Math.min(p.maxHp,p.hp+h);g.pop(p.x,p.y-190,'+'+Math.round(p.hp-b),it.col,1.2)}
+  else{const b=p.meter;p.meter=Math.min(300,p.meter+it.v);g.pop(p.x,p.y-190,'+'+Math.round(p.meter-b)+' METER',it.col,1.1,{text:true})}
+  g.fx.ps.ring(p.x,p.y-80,it.col,110);g.sfx('ui_round_start',{vol:.5,rate:1.6});return true}
+ update(){const g=this.g,p=g.p1;this.ft++;if(this.itemCd>0)this.itemCd--;this.pickups();if(this.dealer)this.dealer.update();
   for(const m of this.mobs)if(m.state==='ko')m.koT=(m.koT||0)+1;
   const gone=this.mobs.filter(m=>m.state==='ko'&&m.koT>80);
   if(gone.length){this.mobs=this.mobs.filter(m=>!gone.includes(m));g.fighters=g.fighters.filter(f=>!gone.includes(f))}
