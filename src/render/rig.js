@@ -85,26 +85,26 @@ export function attackFx(g,f,fist,glow){const m=f.move;
  if(f.state==='attack'&&m&&m.fx==='tails')tailsFx(g,f,m,glow);else if(f.state==='attack'&&m&&m.fx==='breath')breathFx(g,f,m);else if(f.state==='attack'&&m&&m.fx==='bolt')boltFx(g,f,m);else if(f.state==='attack'&&m&&m.fx==='swarm')swarmFx(g,f,m)}
 // Rabenschwarm (Korvus-Hyper): ein Schwarm dunkler Raben mit violettem Schweif stürmt über die Trefferbox nach vorn. Weltmaß wie tailsFx (Ursprung = Körpermitte, nach vorn = +x).
 function swarmFx(g,f,m){const t=f.mf,t0=m.su-6,t1=m.su+m.ac;if(t<t0||t>t1+14)return;
- const grow=Math.min(1,(t-t0)/10),fade=t>t1?Math.max(0,1-(t-t1)/14):1,L=(m.box?m.box[2]+m.box[0]:460)*.95,N=26,oy=-92,VIO='#b57cff',DEEP='#1a0d2b';
- g.save();g.globalAlpha=fade;
+ const grow=Math.min(1,(t-t0)/10),fade=t>t1?Math.max(0,1-(t-t1)/14):1,L=(m.box?m.box[2]+m.box[0]:460)*.95,N=11,oy=-92,VIO='#b57cff',HOT='#ecd9ff';
  const H=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
- const gr=g.createRadialGradient(60,oy,6,60,oy,90*grow);gr.addColorStop(0,'#b57cff33');gr.addColorStop(1,'#b57cff00');g.fillStyle=gr;g.beginPath();g.arc(60,oy,90*grow,0,7);g.fill();   // dunkles Leuchten an der Quelle
+ g.save();g.globalCompositeOperation='lighter';g.lineCap='round';g.lineJoin='round';
  for(let i=0;i<N;i++){
   const sp=.65+H(i*3.1)*.6,ph=((t-t0)*sp/46+H(i*7.7))%1,u=Math.min(1,grow*ph*1.15),
    x=40+u*L,spread=(.12+H(i*1.9)*.88)*(.25+.75*u),y=oy+(H(i*5.3)-.5)*2*210*spread*.55+Math.sin(t*.25+i)*9,
-   s=(24+H(i*2.2)*22)*(.75+.5*u),fl=.5+.5*Math.sin(t*.75+i*2.1),wing=-.15+fl*1.05,a=Math.min(1,u*5)*(1-Math.max(0,u-.85)/.15);
-  g.save();g.translate(x,y);g.globalAlpha=fade*a;
-  const tr=g.createLinearGradient(-s*4.5,0,0,0);tr.addColorStop(0,VIO+'00');tr.addColorStop(1,VIO+'cc');   // Schweif
-  g.fillStyle=tr;g.beginPath();g.moveTo(0,-s*.12);g.lineTo(-s*4.5,0);g.lineTo(0,s*.12);g.closePath();g.fill();
-  g.fillStyle=DEEP;g.strokeStyle=VIO;g.lineWidth=1.6;g.shadowColor=VIO;g.shadowBlur=10;
-  const up=.3+wing*1.5;   // Flügelhub
-  g.beginPath();g.moveTo(s*.1,-s*.05);g.quadraticCurveTo(-s*.2,-s*up*.9,-s*1.0,-s*up);g.quadraticCurveTo(-s*.75,-s*up*.45,-s*.95,-s*up*.2);g.quadraticCurveTo(-s*.5,-s*.08,-s*.35,s*.02);g.closePath();g.fill();g.stroke();   // oberer Flügel (gefiedert)
-  g.beginPath();g.moveTo(s*.05,s*.03);g.quadraticCurveTo(-s*.2,s*(.15+up*.35),-s*.75,s*(.3+up*.5));g.quadraticCurveTo(-s*.45,s*.12,-s*.35,0);g.closePath();g.fill();g.stroke();                                                                          // unterer Flügel
-  g.beginPath();g.ellipse(0,0,s*.36,s*.15,0,0,7);g.fill();g.stroke();                                          // Körper (klein)
-  g.beginPath();g.arc(s*.38,-s*.06,s*.16,0,7);g.fill();g.stroke();                                              // Kopf
-  g.beginPath();g.moveTo(s*.5,-s*.12);g.lineTo(s*.82,-s*.04);g.lineTo(s*.5,s*.02);g.closePath();g.fill();       // Schnabel
-  g.beginPath();g.moveTo(-s*.3,-s*.03);g.lineTo(-s*.85,-s*.2);g.lineTo(-s*.95,-s*.02);g.lineTo(-s*.85,s*.18);g.closePath();g.fill();   // Schwanzfächer
-  g.shadowBlur=0;g.fillStyle='#ffffffcc';g.beginPath();g.arc(s*.42,-s*.08,s*.045,0,7);g.fill();             // Auge
+   s=(26+H(i*2.2)*20)*(.75+.5*u),fl=.5+.5*Math.sin(t*.75+i*2.1),wing=-.15+fl*1.05,
+   blink=Math.sin(t*1.7+i*4.3)>-.35?1:.25+.2*Math.sin(t*3+i),   // Neon-Flackern: kurz fast aus, dann wieder an
+   a=Math.min(1,u*5)*(1-Math.max(0,u-.85)/.15)*fade*blink,up=.3+wing*1.5;
+  g.save();g.translate(x,y);
+  const P=new Path2D();   // Raben-Silhouette nur als Linien: oberer Flügel, unterer Flügel, Körper+Kopf+Schnabel, Schwanz
+  P.moveTo(s*.1,-s*.05);P.quadraticCurveTo(-s*.2,-s*up*.9,-s*1.0,-s*up);P.quadraticCurveTo(-s*.75,-s*up*.45,-s*.95,-s*up*.2);P.quadraticCurveTo(-s*.5,-s*.08,-s*.35,s*.02);
+  P.moveTo(s*.05,s*.03);P.quadraticCurveTo(-s*.2,s*(.15+up*.35),-s*.75,s*(.3+up*.5));P.quadraticCurveTo(-s*.45,s*.12,-s*.35,0);
+  P.moveTo(-s*.3,0);P.quadraticCurveTo(s*.1,-s*.2,s*.32,-s*.12);P.arc(s*.38,-s*.06,s*.16,-2.6,.2);P.lineTo(s*.84,-s*.03);P.lineTo(s*.52,s*.02);P.quadraticCurveTo(s*.2,s*.2,-s*.3,0);
+  P.moveTo(-s*.3,-s*.03);P.lineTo(-s*.9,-s*.2);P.moveTo(-s*.3,0);P.lineTo(-s*.98,-s*.02);P.moveTo(-s*.3,s*.03);P.lineTo(-s*.9,s*.18);
+  g.globalAlpha=a*.28;g.strokeStyle=VIO;g.lineWidth=9;g.stroke(P);       // weiter Glow
+  g.globalAlpha=a*.7;g.strokeStyle=VIO;g.lineWidth=3.6;g.stroke(P);      // Neon-Körper
+  g.globalAlpha=a;g.strokeStyle=HOT;g.lineWidth=1.4;g.stroke(P);         // heißer Laserkern
+  g.globalAlpha=a*.8;g.strokeStyle=VIO;g.lineWidth=1.6;g.beginPath();g.moveTo(-s*1.0,0);g.lineTo(-s*4.2,0);g.stroke();   // Laser-Schweif (eine Linie)
+  g.fillStyle='#fff';g.beginPath();g.arc(s*.42,-s*.08,s*.05,0,7);g.fill();   // Auge
   g.restore()}
  g.restore()}
 // Neunschwanz-Inferno (Kitsune-Hyper): neun Geisterfeuer-Schwänze fächern sich nach vorn auf, wippen, enden in Flammenkugeln. Weltmaß (passt zur Trefferbox m.box), Ursprung = Körpermitte.

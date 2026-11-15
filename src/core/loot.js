@@ -16,7 +16,10 @@ export const CARDS=[
  {id:'krieger',name:'Mantis-Krieger',r:0,txt:'Springt von allen Seiten.'},{id:'laterne',name:'Straßenlaterne',r:0,txt:'Das letzte Licht der Gasse.'},
  {id:'drink',name:'Energiedrink',r:0,txt:'Heilt 25 % Leben.'},{id:'wirbel',name:'Wirbel-Angriff',r:1,txt:'Trifft auch hinter ihm.'},
  {id:'tiger',name:'H!T',r:1,txt:'Wilder Brawler.'},{id:'st3g0',name:'ST3-G0',r:1,txt:'Panzer-Echse.'},{id:'kitsune',name:'KITSUNE',r:1,txt:'Neunschwanz-Fuchs.'},
- {id:'alpha',name:'Alpha-Mantis',r:2,txt:'Anführer des Schwarms.'},{id:'anubis',name:'ANUBIS',r:2,txt:'Wächter der Unterwelt.'},{id:'koenigin',name:'Schwarm-Königin',r:2,txt:'Niemand hat sie je gesehen.'}];
+ {id:'alpha',name:'Alpha-Mantis',r:2,txt:'Anführer des Schwarms.'},{id:'anubis',name:'ANUBIS',r:2,txt:'Wächter der Unterwelt.'},{id:'koenigin',name:'Schwarm-Königin',r:2,txt:'Niemand hat sie je gesehen.'},
+ {id:'sichel',name:'Schattensichel',r:1,txt:'Ein violetter Bogen aus Nacht.'},{id:'schwarm',name:'Rabenschwarm',r:1,txt:'Hyper: Der Schwarm stürmt vor.'},
+ {id:'blutrausch',name:'Blutrausch',r:1,txt:'Klauenhagel mit beiden Händen.'},{id:'blitz',name:'Blitz-Kamehameha',r:1,txt:'Hyper: Ein Blitz, ein Strahl.'},
+ {id:'korvus',name:'KORVUS',r:2,txt:'Rabenfürst mit Sichel.'},{id:'cyberdemon',name:'CYBERDEMON',r:2,txt:'Glühende Klauen aus der Tiefe.'}];
 export const SKIN_POOL=[];for(const id of['tiger','st3g0','kitsune'])for(const k of[1,2,3])SKIN_POOL.push([id,k]);   // Zu Beginn hat jede Figur nur Farbe 0; alle weiteren Farben kommen nur aus Boostern
 export const STAGE_NAMES=['NEON CITY','CRIMSON TEMPLE','TOXIC DOCKS','LABYRINTH'];   // Reihenfolge wie THEMES in render/stage.js; Stage 0 ist frei, alle weiteren kommen nur aus Boostern
 export const STAGE_POOL=[1,2,3];

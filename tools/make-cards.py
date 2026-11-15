@@ -26,6 +26,15 @@ CARDS = {
     'alpha':   ('mantis',  'p_1_2',          (255, 122, 58), 1.00),
     'krieger': ('mantis',  'p_2_2',          (125, 255, 154), 1.00),
     'spaeher': ('mantis',  'p_3_1',          (150, 190, 255), 1.00),
+    'sichel':  ('rabe',    'c_6',            (200, 120, 255), 1.00),
+    'schwarm': ('rabe',    'c_8',            (181, 124, 255), 1.00),
+    'korvus':  ('rabe',    'c_0',            (160, 110, 255), 1.00),
+    'blutrausch': ('cyberdemon', 'a_3',      (255, 90, 50),   1.00),
+    'cyberdemon': ('cyberdemon', 'i_2',      (255, 50, 70),   1.00),
+    'blitz':   ('tiger',   't_neu_blitz_02', (95, 208, 255),  1.00),
+    'larve':   ('mantis',  'p_1_0',          (140, 255, 120), .80),
+    'koenigin': ('mantis', 'p_2_0',          (255, 80, 200),  1.00),
+    'wirbel':  ('tiger',   't_neu_tritt_01', (63, 224, 255),  1.00),
 }
 
 

@@ -109,8 +109,8 @@ export function drawShop(g,hud,u){const sel=u.sel|0;
  const age=u.t-(u.msgAt==null?-999:u.msgAt);if(u.msg&&age<110){g.save();g.globalAlpha=Math.min(1,(110-age)/30);hud.txt(g,u.msg,W/2,H-112,20,u.msgOk?'#7dff9a':'#ff6f7f','center',u.msgOk?'#7dff9a':'#ff6f7f');g.restore()}
  hud.txt(g,'◀ ▶  wählen   ·   ENTER / Klick – kaufen   ·   ESC / P – zurück',W/2,H-34,14,'#ffffff','center')}
 // ---- Karten-Ansicht (Klick auf eine Karte = groß anzeigen) ----
-export const CARD_GRID={cols:6,cw:112,ch:152,gx:10,y0:104};
-export const cardGridRect=i=>{const G=CARD_GRID,x0=W/2-(G.cols*G.cw+(G.cols-1)*G.gx)/2;return{x:x0+(i%G.cols)*(G.cw+G.gx),y:G.y0+Math.floor(i/G.cols)*(G.ch+G.gx),w:G.cw,h:G.ch}};
+export const gridGeom=()=>{const n=CARDS.length,cols=n>12?9:6,gx=10,cw=Math.min(112,Math.floor((W-110-(cols-1)*gx)/cols)),ch=Math.round(cw*152/112);return{cols,cw,ch,gx,y0:104,rows:Math.ceil(n/cols)}};   // wächst mit der Kartenzahl, bleibt bei 2 Reihen
+export const cardGridRect=i=>{const G=gridGeom(),x0=W/2-(G.cols*G.cw+(G.cols-1)*G.gx)/2;return{x:x0+(i%G.cols)*(G.cw+G.gx),y:G.y0+Math.floor(i/G.cols)*(G.ch+G.gx),w:G.cw,h:G.ch}};
 export function hitCardGrid(lx,ly){for(let i=0;i<CARDS.length;i++)if(inR(cardGridRect(i),lx,ly)&&(LOOT.cards[CARDS[i].id]|0)>0)return i;return -1}   // nur besessene Karten lassen sich ansehen
 export const cardFace=c=>({col:RARITY[c.r].c,t1:c.name,t2:RARITY[c.r].n,t3:'x'+(LOOT.cards[c.id]|0)+' gesammelt',id:c.id});
 export const cardFaceAt=i=>cardFace(CARDS[i]);
@@ -135,7 +135,7 @@ export function drawLoot(g,hud,u){if(!u||!u.open)return;u.t=(u.t||0)+1;
    else if(r.type==='stage')card(g,hud,x,y,cw,ch,'#8f7bff','NEUE STAGE',r.name,'NEU – im 2-Spieler/Melee-Menü',fl);
    else card(g,hud,x,y,cw,ch,r.col,r.char.toUpperCase()+' SKIN',r.name,'NEU – Farbe im Menü mit C',fl)});
   if(u.t>70)hud.txt(g,LOOT.packs>0?`ENTER – weiter (noch ${LOOT.packs} Booster)`:'ENTER – weiter',W/2,H-34,15,'#ffffff','center')}
- else{const cols=6,cw=112,ch=152,gx=10,x0=W/2-(cols*cw+(cols-1)*gx)/2,y0=104;
+ else{const{cols,cw,ch,gx,y0,rows}=gridGeom(),x0=W/2-(cols*cw+(cols-1)*gx)/2;
   CARDS.forEach((c,i)=>{const x=x0+(i%cols)*(cw+gx),y=y0+Math.floor(i/cols)*(ch+gx),n=LOOT.cards[c.id]|0,col=RARITY[c.r].c,im=n?cardImg(c.id):null;
    g.fillStyle='#07131c';g.strokeStyle=n?col:'#31505d';g.lineWidth=1.3;g.fillRect(x,y,cw,ch);g.fillStyle='rgba(255,255,255,.08)';g.fillRect(x+2,y+2,cw-4,2);g.strokeStyle='rgba(150,225,235,.18)';g.strokeRect(x+4,y+4,cw-8,ch-8);
    if(im){cover(g,im,x,y,cw,ch);const gr=g.createLinearGradient(0,y+ch-40,0,y+ch);gr.addColorStop(0,'#04020a00');gr.addColorStop(1,'#04020aee');g.fillStyle=gr;g.fillRect(x,y+ch-40,cw,40);hud.txt(g,c.name,x+cw/2,y+ch-18,10,'#ffffff','center');hud.txt(g,'x'+n,x+cw-14,y+14,11,'#ffffff','center',col)}
@@ -143,7 +143,7 @@ export function drawLoot(g,hud,u){if(!u||!u.open)return;u.t=(u.t||0)+1;
    else hud.txt(g,'?',x+cw/2,y+ch*.6,30,'#2a2a50','center');
    g.strokeRect(x,y,cw,ch)});
   const own=SKIN_POOL.filter(([id,k])=>ownsSkin(id,k)).map(([id,k])=>id.toUpperCase()+' '+skinName(id,k));
-  hud.txt(g,'FARBEN: '+(own.length?own.join(' · '):'noch keine – Booster bringen neue Farben'),W/2,y0+2*(ch+gx)+18,12,'#c9d0ff','center');
+  hud.txt(g,'FARBEN: '+(own.length?own.join(' · '):'noch keine – Booster bringen neue Farben'),W/2,y0+rows*(ch+gx)+18,12,'#c9d0ff','center');
   const ow2=STAGE_POOL.filter(i=>ownsStage(i)).map(i=>STAGE_NAMES[i]);hud.txt(g,'STAGES: NEON CITY'+(ow2.length?' · '+ow2.join(' · '):'')+'   ('+(1+ow2.length)+'/'+(1+STAGE_POOL.length)+')',W/2,y0+2*(ch+gx)+38,12,'#c9d0ff','center');
   {const b=shopBtnRect();hud.kPlate(g,b.x,b.y,b.w,b.h,{col:'#ffd23f',on:true,sk:8,t:u.t});hud.txt(g,'P – SHOP',b.x+b.w/2+4,b.y+19,13,'#ffffff','center','#ffd23f')}
   {const o=lootOpenRect(),c=lootCloseRect(),pk=LOOT.packs>0;
