@@ -15,7 +15,7 @@ export const LV={x0:-800,x1:1900,start:-700,half:560};   // Levelgrenzen, Startp
 // npc = Schwarzmarkthändler KORVUS (core/blackmarket.js): x = Standort (zwischen den Wellen ansprechbar, bei einer Welle duckt er sich weg).
 // enc-Felder: x = Auslöse-Position, n = Anzahl Mantis, boss = Boss-Figur (1 = Alpha-Mantis) und at = Platz in der Spawn-Reihenfolge (0 = zuerst).
 export const CHAPTERS=[
- {id:1,name:'DER SCHWARM',stage:0,capBase:2,cap:5,npc:{x:-480},look:{ground:['#14101f','#050309'],line:'#4a3b78',lamp:'255,210,120',acc:'#7dff9a'},
+ {id:1,name:'DER SCHWARM',stage:0,capBase:2,cap:5,npc:{x:-480},props:[{k:'crate',x:-600},{k:'barrel',x:-120},{k:'sign',x:330},{k:'crate',x:820},{k:'barrel',x:1200},{k:'sign',x:1560}],look:{ground:['#14101f','#050309'],line:'#4a3b78',lamp:'255,210,120',acc:'#7dff9a'},
   intro:['Die Stadt schläft nicht mehr. Aus den Gassen kriechen Insektenkrieger.','Kämpfe dich durch das Viertel – sie kommen in Gruppen.'],
   win:{title:'SCHWARM BESIEGT',say:'Die Stadt ist sicher – vorerst.'},
   enc:[
@@ -24,7 +24,7 @@ export const CHAPTERS=[
    {x:600,n:4,title:'DRITTE WELLE',say:'Der Schwarm hat dich eingekreist!'},
    {x:1000,n:5,title:'VIERTE WELLE',say:'Sie greifen von beiden Seiten an – bleib in Bewegung!'},
    {x:1380,n:4,boss:1,title:'DER ALPHA',say:'Der Anführer des Schwarms steigt herab.'}]},
- {id:2,name:'DER DÄMON ERWACHT',stage:2,capBase:3,cap:6,npc:{x:-480},look:{ground:['#0c2a22','#030a07'],line:'#52ffa8',lamp:'120,255,200',acc:'#ff6a7a'},
+ {id:2,name:'DER DÄMON ERWACHT',stage:2,capBase:3,cap:6,npc:{x:-480},props:[{k:'barrel',x:-560},{k:'crate',x:-200},{k:'crate',x:420},{k:'barrel',x:900},{k:'sign',x:1250},{k:'crate',x:1600}],look:{ground:['#0c2a22','#030a07'],line:'#52ffa8',lamp:'120,255,200',acc:'#ff6a7a'},
   intro:['Der Schwarm war nur der Vorbote. Im Hafen regt sich etwas viel Größeres.','Mehr Krieger, härtere Wellen – und am Ende wartet er.'],
   win:{title:'DÄMON BESIEGT',say:'Das Glühen im Hafen erlischt.'},
   enc:[
@@ -32,7 +32,20 @@ export const CHAPTERS=[
    {x:150,n:5,title:'ZWEITE WELLE',say:'Aus den Containern kriechen sie hervor.'},
    {x:600,n:6,title:'DRITTE WELLE',say:'Der Schwarm ist gewachsen – lass dich nicht einkreisen!'},
    {x:1000,n:7,title:'VIERTE WELLE',say:'Sie kommen aus allen Richtungen. Der Boden bebt.'},
-   {x:1380,n:2,boss:'cyberdemon',at:0,title:'CYBERDÄMON',say:'Rotes Glühen unter der Haut – der Dämon des Kerns.'}]}];
+   {x:1380,n:2,boss:'cyberdemon',at:0,title:'CYBERDÄMON',say:'Rotes Glühen unter der Haut – der Dämon des Kerns.'}]},
+ // Kapitel 3: gemischte Wellen (mix = [[Figur, Anzahl], …], gleichmäßig durchgemischt) aus Mantis + Mini-Cyberdämonen, Finale wieder der große Cyberdämon.
+ // hurdles = Hindernisse zwischen den Wellen (x = Mitte, w = Breite, h = Höhe): am Boden kommt man nicht durch – man muss drüberspringen (nur beim Laufen aktiv, im Kampf stören sie nicht).
+ {id:3,name:'DER KERN',stage:1,capBase:3,cap:7,npc:{x:-480},look:{ground:['#2a0c14','#0a0206'],line:'#ff5a6e',lamp:'255,130,110',acc:'#ffb347'},
+  intro:['Der Hafen ist gefallen – doch das Glühen kommt von weiter unten, aus dem Kern der Stadt.','Zwischen den Wellen versperren Trümmer den Weg. Spring drüber – und halte dich bereit.'],
+  win:{title:'KERN ERLOSCHEN',say:'Das Glühen ist verschwunden. Die Stadt atmet auf.'},
+  hurdles:[{x:-60,w:70,h:70},{x:380,w:80,h:95},{x:790,w:70,h:80},{x:1190,w:90,h:105}],
+  props:[{k:'crate',x:-640},{k:'barrel',x:-330},{k:'sign',x:-160},{k:'crate',x:260},{k:'barrel',x:520},{k:'sign',x:700},{k:'crate',x:940},{k:'barrel',x:1100},{k:'crate',x:1500},{k:'sign',x:1640}],
+  enc:[
+   {x:-300,mix:[['mantis',3],['miniDemon',1]],title:'ERSTE WELLE',say:'Zwischen den Insekten tauchen kleine Dämonen auf.'},
+   {x:150,mix:[['mantis',3],['miniDemon',2]],title:'ZWEITE WELLE',say:'Das Glühen wird stärker.'},
+   {x:600,mix:[['mantis',2],['miniDemon',3]],title:'DRITTE WELLE',say:'Die kleinen Dämonen sind schneller als sie aussehen!'},
+   {x:1000,mix:[['mantis',3],['miniDemon',3]],title:'VIERTE WELLE',say:'Sie kommen von allen Seiten – spring, wenn es eng wird.'},
+   {x:1380,n:2,boss:'cyberdemon',at:0,title:'CYBERDÄMON',say:'Er ist zurück – größer, wütender. Der Kern pulsiert.'}]}];
 export const ENC=CHAPTERS[0].enc;   // Kapitel 1 (Rückwärtskompatibilität: Tests/HUD)
 // KI für Schwarm-Gegner: nur die nächsten 2-3 greifen an, der Rest kreist in Abstand (sonst Dauer-Überzahl)
 export class MobAI extends AIController{
@@ -55,7 +68,9 @@ export class Story{
  dealerSpot(){const p=this.g.p1,e=this.encs[this.enc],lim=e?e.x-130:LV.x1-80;return Math.max(LV.x0+80,Math.min(lim,p.x+170))}
  setBounds(l,r){this.l=l;this.r=r;this.g.arena.setOpen(l,r)}
  engage(e){this.state='fight';this.setBounds(Math.max(LV.x0,e.x-LV.half),Math.min(LV.x1,e.x+LV.half));
-  this.queue=[];for(let i=0;i<e.n;i++)this.queue.push({side:i%2?-1:1,elite:false});
+  this.queue=[];
+  if(e.mix){const L=e.mix.map(([id,n])=>Array.from({length:n},()=>id));let i=0;while(L.some(a=>a.length))for(const a of L)if(a.length){this.queue.push({side:i++%2?-1:1,elite:false,id:a.shift()})}}   // gemischt: reihum aus jeder Gruppe, Seiten im Wechsel
+  else for(let i=0;i<e.n;i++)this.queue.push({side:i%2?-1:1,elite:false});
   if(e.boss)this.queue.splice(e.at===undefined?2:e.at,0,{side:1,elite:true,id:e.boss===1?'mantisAlpha':e.boss});
   this.cap=Math.min(this.cfg.cap,this.cfg.capBase+this.enc);this.sd=30;this.msg={t:170,title:e.title,say:e.say};this.g.sfx('ui_round_start',{vol:.7})}
  spawn(q){const g=this.g,c=CHARACTERS[q.id||(q.elite?'mantisAlpha':'mantis')],boss=!!c.storyBoss;
@@ -93,7 +108,13 @@ export class Story{
   if(it.kind==='heal'){const h=Math.round(p.maxHp*it.v),b=p.hp;p.hp=Math.min(p.maxHp,p.hp+h);g.pop(p.x,p.y-190,'+'+Math.round(p.hp-b),it.col,1.2)}
   else{const b=p.meter;p.meter=Math.min(300,p.meter+it.v);g.pop(p.x,p.y-190,'+'+Math.round(p.meter-b)+' METER',it.col,1.1,{text:true})}
   g.fx.ps.ring(p.x,p.y-80,it.col,110);g.sfx('ui_round_start',{vol:.5,rate:1.6});return true}
- update(){const g=this.g,p=g.p1;this.ft++;if(this.itemCd>0)this.itemCd--;this.pickups();if(this.dealer)this.dealer.update();
+ // Hindernisse (Kapitel 3): beim Laufen am Boden blockiert; wer drüberspringt (Füße höher als h), kommt durch. Landen im Hindernis schiebt zur näheren Seite.
+ hurdleBlock(){const p=this.g.p1,hs=this.cfg.hurdles;if(!hs||this.state!=='walk'||p.hp<=0){this.px=p.x;return}
+  const px=this.px===undefined?p.x:this.px;
+  for(const h of hs){const a=h.x-h.w/2,b=h.x+h.w/2;if(p.y<=GROUND-h.h+4)continue;   // Sprung über das Hindernis
+   if(p.x>a-14&&p.x<b+14){p.x=px<=h.x?a-14:b+14;if(p.vx)p.vx=0}}
+  this.px=p.x}
+ update(){const g=this.g,p=g.p1;this.ft++;this.hurdleBlock();if(this.itemCd>0)this.itemCd--;this.pickups();if(this.dealer)this.dealer.update();
   for(const m of this.mobs)if(m.state==='ko')m.koT=(m.koT||0)+1;
   const gone=this.mobs.filter(m=>m.state==='ko'&&m.koT>80);
   if(gone.length){this.mobs=this.mobs.filter(m=>!gone.includes(m));g.fighters=g.fighters.filter(f=>!gone.includes(f))}

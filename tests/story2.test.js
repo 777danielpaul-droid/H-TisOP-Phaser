@@ -39,8 +39,8 @@ if(boss.state!=='ko')fail('Boss nicht besiegt');
 if(s.alive().length)fail('nach dem Boss dürfen keine Mantis übrig sein');
 if(!(s.items&&s.items.length>=0))fail('Items');
 console.log('Kapitel 2 + Boss OK');
-if(arc.hasNextChapter)fail('Kapitel 2 ist das letzte Kapitel');
-arc.confirm();if(arc.state!=='select'||game.story)fail('Enter nach dem letzten Kapitel -> Auswahl');
+if(!arc.hasNextChapter)fail('nach Kapitel 2 folgt Kapitel 3');
+arc.confirm();if(arc.state!=='fight'||!game.story||game.story.ch!==3)fail('Enter nach Kapitel 2 -> Kapitel 3');
 
 // ---- Kapitel 1 geschafft -> Kapitel 2 frei, Enter = weiter ----
 arc.startStory('tiger',1);const s1=game.story;s1.state='done';s1.doneT=261;game.phase='fight';arc.update();
@@ -50,5 +50,5 @@ if(!arc.hasNextChapter)fail('hasNextChapter');
 arc.confirm();if(arc.state!=='fight'||!game.story||game.story.ch!==2||game.stageIndex!==CHAPTERS[1].stage)fail('Enter -> Kapitel 2');
 console.log('Kapitelwechsel OK');
 // ---- Kapitelwahl im Menü ----
-arc.toSelect();arc.setMode('story');arc.chapter=1;if(!arc.cycleChapter()||arc.chapter!==2)fail('cycleChapter 1->2');if(!arc.cycleChapter()||arc.chapter!==1)fail('cycleChapter 2->1');
+arc.toSelect();arc.setMode('story');arc.chapter=1;if(!arc.cycleChapter()||arc.chapter!==2)fail('cycleChapter 1->2');{const want=arc.chapterOpen(3)?3:1;if(!arc.cycleChapter()||arc.chapter!==want)fail('cycleChapter 2->'+want);if(want===3&&(!arc.cycleChapter()||arc.chapter!==1))fail('cycleChapter 3->1')}
 console.log('OK');

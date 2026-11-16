@@ -15,7 +15,19 @@ export function storyWorld(g,game,t){const x0=LV.x0-400,x1=LV.x1+400,L=(game.sto
  for(let x=-1200;x<=2200;x+=400){g.fillStyle='#1a1426';g.fillRect(x-3,GROUND-215,6,215);g.fillRect(x-3,GROUND-215,34,5);
   g.save();g.globalCompositeOperation='lighter';const rg=g.createRadialGradient(x+28,GROUND-208,4,x+28,GROUND-208,170);rg.addColorStop(0,`rgba(${L.lamp},.5)`);rg.addColorStop(1,`rgba(${L.lamp},0)`);g.fillStyle=rg;g.fillRect(x-150,GROUND-380,360,380);
   g.translate(x+28,GROUND+6);g.scale(1,.22);const pg=g.createRadialGradient(0,0,4,0,0,130);pg.addColorStop(0,`rgba(${L.lamp},.4)`);pg.addColorStop(1,`rgba(${L.lamp},0)`);g.fillStyle=pg;g.fillRect(-130,-130,260,260);g.restore()}
- g.restore();drawDealer(g,game,t)}
+ g.restore();drawProps(g,game,t,L);drawDealer(g,game,t)}
+// Ausschmückung (Kisten, Fässer, Neonschilder) + Hindernisse zum Überspringen (Kapitel-Config: props / hurdles)
+function drawProps(g,game,t,L){const c=game.story&&game.story.cfg;if(!c)return;g.save();
+ for(const o of c.props||[]){const x=o.x;
+  if(o.k==='crate'){g.fillStyle='#1b1428';g.fillRect(x-34,GROUND-52,68,52);g.fillRect(x-22,GROUND-92,46,40);g.strokeStyle=L.line;g.globalAlpha=.7;g.lineWidth=2;g.strokeRect(x-34,GROUND-52,68,52);g.strokeRect(x-22,GROUND-92,46,40);g.beginPath();g.moveTo(x-34,GROUND-52);g.lineTo(x+34,GROUND);g.moveTo(x+34,GROUND-52);g.lineTo(x-34,GROUND);g.stroke();g.globalAlpha=1}
+  else if(o.k==='barrel'){g.fillStyle='#211832';g.beginPath();g.ellipse(x,GROUND-5,24,6,0,0,7);g.fill();g.fillRect(x-24,GROUND-62,48,58);g.fillStyle=L.line;g.globalAlpha=.55;g.fillRect(x-24,GROUND-48,48,4);g.fillRect(x-24,GROUND-20,48,4);g.globalAlpha=1;g.strokeStyle='#3a2f58';g.lineWidth=2;g.strokeRect(x-24,GROUND-62,48,58)}
+  else if(o.k==='sign'){g.fillStyle='#1a1426';g.fillRect(x-2,GROUND-150,4,150);const fl=.75+.25*Math.sin(t*3+x),w=90;g.fillStyle='rgba(10,6,20,.9)';g.fillRect(x-w/2,GROUND-190,w,40);g.strokeStyle=L.acc;g.globalAlpha=fl;g.lineWidth=2;g.strokeRect(x-w/2,GROUND-190,w,40);g.fillStyle=L.acc;g.fillRect(x-30,GROUND-176,60,5);g.fillRect(x-20,GROUND-164,40,5);g.globalAlpha=1}}
+ for(const h of c.hurdles||[]){const a=h.x-h.w/2,y=GROUND-h.h;
+  g.save();g.shadowColor=L.acc;g.shadowBlur=14;g.fillStyle='#1d1530';g.fillRect(a,y,h.w,h.h);g.restore();
+  g.save();g.beginPath();g.rect(a,y,h.w,h.h);g.clip();g.fillStyle=L.acc;g.globalAlpha=.8;for(let k=-h.h;k<h.w+h.h;k+=22){g.beginPath();g.moveTo(a+k,GROUND);g.lineTo(a+k+11,GROUND);g.lineTo(a+k+11+h.h,y);g.lineTo(a+k+h.h,y);g.closePath();g.fill()}g.restore();
+  g.strokeStyle=L.acc;g.lineWidth=3;g.strokeRect(a,y,h.w,h.h);g.fillStyle=L.acc;g.fillRect(a-4,y-5,h.w+8,6);
+  const b=Math.sin(t*4+h.x)*3;g.fillStyle=L.acc;g.globalAlpha=.9;g.beginPath();g.moveTo(h.x,y-30+b);g.lineTo(h.x-9,y-44+b);g.lineTo(h.x+9,y-44+b);g.closePath();g.fill();g.globalAlpha=1}   // Pfeil: hier springen
+ g.restore()}
 // ---------- Schwarzmarkthändler KORVUS (NPC): Marktstand + Rabe in der Welt, Dialog-Panel im HUD ----------
 // Welt (unter der Kamera, vor den Kämpfern gezeichnet): Kisten, violette Laterne, Tuch mit Raben-Auge; Rabe mit Sprech-Gesten (Frames aus assets/rabe: Dealer.frame()).
 export function drawDealer(g,game,t){const d=game.story&&game.story.dealer;if(!d||d.alpha<=.01)return;const x=d.x,a=d.alpha;

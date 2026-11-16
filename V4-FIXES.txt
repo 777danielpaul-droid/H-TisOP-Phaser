@@ -44,3 +44,11 @@ Corvus: Flügel-Sprung, Fallen/Aufstehen, Schwarzmarkt erreichbar
 - Schwarzmarkt: Energiedrink/Schattenelixier/Hyper-Kristall gehen jetzt immer in den Beutel (LOOT.items, Taste 1/2/3 im Kampf), egal wie viel Leben fehlt; mehrfach auf Lager.
 - Energiedrink/Schattenelixier/Kristall: Händler legt sie jetzt in den Beutel (LOOT.items, Taste 1/2/3 im Kampf) statt sie sofort zu verbrauchen -> immer kaufbar, auch bei vollem Leben, beliebig auf Lager.
 - Sprung: Flügel öffnen sich einmal, bleiben in einer festen gespreizten Pose (j_8, gehalten, kein Flattern) und falten sich erst beim Fallen.
+
+---
+Story: Kapitel 3 "DER KERN" + Hindernisse + Ausschmückung
+- Neuer Gegner MINI-CYBERDÄMON (characters.js: miniDemon): kleinere Version des Cyberdämons (Sprite x0.78, 380 HP, kein Hyper, normaler Mob – kein Boss).
+- Kapitel 3 (core/story.js): 4 gemischte Wellen (enc.mix = [['mantis',3],['miniDemon',2]] -> reihum durchgemischt) + Finale CYBERDÄMON mit 2 Mantis. Look: Crimson-Temple-Stage, rotes Glühen. Wird durch Abschluss von Kapitel 2 freigeschaltet (zum Testen: ?unlock=story3).
+- Hindernisse zum Überspringen (chapter.hurdles = {x,w,h}): beim Laufen blockieren sie am Boden, drüberspringen geht (Füße höher als h). Im Kampf (gesperrte Arena) sind sie inaktiv. Gelb-schwarz gestreifte Blöcke mit Pfeil (render/storyhud.js drawProps).
+- Ausschmückung aller 3 Kapitel: Kisten, Fässer, Neonschilder (chapter.props).
+- Neuer Test: tests/story3.test.js (Daten, Hindernis blockt/Sprung geht, Mischung, komplettes Kapitel mit Boss).

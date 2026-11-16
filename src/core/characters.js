@@ -38,6 +38,9 @@ export const CHARACTERS={
   ai:[{min:100,max:300,b:'S',dx:0,p:.14},{min:90,max:220,b:'S',dx:1,p:.1},{min:90,max:240,b:'M',dx:1,p:.16}]},
  mantisAlpha:{id:'mantisAlpha',name:'ALPHA-MANTIS',desc:'Schwarm-Anführer',hp:650,walk:.92,dmg:.95,def:1,jump:1,dash:1,airJumps:0,meter:.01,pal:'tiger',glow:'#ff7a3a',sprites:'mantis',noSpecialBlock:true,spriteScale:1.25,size:1.25,defeat:true,mods:ALPHA_MODS,
   ai:[{min:100,max:320,b:'S',dx:0,p:.16},{min:90,max:240,b:'S',dx:1,p:.12},{min:90,max:260,b:'H',dx:1,p:.14}]},
+ miniDemon:{id:'miniDemon',name:'MINI-CYBERDÄMON',desc:'Kleiner Dämon des Kerns · Story-Gegner Kapitel 3',hp:380,walk:1.05,dmg:.75,def:1,jump:.9,dash:1,airJumps:0,meter:.01,pal:'tiger',glow:'#ff5a3a',sprites:'cyberdemon',spriteScale:.78,size:.78,noSpecialBlock:true,defeat:true,
+  mods:{...MODS.cyberdemon,super:{cost:9999},airsuper:{cost:9999}},   // kein Hyper (wie Mantis); Specials/Normals vom großen Cyberdämon
+  ai:[{min:100,max:300,b:'S',dx:-1,p:.12},{min:90,max:230,b:'M',dx:1,p:.16},{min:90,max:240,b:'H',dx:1,p:.12}]},
  cyberdemon:{id:'cyberdemon',name:'CYBERDÄMON',desc:'Dämon des Kerns · Story-Boss Kapitel 2',storyBoss:true,hp:1350,walk:.88,dmg:1,def:.92,jump:.85,dash:.95,airJumps:0,meter:1,pal:'tiger',glow:'#ff2a44',sprites:'cyberdemon',spriteScale:1.22,size:1.22,defeat:true,mods:MODS.cyberdemon,
   pros:'Sehr viel HP, riesige Reichweite, rote Klauenwellen, Rüstungs-Ansturm, Blutrausch',cons:'Langsam, schwere Moves mit langem Startup, kein Doppelsprung',
   ai:[{min:100,max:340,b:'S',dx:-1,p:.16},{min:90,max:280,b:'M',dx:1,p:.18},{min:90,max:300,b:'H',dx:1,p:.14},{min:140,max:340,b:'S',dx:0,dy:1,p:.12}]},
