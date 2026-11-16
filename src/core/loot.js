@@ -14,8 +14,7 @@ export const RARITY=[{n:'GEWÖHNLICH',c:'#b8c0e0'},{n:'SELTEN',c:'#5fd0ff'},{n:'
 // r = Seltenheit (Index in RARITY). Neue Karten: hier eintragen.
 export const CARDS=[
  {id:'larve',name:'Schwarm-Larve',r:0,txt:'Klein, aber hungrig.'},{id:'spaeher',name:'Mantis-Späher',r:0,txt:'Immer zuerst da.'},
- {id:'krieger',name:'Mantis-Krieger',r:0,txt:'Springt von allen Seiten.'},{id:'laterne',s:'LATERNE',name:'Straßenlaterne',r:0,txt:'Das letzte Licht der Gasse.'},
- {id:'drink',s:'DRINK',name:'Energiedrink',r:0,txt:'Heilt 25 % Leben. Story: Taste 1.'},{id:'wirbel',name:'Wirbel-Angriff',r:1,txt:'Trifft auch hinter ihm.'},
+ {id:'krieger',name:'Mantis-Krieger',r:0,txt:'Springt von allen Seiten.'},{id:'drink',s:'DRINK',name:'Energiedrink',r:0,txt:'Heilt 25 % Leben. Story: Taste 1.'},{id:'wirbel',name:'Wirbel-Angriff',r:1,txt:'Trifft auch hinter ihm.'},
  {id:'tiger',name:'H!T',r:1,txt:'Wilder Brawler.'},{id:'st3g0',name:'ST3-G0',r:1,txt:'Panzer-Echse.'},{id:'kitsune',name:'KITSUNE',r:1,txt:'Neunschwanz-Fuchs.'},
  {id:'alpha',name:'Alpha-Mantis',r:2,txt:'Anführer des Schwarms.'},{id:'anubis',name:'ANUBIS',r:2,txt:'Wächter der Unterwelt.'},{id:'koenigin',name:'Schwarm-Königin',r:2,txt:'Niemand hat sie je gesehen.'},
  {id:'sichel',name:'Schattensichel',r:1,txt:'Ein violetter Bogen aus Nacht.'},{id:'schwarm',name:'Rabenschwarm',r:1,txt:'Hyper: Der Schwarm stürmt vor.'},
@@ -76,15 +75,17 @@ export const pick=(a,rnd)=>a[Math.floor(rnd()*a.length)];
 // Feinjustierung: GOOD_CHANCE = Wahrscheinlichkeit, dass ein Booster überhaupt etwas Gutes enthält; GOOD_MIX = Verteilung darunter; FILLER_COIN = Anteil Coins bei den übrigen Plätzen.
 // >>> TESTMODUS (14.11.2026): Drops absichtlich hochgeschraubt, damit Karten/Booster schnell geprüft werden können. <<<
 // Originalwerte fürs fertige Spiel: GOOD_CHANCE=.22, GOOD_MIX={epic:.15,rare:.40}, FILLER_COIN=.78
+export const ITEM_FILLER=.3,ITEM_GOOD=.35;   // Anteil Sonderitems an den Karten-Füllplätzen (Rest: gewöhnliche Karten)
 export const GOOD_CHANCE=.9,GOOD_MIX={epic:.4,rare:.5},FILLER_COIN=.45;   // GOOD_MIX: Rest (~45 %) = neue Farbe/Stage, solange es noch welche gibt
 export const isGood=r=>prizeTier(r)>=2;
 const mkCard=(c,rnd)=>({type:'card',id:c.id,name:c.name,r:c.r,isNew:!(LOOT.cards[c.id]>0),item:isItem(c.id)});   // item: Karte ist zugleich ein benutzbares Story-Item
 // Füllplatz: meist wenig Coins (6-26), selten ein dicker Coin-Treffer (35-50), sonst eine gewöhnliche Karte
 export function rollFiller(rnd){
  if(rnd()<FILLER_COIN)return{type:'coins',n:rnd()<.08?35+Math.floor(rnd()*16):6+Math.floor(rnd()*21)};
- return mkCard(pick(CARDS.filter(c=>c.r===0),rnd),rnd)}
+ if(rnd()<ITEM_FILLER)return mkCard(pick(CARDS.filter(c=>c.r===0&&isItem(c.id)),rnd),rnd);   // gewöhnliches Sonderitem (Energydrink) – benutzbar im Story-Modus
+ return mkCard(pick(CARDS.filter(c=>c.r===0&&!isItem(c.id)),rnd),rnd)}
 // Der seltene gute Platz: epische Karte, seltene Karte oder etwas Freischaltbares (Farben + Stages)
-export function rollGood(rnd){const x=rnd(),card=r=>mkCard(pick(CARDS.filter(c=>c.r===r),rnd),rnd);
+export function rollGood(rnd){const x=rnd(),card=r=>{let pool=CARDS.filter(c=>c.r===r);if(r===1){const it=pool.filter(c=>isItem(c.id)),rest=pool.filter(c=>!isItem(c.id));if(it.length&&rest.length)pool=rnd()<ITEM_GOOD?it:rest}return mkCard(pick(pool,rnd),rnd)};   // seltene Karte: zu ITEM_GOOD ein Sonderitem (Elixier, Hyper-Kristall)
  if(x<GOOD_MIX.epic)return card(2);if(x<GOOD_MIX.epic+GOOD_MIX.rare)return card(1);
  const free=[...SKIN_POOL.filter(([id,k])=>!ownsSkin(id,k)).map(([id,k])=>['skin',id,k]),...STAGE_POOL.filter(i=>!ownsStage(i)).map(i=>['stage',i])];
  if(!free.length)return card(1);   // alles freigeschaltet -> seltene Karte

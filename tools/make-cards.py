@@ -159,7 +159,75 @@ def make(cid, sid, frame, acc, size):
     return out
 
 
+def make_item(cid, kind, acc):
+    """Item-Karten (Energydrink, Elixier, Hyper-Kristall): Motiv wird selbst gezeichnet (4x Supersampling)."""
+    S = 3
+    bg = background(acc, cid).convert('RGBA')
+    L = Image.new('RGBA', (W * S, H * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(L)
+    cx, base = W * S // 2, 600 * S
+    lite = mix(acc, (255, 255, 255), .55)
+    dark = mix(acc, (0, 0, 0), .55)
+    if kind == 'drink':      # Dose mit Blitz
+        bw, bh = 190 * S, 330 * S
+        x0, y0 = cx - bw // 2, base - bh
+        d.rounded_rectangle([x0, y0, x0 + bw, base], radius=26 * S, fill=dark, outline=lite, width=4 * S)
+        d.rounded_rectangle([x0 + 18 * S, y0 + 40 * S, x0 + bw - 18 * S, base - 40 * S], radius=18 * S, fill=acc)
+        d.rectangle([x0 + 10 * S, y0, x0 + bw - 10 * S, y0 + 22 * S], fill=lite)
+        d.ellipse([cx - 22 * S, y0 - 8 * S, cx + 22 * S, y0 + 14 * S], fill=(30, 40, 40))
+        bolt = [(cx + 18 * S, y0 + 70 * S), (cx - 46 * S, y0 + 175 * S), (cx - 2 * S, y0 + 175 * S),
+                (cx - 22 * S, y0 + 270 * S), (cx + 50 * S, y0 + 150 * S), (cx + 4 * S, y0 + 150 * S)]
+        d.polygon(bolt, fill=(255, 255, 255))
+    elif kind == 'elixir':   # Kolben mit Flüssigkeit und Blasen
+        r = 125 * S
+        ccy = base - r
+        d.rectangle([cx - 34 * S, ccy - 215 * S, cx + 34 * S, ccy - 40 * S], fill=lite)
+        d.ellipse([cx - r, ccy - r, cx + r, ccy + r], fill=lite)
+        d.ellipse([cx - r + 10 * S, ccy - r + 10 * S, cx + r - 10 * S, ccy + r - 10 * S], fill=(12, 16, 28))
+        liq = Image.new('RGBA', L.size, (0, 0, 0, 0))
+        ld = ImageDraw.Draw(liq)
+        ld.ellipse([cx - r + 10 * S, ccy - r + 10 * S, cx + r - 10 * S, ccy + r - 10 * S], fill=acc)
+        ld.rectangle([0, 0, W * S, ccy - 25 * S], fill=(0, 0, 0, 0))
+        L.alpha_composite(liq)
+        d = ImageDraw.Draw(L)
+        d.rectangle([cx - 24 * S, ccy - 205 * S, cx + 24 * S, ccy - 50 * S], fill=(12, 16, 28))
+        d.rounded_rectangle([cx - 42 * S, ccy - 245 * S, cx + 42 * S, ccy - 205 * S], radius=10 * S, fill=(150, 100, 60))
+        for bx, by, br in [(-40, 40, 14), (30, 10, 10), (-10, 85, 8), (55, 70, 12), (-65, -5, 7)]:
+            d.ellipse([cx + (bx - br) * S, ccy + (by - br) * S, cx + (bx + br) * S, ccy + (by + br) * S], outline=lite, width=3 * S)
+    else:                    # Hyper-Kristall
+        top, bot, mid = base - 380 * S, base, base - 190 * S
+        w2 = 150 * S
+        pts = {'t': (cx, top), 'l': (cx - w2, mid), 'r': (cx + w2, mid), 'b': (cx, bot), 'tl': (cx - 55 * S, mid - 70 * S), 'tr': (cx + 55 * S, mid - 70 * S)}
+        facets = [([pts['t'], pts['l'], pts['tl']], lite), ([pts['t'], pts['tl'], pts['tr']], mix(acc, (255, 255, 255), .25)),
+                  ([pts['t'], pts['tr'], pts['r']], acc), ([pts['l'], pts['tl'], pts['b']], mix(acc, (0, 0, 0), .2)),
+                  ([pts['tl'], pts['tr'], pts['b']], acc), ([pts['tr'], pts['r'], pts['b']], dark)]
+        for poly, col in facets:
+            d.polygon(poly, fill=col, outline=(255, 255, 255), width=3 * S)
+    L = L.resize((W, H), Image.LANCZOS)
+    a = L.split()[3]
+    halo = Image.new('RGBA', (W, H), acc + (0,))
+    halo.putalpha(a.filter(ImageFilter.GaussianBlur(22)).point(lambda v: int(v * .8)))
+    shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    shadow.putalpha(a.filter(ImageFilter.GaussianBlur(10)).point(lambda v: int(v * .7)))
+    bg.alpha_composite(halo)
+    bg.alpha_composite(shadow, (6, 10))
+    bg.alpha_composite(L)
+    path = os.path.join(ROOT, 'assets', 'cards', cid + '.webp')
+    bg.convert('RGB').save(path, 'WEBP', quality=90, method=6)
+    print(cid, '->', path, os.path.getsize(path) // 1024, 'KB')
+
+
+ITEM_CARDS = {'drink': ('drink', (125, 255, 154)), 'elixir': ('elixir', (185, 139, 255)), 'crystal': ('crystal', (255, 210, 63))}
+
+
 if __name__ == '__main__':
+    import sys
+    force = '--force' in sys.argv    # ohne --force werden vorhandene Karten-Bilder nicht überschrieben (eigene Karten-Art bleibt)
     os.makedirs(os.path.join(ROOT, 'assets', 'cards'), exist_ok=True)
+    have = lambda cid: os.path.exists(os.path.join(ROOT, 'assets', 'cards', cid + '.webp'))
     for cid, (sid, frame, acc, size) in CARDS.items():
-        make(cid, sid, frame, acc, size)
+        if force or not have(cid):
+            make(cid, sid, frame, acc, size)
+    for cid, (kind, acc) in ITEM_CARDS.items():
+        if force or not have(cid):
+            make_item(cid, kind, acc)
