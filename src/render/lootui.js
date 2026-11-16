@@ -16,17 +16,19 @@ export const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function cardImg(id){const S=typeof window!=='undefined'&&window.__CARDS__&&window.__CARDS__[id];if(!S||typeof Image==='undefined')return null;
  cardImg.c=cardImg.c||{};let im=cardImg.c[id];if(!im){im=cardImg.c[id]=new Image();im.src=S}return im.complete&&im.naturalWidth>0?im:null}
 export function cover(g,im,x,y,w,h){const k=Math.max(w/im.naturalWidth,h/im.naturalHeight),dw=im.naturalWidth*k,dh=im.naturalHeight*k;g.save();g.beginPath();g.rect(x,y,w,h);g.clip();g.drawImage(im,x+(w-dw)/2,y+(h-dh)/2,dw,dh);g.restore()}
+// Abgerundetes Rechteck (Pfad) – Sammelkarten haben runde statt abgeschnittene Ecken
+function rr(g,x,y,w,h,r){r=Math.min(r,w/2,h/2);g.beginPath();g.moveTo(x+r,y);g.lineTo(x+w-r,y);g.arcTo(x+w,y,x+w,y+r,r);g.lineTo(x+w,y+h-r);g.arcTo(x+w,y+h,x+w-r,y+h,r);g.lineTo(x+r,y+h);g.arcTo(x,y+h,x,y+h-r,r);g.lineTo(x,y+r);g.arcTo(x,y,x+r,y,r);g.closePath()}
 export function card(g,hud,x,y,w,h,col,t1,t2,t3,flip=1,img=null){
  const fs=(b,s)=>Math.round(Math.min(b,w*1.65/Math.max(6,String(s).length)));g.save();g.translate(x+w/2,y+h/2);g.scale(Math.max(.025,Math.abs(flip)),1);const front=flip>=0,bx=-w/2,by=-h/2;const bk=front?null:cardImg('back');   // Rückseite: assets/cards/back.webp (tools/make-cardback.py); fehlt das Bild, bleibt die alte Text-Rückseite
  // Machined card chassis, raised outer lip and deep black-glass inset.
- g.shadowColor=front?col:bk?'#a56bff':'#6a9aa8';g.shadowBlur=front?18:8;g.fillStyle='#03080d';hud.kChamfer(g,bx,by,w,h,12);g.fill();g.shadowBlur=0;
- const shell=g.createLinearGradient(bx,by,bx+w,by+h);shell.addColorStop(0,'#b9d1d5');shell.addColorStop(.12,'#354a52');shell.addColorStop(.42,'#0b151c');shell.addColorStop(.78,'#24363e');shell.addColorStop(1,'#050b10');g.fillStyle=shell;hud.kChamfer(g,bx+2,by+2,w-4,h-4,10);g.fill();
- g.strokeStyle=front?col:'rgba(171,214,222,.55)';g.lineWidth=1.2;hud.kChamfer(g,bx+3,by+3,w-6,h-6,9);g.stroke();
- g.save();hud.kChamfer(g,bx+7,by+7,w-14,h-14,7);g.clip();const well=g.createLinearGradient(0,by+7,0,by+h-7);well.addColorStop(0,'#142630');well.addColorStop(.4,'#061018');well.addColorStop(1,'#020609');g.fillStyle=well;g.fillRect(bx+7,by+7,w-14,h-14);
+ g.shadowColor=front?col:bk?'#a56bff':'#6a9aa8';g.shadowBlur=front?18:8;g.fillStyle='#03080d';rr(g,bx,by,w,h,10);g.fill();g.shadowBlur=0;
+ const shell=g.createLinearGradient(bx,by,bx+w,by+h);shell.addColorStop(0,'#b9d1d5');shell.addColorStop(.12,'#354a52');shell.addColorStop(.42,'#0b151c');shell.addColorStop(.78,'#24363e');shell.addColorStop(1,'#050b10');g.fillStyle=shell;rr(g,bx+2,by+2,w-4,h-4,8);g.fill();
+ g.strokeStyle=front?col:'rgba(171,214,222,.55)';g.lineWidth=1.2;rr(g,bx+3,by+3,w-6,h-6,7);g.stroke();
+ g.save();rr(g,bx+7,by+7,w-14,h-14,4);g.clip();const well=g.createLinearGradient(0,by+7,0,by+h-7);well.addColorStop(0,'#142630');well.addColorStop(.4,'#061018');well.addColorStop(1,'#020609');g.fillStyle=well;g.fillRect(bx+7,by+7,w-14,h-14);
  if(front&&img){cover(g,img,bx+8,by+8,w-16,h-16);const fade=g.createLinearGradient(0,by+h*.55,0,by+h*.86);fade.addColorStop(0,'#02060900');fade.addColorStop(1,'#020609ee');g.fillStyle=fade;g.fillRect(bx+8,by+h*.55,w-16,h*.31)}
  const sheen=g.createLinearGradient(bx,by,bx+w,by+h);sheen.addColorStop(0,'rgba(255,255,255,.16)');sheen.addColorStop(.22,'rgba(255,255,255,.025)');sheen.addColorStop(.52,'rgba(90,224,235,.035)');sheen.addColorStop(1,'rgba(0,0,0,.22)');g.fillStyle=sheen;g.fillRect(bx+7,by+7,w-14,h-14);
  g.restore();
- if(bk){g.save();hud.kChamfer(g,bx+2,by+2,w-4,h-4,10);g.clip();g.drawImage(bk,bx+2,by+2,w-4,h-4);g.restore()}   // Rückseite füllt die ganze Karte
+ if(bk){g.save();rr(g,bx+2,by+2,w-4,h-4,8);g.clip();g.drawImage(bk,bx+2,by+2,w-4,h-4);g.restore()}   // Rückseite füllt die ganze Karte
  // Corner fasteners and a small energized spine.
  if(!bk){g.fillStyle='#d7f7fa';for(const [xx,yy] of [[bx+11,by+11],[bx+w-11,by+11],[bx+11,by+h-11],[bx+w-11,by+h-11]]){g.beginPath();g.arc(xx,yy,1.8,0,Math.PI*2);g.fill()}
  g.fillStyle=col;g.shadowColor=col;g.shadowBlur=9;g.fillRect(bx+10,by+15,2,h-30);g.shadowBlur=0}
