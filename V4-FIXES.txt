@@ -43,4 +43,4 @@ Corvus: Flügel-Sprung, Fallen/Aufstehen, Schwarzmarkt erreichbar
 - Schwarzmarkt (Korvus, Story): war nur am Level-Anfang ansprechbar (bei Checkpoint-Neustart oder nach der ersten Welle stand er außer Reichweite). Jetzt steht er nach jeder Welle und an jedem Checkpoint wieder kurz vor dem Spieler (Story.dealerSpot), Ansprechweite 170 -> 210 px.
 - Schwarzmarkt: Energiedrink/Schattenelixier/Hyper-Kristall gehen jetzt immer in den Beutel (LOOT.items, Taste 1/2/3 im Kampf), egal wie viel Leben fehlt; mehrfach auf Lager.
 - Energiedrink/Schattenelixier/Kristall: Händler legt sie jetzt in den Beutel (LOOT.items, Taste 1/2/3 im Kampf) statt sie sofort zu verbrauchen -> immer kaufbar, auch bei vollem Leben, beliebig auf Lager.
-- Sprung: gespreizte Flügel-Frames wiederholt (Flügelschlag), Flügel sind fast den ganzen Sprung sichtbar.
+- Sprung: Flügel öffnen sich einmal, bleiben in einer festen gespreizten Pose (j_8, gehalten, kein Flattern) und falten sich erst beim Fallen.

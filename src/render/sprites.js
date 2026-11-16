@@ -158,7 +158,7 @@ export const CYBERDEMON_ANIMS={
 //  c_0 Deckung | c_1 tiefe Deckung | c_2 Jab | c_3 hoher Tritt | c_4 geduckte Krallen | c_5 Sprung-Krallen | c_6 Sichelschwung (violette Spur) | c_7 Deckung + Sichel-Abschuss
 //  c_8 Aura aufladen | c_9 Boden-Dornen (Hocke) | c_10 Dash-Ausfall | c_11 Brüllen/Power-Pose
 //  f_0-f_6 Fallen (f_0-f_2 noch in der Luft, f_3-f_6 schlägt auf / liegt) | u_0-u_7 Aufstehen (hockend -> aufrecht)
-//  j_0-j_16 Sprung mit magischen Flügeln: j_0-j_2 Ausgangshaltung/Hocke (ungenutzt, kein Sprungabdruck-Zustand), j_3-j_5 Absprung, j_5-j_10 Flügel öffnen + gespreizt (gespreizte Frames j_8-j_10 wiederholt = Flügelschlag, damit die Flügel fast den ganzen Sprung sichtbar sind), j_11-j_15 Flügel falten, j_16 Landehocke (ungenutzt)
+//  j_0-j_16 Sprung mit magischen Flügeln: j_0-j_2 Ausgangshaltung/Hocke (ungenutzt, kein Sprungabdruck-Zustand), j_3-j_5 Absprung, j_5-j_10 Flügel öffnen + gespreizt (Luft-Anim: nur j_8 als gespreizte Pose, lange gehalten – KEIN Flattern), j_11-j_15 Flügel falten, j_16 Landehocke (ungenutzt)
 // NOCH BEHELFE (Bögen fehlen): Treffer (tiefe Deckung geneigt), Duck-Angriffe (geduckte Krallen), Luft-Angriffe (Sprung-Klauen ohne Flügel).
 // Frame-Maßstab Rabe: Die Kampfposen (c_*) sind im Gemini-Bogen kleiner und geduckt gezeichnet als die aufrechte Idle-Pose (i_*, t_*), dadurch schrumpfte KORVUS beim Gehen/Kämpfen.
 // Wert > 1 vergrößert den Frame (Idle/Sprechen/Liegepose bleiben 1). 'a'-Varianten erben vom Basis-Frame. Feinjustierung hier.
@@ -167,7 +167,7 @@ export const RABE_ANIMS={
  idle:{frames:['i_0','i_1','i_2','i_1'],loop:1,fps:3},
  walk:{frames:['c_0','c_1','c_0','c_1'],loop:1,fps:8,bob:3,lean:.03},
  crouch:{frames:['c_1'],squash:.9},cblock:{frames:['c_1'],squash:.88},
- air:{frames:['j_3a','j_4a','j_5a','j_6a','j_7a','j_8a','j_9a','j_10a','j_8a','j_9a','j_10a','j_7a','j_11a','j_12a','j_13a','j_14a','j_15a'],lean:.03},   // Sprung (Frame nach Flugbahn, siehe Fighter.updateAnim): Absprung -> violette Flügel öffnen -> am Scheitel gespreizt -> Flügel falten
+ air:{frames:['j_3a','j_4a','j_5a','j_6a','j_7a','j_8a','j_8a','j_8a','j_8a','j_8a','j_8a','j_11a','j_12a','j_13a','j_14a','j_15a'],lean:.03},   // Sprung (Frame nach Flugbahn, siehe Fighter.updateAnim): Absprung -> violette Flügel öffnen -> am Scheitel gespreizt -> Flügel falten
  dash:{frames:['c_10'],lean:.05},airdash:{frames:['c_10a'],lean:.14},
  punch:{frames:['c_0','c_2','c_2','c_0']},cpunch:{frames:['c_1','c_4','c_4'],squash:.94},jpunch:{frames:['c_5a','c_5a']},
  kick:{frames:['c_0','c_3','c_3','c_0']},ckick:{frames:['c_4','c_4','c_1']},jkick:{frames:['c_3a','c_3a']},
