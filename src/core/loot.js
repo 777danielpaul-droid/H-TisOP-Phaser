@@ -14,14 +14,29 @@ export const RARITY=[{n:'GEWÖHNLICH',c:'#b8c0e0'},{n:'SELTEN',c:'#5fd0ff'},{n:'
 // r = Seltenheit (Index in RARITY). Neue Karten: hier eintragen.
 export const CARDS=[
  {id:'larve',name:'Schwarm-Larve',r:0,txt:'Klein, aber hungrig.'},{id:'spaeher',name:'Mantis-Späher',r:0,txt:'Immer zuerst da.'},
- {id:'krieger',name:'Mantis-Krieger',r:0,txt:'Springt von allen Seiten.'},{id:'laterne',name:'Straßenlaterne',r:0,txt:'Das letzte Licht der Gasse.'},
- {id:'drink',name:'Energiedrink',r:0,txt:'Heilt 25 % Leben. Story: Taste 1.'},{id:'wirbel',name:'Wirbel-Angriff',r:1,txt:'Trifft auch hinter ihm.'},
+ {id:'krieger',name:'Mantis-Krieger',r:0,txt:'Springt von allen Seiten.'},{id:'laterne',s:'LATERNE',name:'Straßenlaterne',r:0,txt:'Das letzte Licht der Gasse.'},
+ {id:'drink',s:'DRINK',name:'Energiedrink',r:0,txt:'Heilt 25 % Leben. Story: Taste 1.'},{id:'wirbel',name:'Wirbel-Angriff',r:1,txt:'Trifft auch hinter ihm.'},
  {id:'tiger',name:'H!T',r:1,txt:'Wilder Brawler.'},{id:'st3g0',name:'ST3-G0',r:1,txt:'Panzer-Echse.'},{id:'kitsune',name:'KITSUNE',r:1,txt:'Neunschwanz-Fuchs.'},
  {id:'alpha',name:'Alpha-Mantis',r:2,txt:'Anführer des Schwarms.'},{id:'anubis',name:'ANUBIS',r:2,txt:'Wächter der Unterwelt.'},{id:'koenigin',name:'Schwarm-Königin',r:2,txt:'Niemand hat sie je gesehen.'},
  {id:'sichel',name:'Schattensichel',r:1,txt:'Ein violetter Bogen aus Nacht.'},{id:'schwarm',name:'Rabenschwarm',r:1,txt:'Hyper: Der Schwarm stürmt vor.'},
  {id:'blutrausch',name:'Blutrausch',r:1,txt:'Klauenhagel mit beiden Händen.'},{id:'blitz',name:'Blitz-Kamehameha',r:1,txt:'Hyper: Ein Blitz, ein Strahl.'},
  {id:'korvus',name:'KORVUS',r:2,txt:'Rabenfürst mit Sichel.'},{id:'cyberdemon',name:'CYBERDEMON',r:2,txt:'Glühende Klauen aus der Tiefe.'},
- {id:'elixir',name:'Schattenelixier',r:1,txt:'Heilt 70 % Leben. Story: Taste 2.'},{id:'crystal',name:'Hyper-Kristall',r:1,txt:'+100 Hyper-Meter. Story: Taste 3.'}];
+ {id:'elixir',s:'ELIXIR',name:'Schattenelixier',r:1,txt:'Heilt 70 % Leben. Story: Taste 2.'},{id:'crystal',s:'KRISTALL',name:'Hyper-Kristall',r:1,txt:'+100 Hyper-Meter. Story: Taste 3.'},
+ // --- Attacken-, Hyper- und Siegerposen-Karten (Bilder: tools/make-cards.py) ---
+ {id:'tigerklaue',name:'Tigerklaue',r:1,txt:'Special: Aufwärtshaken mit Wirbel.'},{id:'flugtritt',name:'Flugtritt',r:0,txt:'Der Tritt kommt aus der Luft.'},
+ {id:'siegesbruell',name:'Siegesbrüller',r:1,txt:'H!T brüllt nach dem K.O.'},{id:'blitzladung',name:'Blitz-Ladung',r:1,txt:'Hyper: Die Energie sammelt sich.'},
+ {id:'tiger_sieg',name:'H!T: Siegerpose',r:2,txt:'Muskeln raus, Runde vorbei.'},
+ {id:'feueratem',name:'Feuer-Atem',r:1,txt:'Special: ST3-G0 speit Feuer.'},{id:'drachenuppercut',name:'Drachen-Uppercut',r:1,txt:'Aufwärtshaken mit Staubwolke.'},
+ {id:'klauenhieb',name:'Klauenhieb',r:0,txt:'Schwerer Schlag der Panzer-Echse.'},{id:'drachenfluegel',name:'Drachenflügel',r:2,txt:'ST3-G0: Siegerpose in Jade-Licht.'},
+ {id:'fuchsfeuer',name:'Fuchsfeuer',r:1,txt:'Special: Eine Welle aus Fuchsfeuer.'},{id:'neunschwanz',name:'Neunschwanz-Inferno',r:2,txt:'Hyper: Alle neun Schwänze lodern.'},
+ {id:'meditation',name:'Meditation der Neun',r:1,txt:'KITSUNE: Siegerpose im Schneidersitz.'},{id:'fuchssprung',name:'Fuchs-Sprungtritt',r:0,txt:'Schnell wie ein Blitz.'},
+ {id:'fuchshieb',name:'Fuchshieb',r:0,txt:'Schwerer Schlag mit Schwung.'},
+ {id:'seelenwelle',name:'Seelenwelle',r:1,txt:'Special: ANUBIS schickt eine Welle.'},{id:'goldsichel',name:'Goldene Sichel',r:1,txt:'Ein Schwung mit goldener Spur.'},
+ {id:'goldtritt',name:'Goldtritt',r:0,txt:'Hoher Tritt mit Goldspur.'},{id:'schakalblock',name:'Schakal-Block',r:0,txt:'Nichts kommt an der Wache vorbei.'},
+ {id:'rabendornen',name:'Raben-Dornen',r:1,txt:'Hyper: Dornen aus Nacht am Boden.'},{id:'korvus_sieg',name:'KORVUS: Siegerpose',r:2,txt:'Brüllen und Power-Pose.'},
+ {id:'fluegelsprung',name:'Flügelsprung',r:1,txt:'Violette Flügel, weit gespreizt.'},
+ {id:'klauenwelle',name:'Klauenwelle',r:1,txt:'Special: Rote Welle aus Klauen.'},{id:'gegenhand',name:'Gegenhand-Hieb',r:1,txt:'Der zweite Hieb sitzt härter.'},
+ {id:'daemonenatem',name:'Atem des Kerns',r:0,txt:'Er atmet. Das reicht.'}];
 export const SKIN_POOL=[];for(const id of['tiger','st3g0','kitsune'])for(const k of[1,2,3])SKIN_POOL.push([id,k]);   // Zu Beginn hat jede Figur nur Farbe 0; alle weiteren Farben kommen nur aus Boostern
 export const STAGE_NAMES=['NEON CITY','CRIMSON TEMPLE','TOXIC DOCKS','LABYRINTH'];   // Reihenfolge wie THEMES in render/stage.js; Stage 0 ist frei, alle weiteren kommen nur aus Boostern
 export const STAGE_POOL=[1,2,3];
