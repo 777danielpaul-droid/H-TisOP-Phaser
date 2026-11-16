@@ -16,7 +16,7 @@ import{skinCount,skinName}from'./render/skins.js';
 import{THEMES}from'./render/stage.js';
 import{hitDealerOpt}from'./render/storyhud.js';
 import{ITEMS}from'./core/items.js';
-import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel,shopCardRect,shopBackRect,shopBtnRect,shopSelRect,boosterRect,lootOpenRect,lootCloseRect,inR,hitCardGrid,cardFaceAt,hitSellBtn,sellBtnRect,gridGeom,cardGridRect}from'./render/lootui.js';
+import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel,hitStartSel,startSelRect,shopCardRect,shopBackRect,shopBtnRect,shopSelRect,boosterRect,lootOpenRect,lootCloseRect,inR,hitCardGrid,cardFaceAt,hitSellBtn,sellBtnRect,gridGeom,cardGridRect}from'./render/lootui.js';
 import{endBtnRect}from'./render/hover.js';
 import{Renderer}from'./render/renderer.js';
 import{Sound}from'./render/audio.js';
@@ -92,6 +92,7 @@ const startIdleArm=()=>{clearTimeout(startIdleT);if(start&&startOpen&&!startPinn
 const startMin=on=>{if(!start)return;clearTimeout(startMinT);clearTimeout(startIdleT);if(!on)startPinned=false;start.classList.toggle('min',on);const tg=$('startToggle');if(tg)tg.setAttribute('aria-expanded',on?'false':'true');if(!on)startIdleArm()};
 const startManual=()=>{const m=!startIsMin();startMin(m);startPinned=m};
 let startQuiet=0;
+const toStart=()=>{if(!start)return false;clearInputs();startOpen=true;start.classList.remove('hidden');startAutoOpen();canvas.focus();return true};   // zurück zur Startseite (Demokampf), z. B. vom „STARTSEITE“-Knopf der Charakterwahl
 const startAutoOpen=()=>{curShow();startMin(true);startQuiet=performance.now()+700};   // Titelmenü bleibt eingeklappt (freie Sicht auf den Demokampf), bis die Maus bewegt wird (oder eine Taste / V gedrückt wird)
 const startIsMin=()=>!!start&&start.classList.contains('min');
 const startTg=$('startToggle');if(startTg)startTg.onclick=()=>{startManual();canvas.focus()};
@@ -198,6 +199,7 @@ function hoverTarget(){endHot=-1;const L=mouseL;if(!L||menuOpen||panelsOpen()||s
   if(u.mode==='sell'){const ci=hitCardGrid(...L);if(ci>=0)return cardGridRect(ci);if(hitShopBtn(...L))return shopBtnRect();if(inR(lootOpenRect(),...L))return lootOpenRect();return inR(lootCloseRect(),...L)?lootCloseRect():null}
   if(u.mode==='main'){if(hitSellBtn(...L))return sellBtnRect();if(hitShopBtn(...L))return shopBtnRect();if(LOOT.packs>0&&inR(lootOpenRect(),...L))return lootOpenRect();if(inR(lootCloseRect(),...L))return lootCloseRect()}return null}
  if(st!=='select'){const bs=endBtns();for(let i=0;i<bs.length;i++){const r=endBtnRect(i,bs.length);if(inR(r,...L)){endHot=i;return r}}return null}
+ if(start&&hitStartSel(...L))return startSelRect();
  if(!a.pvp&&lootCan()){if(hitShopSel(...L))return shopSelRect();if(inR(boosterRect(),...L))return boosterRect()}
  const md=hitMode(...L);if(md>=0)return{x:MODE_PILL.x+md*MODE_PILL.w/4,y:MODE_PILL.y,w:MODE_PILL.w/4,h:MODE_PILL.h};
  if(a.mode==='melee'&&a.vs.step===0&&!a.vs.locked[0]&&!a.vs.locked[1]){const mo=hitMeleeOpt(...L);if(mo>=0&&(mo!==1||a.cpu))return MELEE_OPTS[mo]}
@@ -218,6 +220,7 @@ canvas.addEventListener('click',e=>{{const dl=game.story&&game.story.dealer;if(d
   else if(u.mode==='main'){const ci=hitCardGrid(...L);if(ci>=0){u.zoom=cardFaceAt(ci);u.zt=0}else if(hitSellBtn(...L))lootSell();else if(hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null;sound.unlock();shopClip.start()}else if(LOOT.packs>0&&inR(lootOpenRect(),...L))lootReveal(openPack());else if(inR(lootCloseRect(),...L))u.open=false}
   else if(u.mode==='reveal'){const f=u.po&&u.po.hitSum(...L);if(f){u.zoom=f;u.zt=0}else lootNext()}
   return}}
+ if(arcade.state==='select'&&canvasMenu()&&start&&hitStartSel(...logical(e))){toStart();return}
  if(arcade.state==='select'&&!arcade.pvp&&lootCan()){const L=logical(e);if(hitShopSel(...L)){lootOpen('shop');return}if(inR(boosterRect(),...L)){lootOpen('main');return}}
  if(arcade.state!=='select'&&canvasMenu()){const L=logical(e),bs=endBtns();for(let i=0;i<bs.length;i++)if(inR(endBtnRect(i,bs.length),...L)){bs[i].fn();return}return}
  if(arcade.state!=='select'||menuOpen||studioIsOpen()||renderer.sel.launching)return;const L=logical(e);

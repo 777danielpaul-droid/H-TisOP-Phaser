@@ -60,6 +60,21 @@ export const hpath = (g, pts) => {
   pts.forEach((p, k) => (k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])));
   g.closePath();
 };
+// Laserfarbe (RGB) zu einer Knopffarbe: violette/lila Töne -> Violett wie die geraden Startmenü-Knöpfe, alles andere -> Eis-Blau
+const laserOf = c => {
+  if (Array.isArray(c)) return c;
+  const m = /^#([0-9a-f]{6})$/i.exec(String(c || ''));
+  if (m) {
+    const n = parseInt(m[1], 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255,
+      mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    if (d > .12) {
+      let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      h = (h * 60 + 360) % 360;
+      if (h >= 245 && h <= 320) return [166, 137, 255];
+    }
+  }
+  return [85, 220, 255];
+};
 export const para = (g, x, y, w, h, sk) => {
   g.beginPath();
   g.moveTo(x + sk, y);
@@ -389,33 +404,71 @@ export class Hud {
     g.restore();
   }
   // Schräge Platte (Knöpfe, Reiter, Umschalter): on = aktiv (Farbe + Glanz), sonst dunkle Mulde mit Haarlinie
+  // Knopf im „Laser-Glas“-Look der Startseite (gleiche Formensprache wie `#start .modes button` in styles/main.css, V5):
+  // durchscheinendes Glas im Parallelogramm, helle Kante, Laserlinie oben, Leuchten in Eis-Blau (cyan) oder Violett.
+  // o.col: Farbton wählt nur die Laserfarbe (violette Töne -> violett, sonst cyan); o.on = aktiv/hover (heller, weiße Kante); o.al = Deckkraft.
   kPlate(g, x, y, w, h, o = {}) {
-    const { col = ICE, on = false, al = 1, sk = 9, t = 0 } = o;
+    const { col = ICE, on = false, al = 1, t = 0 } = o;
+    const L = laserOf(o.laser || col), sk = Math.max(3, Math.round(h * 0.21)), rgb = L.join(',');
+    const path = (ix = 0, iy = 0) => {
+      g.beginPath(); g.moveTo(x + ix + sk, y + iy); g.lineTo(x + w - ix, y + iy);
+      g.lineTo(x + w - ix - sk, y + h - iy); g.lineTo(x + ix, y + h - iy); g.closePath();
+    };
     g.save(); g.globalAlpha = al;
-    // Obsidian-Verbund: tiefe schwarze Mulde, innere Glasreflexion und gefräste Metallkante.
-    para(g,x,y,w,h,sk);
-    const base=g.createLinearGradient(x,y,x,y+h);
-    base.addColorStop(0,on?'rgba(20,43,57,.98)':'rgba(13,19,29,.98)');
-    base.addColorStop(.48,on?'rgba(5,20,31,.97)':'rgba(4,9,17,.98)');
-    base.addColorStop(1,'rgba(1,4,9,.99)');
-    g.fillStyle=base; g.fill();
-    g.save(); para(g,x+1,y+1,w-2,h-2,Math.max(2,sk-1)); g.clip();
-    const sheen=g.createLinearGradient(0,y,0,y+h);
-    sheen.addColorStop(0,'rgba(255,255,255,.13)'); sheen.addColorStop(.16,'rgba(255,255,255,.025)');
-    sheen.addColorStop(.52,'rgba(40,130,160,.025)'); sheen.addColorStop(1,'rgba(0,0,0,.34)');
-    g.fillStyle=sheen; g.fillRect(x,y,w,h);
-    // feine holografische Scanline, die nur über aktive Module läuft
-    if(on){const sx=x+((t*1.7)%(w+70))-35,sg=g.createLinearGradient(sx-18,0,sx+18,0);
-      sg.addColorStop(0,'rgba(80,240,255,0)');sg.addColorStop(.5,'rgba(100,245,255,.22)');sg.addColorStop(1,'rgba(80,240,255,0)');
-      g.fillStyle=sg;g.fillRect(sx-18,y,36,h);
-      g.fillStyle=col+'22';g.fillRect(x,y,w,2);
-    }
+    path();
+    // dunkler Grund (die Seite hat Hintergrundunschärfe, Canvas nicht) + Glasverlauf
+    g.fillStyle = 'rgba(3,8,18,.46)'; g.fill();
+    const glass = g.createLinearGradient(0, y, 0, y + h);
+    glass.addColorStop(0, on ? 'rgba(240,250,255,.30)' : 'rgba(235,248,255,.18)');
+    glass.addColorStop(.34, on ? 'rgba(105,172,240,.16)' : 'rgba(94,154,210,.09)');
+    glass.addColorStop(1, on ? 'rgba(8,12,27,.30)' : 'rgba(7,12,25,.24)');
+    g.fillStyle = glass; g.fill();
+    // Glanz innen: schräge Lichtkante links, Verlauf von oben, inneres Leuchten
+    g.save(); path(); g.clip();
+    const sh = g.createLinearGradient(x, 0, x + w, 0);
+    sh.addColorStop(0, 'rgba(255,255,255,.30)'); sh.addColorStop(.17, 'rgba(255,255,255,0)');
+    sh.addColorStop(.67, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(255,255,255,.10)');
+    g.fillStyle = sh; g.fillRect(x, y, w, h);
+    const tp = g.createLinearGradient(0, y, 0, y + h);
+    tp.addColorStop(0, 'rgba(255,255,255,.14)'); tp.addColorStop(.42, 'rgba(255,255,255,0)'); tp.addColorStop(1, 'rgba(9,14,29,.08)');
+    g.fillStyle = tp; g.fillRect(x, y, w, h);
+    g.shadowColor = `rgb(${rgb})`; g.shadowBlur = on ? 22 : 14; g.strokeStyle = `rgba(${rgb},${on ? .42 : .22})`; g.lineWidth = 4; path(); g.stroke();
     g.restore();
-    g.lineWidth=1;g.strokeStyle=on?col:'rgba(105,150,170,.48)';
-    if(on){g.shadowColor=col;g.shadowBlur=8+3*Math.sin(t*.08)} g.stroke();g.shadowBlur=0;
-    // zweite, dunkle Innenfase für die fühlbare Materialtiefe
-    para(g,x+2,y+2,w-4,h-4,Math.max(2,sk-2));g.strokeStyle='rgba(255,255,255,.10)';g.lineWidth=.7;g.stroke();
-    g.globalAlpha=al*.8;g.fillStyle=on?col:'rgba(116,169,190,.65)';g.fillRect(x+sk+3,y+2,Math.min(24,w*.22),1.2);
+    // Kante mit Leuchten (violett: etwas hellere Kante wie im Startmenü)
+    g.shadowColor = `rgb(${rgb})`; g.shadowBlur = on ? 18 : 8;
+    g.lineWidth = 1; g.strokeStyle = on ? '#ffffff' : L[0] > 150 ? 'rgba(193,173,255,.9)' : 'rgba(166,224,255,.88)';
+    path(); g.stroke();
+    if (on) { g.shadowBlur = 30; g.globalAlpha = al * .55; path(); g.stroke(); }
+    g.shadowBlur = 0; g.globalAlpha = al;
+    // helle Oberkante (inset 0 1px 0 white)
+    g.strokeStyle = `rgba(255,255,255,${on ? .88 : .62})`; g.beginPath(); g.moveTo(x + sk + 1, y + 1.5); g.lineTo(x + w - 1, y + 1.5); g.stroke();
+    // Laserlinie oben (pulsiert wie `laserGlassSweep`)
+    const pulse = .62 + .38 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2 / 132));
+    const lx = x + sk + (w - sk) * .07, lw = (w - sk) * .86, ly = y + 3;
+    const lg = g.createLinearGradient(lx, 0, lx + lw, 0);
+    lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(.18, '#fff'); lg.addColorStop(.5, `rgb(${rgb})`); lg.addColorStop(.82, '#fff'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+    g.save(); g.globalAlpha = al * Math.min(1, pulse * (on ? 1.15 : .95)); g.shadowColor = `rgb(${rgb})`; g.shadowBlur = 10;
+    g.fillStyle = lg; g.fillRect(lx, ly, lw, 2); g.restore();
+    g.restore();
+  }
+  // Knopf + Beschriftung im Startmenü-Stil (Orbitron, weiß, Leuchten in der Laserfarbe); passt die Schriftgröße an die Breite an
+  kBtn(g, x, y, w, h, label, o = {}) {
+    const { on = false, al = 1, dim = false } = o, L = laserOf(o.laser || o.col || ICE), rgb = L.join(',');
+    const a = dim ? al * .55 : al;
+    this.kPlate(g, x, y, w, h, { ...o, al: a });
+    const sp = Math.max(1, Math.round(h * 0.07)), sk = Math.max(3, Math.round(h * 0.21));
+    let size = o.size || Math.round(h * 0.46);
+    size = Math.min(size, Math.floor((w - sk - 18) / Math.max(1, label.length * (0.86 + sp / size))));
+    size = Math.max(7, size);
+    g.save(); g.globalAlpha = a;
+    this.fam(F_TECH, () => {
+      g.font = `700 ${size}px ${F_TECH}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+      if ('letterSpacing' in g) g.letterSpacing = sp + 'px';
+      const cx = x + sk / 2 + w / 2 + sp / 2, cy = y + h / 2 + size * 0.36;
+      g.shadowColor = `rgb(${rgb})`;
+      g.shadowBlur = on ? 14 : 9; g.fillStyle = dim ? '#c9d4e0' : '#f8fdff'; g.fillText(label, cx, cy);
+      g.shadowBlur = 4; g.shadowColor = '#fff'; g.fillText(label, cx, cy);
+    });
     g.restore();
   }
   // Glitzerstaub: winzige, harte, kalte Lichtpunkte (Weiß, Eis-Blau, Stahl-Silber) – blitzen kurz auf und verlöschen, einige mit kleinem Kreuzglanz.

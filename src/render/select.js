@@ -173,7 +173,7 @@ export class SelectScreen{
    const nm=ch?ch.name:'EIGENE FIGUR',nsz=lerp(28,16,ad);
    hud.fam(F_DISP,()=>hud.fancy(g,nm,cx,base+lerp(34,22,ad),nsz,sel?['#ffffff',col]:['#cfc6ee','#a79bd6'],'center',sel?col:null,t,false,false,400,1));
    if(ch&&sel)this.skinDots(g,ch,arcade.skinOf(id),cx,base+52,true);
-   if(ch&&ch.custom&&sel){const e=editRect();hud.kPlate(g,e.x,e.y,e.w-6,e.h,{col,on:true,sk:5,t});hud.txt(g,'✎ EDIT',e.x+e.w/2-1,e.y+13,10,'#fff','center')}
+   if(ch&&ch.custom&&sel){const e=editRect();hud.kBtn(g,e.x,e.y,e.w-6,e.h,'EDIT',{col,on:true,t,size:10})}
    g.restore()}
   // Pfeile links/rechts neben dem Namen der Mitte
   if(!this.ln){const pu=.5+.5*Math.sin(t*.14);g.save();g.fillStyle='#9fe8ff';g.shadowColor='#7fe8ff';g.shadowBlur=10;g.globalAlpha=.6+.4*pu;
@@ -244,7 +244,7 @@ export class SelectScreen{
    hud.lab(g,'K = KAPITEL '+arcade.chapter+':  '+c.name,W-24,500,12,'#7dff9a','right',2,'#7dff9a','800');
    if(lock)hud.lab(g,'KAPITEL '+(arcade.chapter+1)+' GESPERRT – schließe Kapitel '+arcade.chapter+' ab',W-24,480,10,'#7d6fb0','right',2,null,'600')}}
  modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','story','versus','melee'].indexOf(A.mode),cols=['#65dce9','#9b8cff','#6eaaff','#c08cff'],sw=m.w/4;
-  ['ARCADE','STORY','2 SPIELER','MELEE'].forEach((n,i)=>{const on=i===k,x=m.x+i*sw+(i?3:0),w=sw-6;hud.kPlate(g,x,m.y,w,m.h,{col:cols[i],on,sk:9,t});hud.txt(g,n,x+w/2+4,m.y+18,13,on?'#ffffff':DIM,'center',on?cols[i]:null)});
+  ['ARCADE','STORY','2 SPIELER','MELEE'].forEach((n,i)=>{const on=i===k,x=m.x+i*sw+(i?3:0),w=sw-6;hud.kBtn(g,x,m.y,w,m.h,n,{col:i%2?'#b98bff':'#7fe8ff',on,dim:!on,t,size:12})});
   hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#7d86c8','left')}
  title(g,t,W,sub,col='#9fe8ff'){const hud=this.hud;
   hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#7fe8ff','#7fe8ff'],'center',null,t,false,true,900,4);g.restore();
@@ -323,7 +323,7 @@ export class SelectScreen{
   if(ch.cons){hud.lab(g,'–',px,sy+15,13,'#c9b8ff','left',0,null,'800');hud.txt(g,fit(ch.cons),px+16,sy+15,11,'#c9b8ff','left')}}
  // Melee-Optionen (rechts oben, klickbar): Spieler 2 = Mensch/CPU (B), CPU-Stärke (▲▼ bzw. Klick), Stocks (T)
  meleeOpts(g,A,t,W){const hud=this.hud,c='#bfe9ff',on='#9fe8ff';
-  const row=(i,txt,col,hot)=>{const r=MELEE_OPTS[i],w=r.w-8;hud.kPlate(g,r.x,r.y,w,r.h,{col,on:hot,sk:8,t});hud.txt(g,txt,r.x+w/2+4,r.y+r.h-7,13,col,'center')};
+  const row=(i,txt,col,hot)=>{const r=MELEE_OPTS[i],w=r.w-8;hud.kBtn(g,r.x,r.y,w,r.h,txt,{col,on:hot,t})};
   row(0,A.cpu?'GEGEN CPU  (klicken / B)':'2 SPIELER LOKAL  (klicken / B)',A.cpu?on:c,A.cpu);
   row(1,A.cpu?`CPU-STÄRKE: ${DIFF[A.difficulty]}  (klicken / ▲▼)`:'CPU-STÄRKE: –  (erst CPU wählen)',A.cpu?DCOL[A.difficulty]:'#6a5d96',A.cpu);
   row(2,`STOCKS: ${A.stocks}  (klicken / T)`,c,false);

@@ -10,7 +10,7 @@ import{PostFX}from'./fx.js';
 import{GLPost}from'./gl.js';
 import{buildHouse}from'./houses.js';
 import{Hud}from'./hud.js';
-import{drawLoot,shopSelRect}from'./lootui.js';
+import{drawLoot,shopSelRect,startSelRect}from'./lootui.js';
 import{HoverFx,drawEndBtns}from'./hover.js';
 import{drawMeleeHud,meleeHalo,meleeStage}from'./meleehud.js';
 import{A,drawFighter,drawTrail}from'./rig.js';
@@ -42,10 +42,11 @@ export class Renderer{
   const st=this.stages[0],T=this.selT/60;if(!this.bd.draw(g,W,H,'select',{dimAdd:.2})){st.draw(g,T);g.fillStyle='#05020ccc';g.fillRect(0,0,W,H)}   // eigener Hintergrund (Bild/Video) oder Stage 1
   this.post.beams(g,W,H,T,'#7a5cff');this.post.dust(g,W,H,T,'#c9b8ff',60,.8);st.overlay(g);this.sel.draw(g,A,this.selT,W,H);
   if(this.useGL)this.glFinish({bloom:.5*GFX.bloom,ab:0,vc:[0,0,.03],va:0,grain:GFX.grain?.06:0,t:this.selT});else{this.post.bloom(g,this.cv,.5);this.post.grain(g,this.cv,.06)}
-  const u=this.g;u.setTransform(s,0,0,s,0,0);if(!this.sel.launching){const h=this.hud,t=this.selT,pw=82,ph=26,gap=5,y=14,x2=W-18-pw,x1=x2-gap-pw,pk=LOOT.packs>0;   // Booster + Coins oben rechts (Anzahl der gesammelten)
-   h.kPlate(u,x1,y,pw,ph,{col:'#ffd23f',on:pk,sk:8,t});h.txt(u,'BOOSTER '+LOOT.packs,x1+pw/2+2,y+18,10,pk?'#ffffff':'#d6c8a0','center',pk?'#ffd23f':null);
-   h.kPlate(u,x2,y,pw,ph,{col:'#7fe8ff',on:false,sk:8,t});h.txt(u,'COINS '+LOOT.coins,x2+pw/2+2,y+18,10,'#d6f6ff','center');
-   if(!A.pvp){const sb=shopSelRect();h.kPlate(u,sb.x,sb.y,sb.w-6,sb.h,{col:'#62dfff',on:false,sk:8,t});h.txt(u,'SHOP',sb.x+(sb.w-6)/2+4,sb.y+18,13,'#e8faff','center','#62dfff');   // Shop-Knopf neben dem Booster-Zähler
+  const u=this.g;u.setTransform(s,0,0,s,0,0);if(!this.sel.launching){const h=this.hud,t=this.selT,pw=76,ph=26,gap=5,y=14,x2=W-18-pw,x1=x2-gap-pw,pk=LOOT.packs>0;   // Booster + Coins oben rechts (Anzahl der gesammelten)
+   h.kBtn(u,x1,y,pw,ph,'BOOSTER '+LOOT.packs,{col:'#7fe8ff',on:pk,dim:!pk,t,size:10});
+   h.kBtn(u,x2,y,pw,ph,'COINS '+LOOT.coins,{col:'#b98bff',t,size:10});
+   {const r=startSelRect();h.kBtn(u,r.x,r.y,r.w,r.h,'STARTSEITE',{col:'#7fe8ff',t,size:10})}   // 4. Knopf rechts: zurück zur Startseite (Demokampf)
+   if(!A.pvp){const sb=shopSelRect();h.kBtn(u,sb.x,sb.y,sb.w,sb.h,'SHOP',{col:'#b98bff',t,size:12});   // Shop-Knopf neben dem Booster-Zähler
     h.txt(u,'B – BOOSTER ÖFFNEN  ·  P – SHOP',W-18,y+ph+16,10,pk?'#ffd23f':'#8f95d8','right')}}
   drawLoot(u,this.hud,this.lootUi);this.hov.draw(u)}
  draw(game){if(this.useGL&&!this.glp.ok)this.applyGfx();if(game.arcade&&game.arcade.state==='select')return this.drawSelect(game);

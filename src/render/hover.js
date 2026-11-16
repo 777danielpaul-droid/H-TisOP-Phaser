@@ -18,4 +18,4 @@ export class HoverFx{
 }
 // Knöpfe unten auf den End-Bildschirmen; btns = [{label,col}], hot = Index unter dem Mauszeiger
 export function drawEndBtns(g,hud,btns,hot,t){if(!btns||!btns.length)return;
- btns.forEach((b,i)=>{const r=endBtnRect(i,btns.length);hud.kPlate(g,r.x,r.y,r.w,r.h,{col:b.col||'#7fe8ff',on:i===hot,sk:8,t});hud.txt(g,b.label,r.x+r.w/2+4,r.y+20,14,'#ffffff','center',i===hot?b.col||'#7fe8ff':null)})}
+ btns.forEach((b,i)=>{const r=endBtnRect(i,btns.length);hud.kBtn(g,r.x,r.y,r.w,r.h,b.label,{col:b.col||'#7fe8ff',on:i===hot,t})})}
