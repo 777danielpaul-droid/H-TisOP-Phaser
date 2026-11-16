@@ -1,7 +1,7 @@
 import{H,W}from'../core/config.js';
 import{CHARACTERS}from'../core/characters.js';
 import{isItem}from'../core/items.js';
-import{CARDS,CHAR_SHOP,LOOT,RARITY,SHOP,SKIN_POOL,STAGE_NAMES,STAGE_POOL,canBuy,canBuyChar,cardsOwned,ownsChar,ownsSkin,ownsStage,shopCount}from'../core/loot.js';
+import{CARDS,CHAR_SHOP,LOOT,RARITY,SHOP,SKIN_POOL,STAGE_NAMES,STAGE_POOL,canBuy,canBuyChar,cardsOwned,ownsChar,ownsSkin,ownsStage,sellPreview,sellable,shopCount}from'../core/loot.js';
 import{drawFullFrame}from'./sprites.js';
 
 import{Story}from'../core/story.js';
@@ -10,7 +10,7 @@ import{Story}from'../core/story.js';
 import{skinName}from'./skins.js';
 import{R}from'./sprites.js';
 // Booster-Overlay (Taste B im Startmenü bzw. nach Story-Ende): Übersicht mit Sammlung, Booster öffnen mit Karten-Aufdeckung, Shop (Taste P / Button) zum Kaufen von Boostern für Coins.
-// u = {open, mode:'main'|'reveal'|'shop', rewards, t, sel, msg, msgAt}  (Zustand liegt in renderer.lootUi, Tasten in main.js)
+// u = {open, mode:'main'|'reveal'|'shop'|'sell' (Karten gegen Coins tauschen; u.sell = {kartenId:anzahl}), rewards, t, sel, msg, msgAt}  (Zustand liegt in renderer.lootUi, Tasten in main.js)
 export const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
 // Sammelkarten-Bild (window.__CARDS__[id], vom Build aus assets/cards/<id>.png|webp|jpg eingebettet); null, solange es fehlt oder lädt
 export function cardImg(id){const S=typeof window!=='undefined'&&window.__CARDS__&&window.__CARDS__[id];if(!S||typeof Image==='undefined')return null;
@@ -52,10 +52,12 @@ export const hitShopSel=(lx,ly)=>inR(shopSelRect(),lx,ly);
 export const boosterRect=()=>({x:W-18-82-5-82,y:14,w:82,h:26});   // kompakter Booster-Zähler oben rechts
 export const lootOpenRect=()=>({x:W/2-196,y:H-62,w:186,h:26});
 export const lootCloseRect=()=>({x:W/2+10,y:H-62,w:186,h:26});   // Booster-Übersicht: „Booster öffnen“ / „Schließen“ per Maus
+export const sellBtnRect=()=>({x:18,y:16,w:150,h:28});   // „TAUSCHEN“-Knopf (Karten gegen Coins) links oben in der Booster-Übersicht; im Tausch-Modus liegt „ALLE DOPPELTEN“ auf shopBtnRect
 export const shopBtnRect=()=>({x:W-168,y:16,w:150,h:28});   // „SHOP“-Knopf in der Booster-Übersicht
 export function hitShopCard(lx,ly){for(let i=0;i<shopCount();i++)if(inR(shopCardRect(i),lx,ly))return i;return -1}
 export const hitShopBack=(lx,ly)=>inR(shopBackRect(),lx,ly);
 export const hitShopBtn=(lx,ly)=>inR(shopBtnRect(),lx,ly);
+export const hitSellBtn=(lx,ly)=>inR(sellBtnRect(),lx,ly);
 // Pack-Sprites (assets/packs/CardPacks.png, vom Build als window.__PACKS__ eingebettet): 9 Farben (Spalten c) x 20 Motive (Zeilen d), je 84x154 Pixel
 export const PACK={cols:9,rows:20,x0:3,y0:3,pw:84,ph:154,gx:95,gy:157};
 export function packImg(){const S=typeof window!=='undefined'&&window.__PACKS__;if(!S||typeof Image==='undefined')return null;
@@ -129,7 +131,7 @@ export function drawLoot(g,hud,u){if(!u||!u.open)return;u.t=(u.t||0)+1;
  // Vault chassis and recessed glass work surface.
  g.save();hud.kChamfer(g,14,12,W-28,H-24,22);const deck=g.createLinearGradient(0,12,0,H-12);deck.addColorStop(0,'#1b2d35');deck.addColorStop(.12,'#07131a');deck.addColorStop(.82,'#02080d');deck.addColorStop(1,'#182830');g.fillStyle=deck;g.fill();g.strokeStyle='rgba(172,221,226,.54)';g.lineWidth=1;g.stroke();hud.kChamfer(g,21,19,W-42,H-38,17);g.strokeStyle='rgba(91,229,237,.18)';g.stroke();g.fillStyle='#6de6ed';g.fillRect(32,26,90,2);g.fillRect(W-122,H-28,90,2);g.restore();
  if(u.mode==='reveal'&&u.po){u.po.draw(g,hud,u);g.restore();drawZoom(g,hud,u);return}   // Booster aufreißen (render/packopen.js)
- hud.txt(g,u.mode==='shop'?'XENOS SUPPLY EXCHANGE':'REWARD VAULT  /  DATA ARCHIVE',W/2,52,29,'#eaffff','center','#62ddea');hud.lab(g,'ALIEN CONTROL NETWORK  //  SECURE INVENTORY',W/2,72,9,'#6faebb','center',2,null,'700');
+ hud.txt(g,u.mode==='shop'?'XENOS SUPPLY EXCHANGE':u.mode==='sell'?'DATA CARD  EXCHANGE':'REWARD VAULT  /  DATA ARCHIVE',W/2,52,29,'#eaffff','center','#62ddea');hud.lab(g,'ALIEN CONTROL NETWORK  //  SECURE INVENTORY',W/2,72,9,'#6faebb','center',2,null,'700');
  hud.txt(g,`SEALED PACKS  ${LOOT.packs}     /     CREDITS  ${LOOT.coins}     /     DATA CARDS  ${cardsOwned()}/${CARDS.length}`,W/2,96,13,'#9cebf2','center');
  if(u.mode==='shop')drawShop(g,hud,u);
  else if(u.mode==='reveal'&&u.rewards){const R=u.rewards,cw=210,ch=290,gap=34,x0=W/2-(cw*3+gap*2)/2;
@@ -140,19 +142,32 @@ export function drawLoot(g,hud,u){if(!u||!u.open)return;u.t=(u.t||0)+1;
    else card(g,hud,x,y,cw,ch,r.col,r.char.toUpperCase()+' SKIN',r.name,'NEU – Farbe im Menü mit C',fl)});
   if(u.t>70)hud.txt(g,LOOT.packs>0?`ENTER – weiter (noch ${LOOT.packs} Booster)`:'ENTER – weiter',W/2,H-34,15,'#ffffff','center')}
  else{const{cols,cw,ch,gx,y0,rows}=gridGeom(),x0=W/2-(cols*cw+(cols-1)*gx)/2;
-  const small=cw<80;
+  const small=cw<80,sm=u.mode==='sell';
   CARDS.forEach((c,i)=>{const x=x0+(i%cols)*(cw+gx),y=y0+Math.floor(i/cols)*(ch+gx),n=LOOT.cards[c.id]|0,col=RARITY[c.r].c,im=n?cardImg(c.id):null;
    g.fillStyle='#07131c';g.strokeStyle=n?col:'#31505d';g.lineWidth=1.3;g.fillRect(x,y,cw,ch);g.fillStyle='rgba(255,255,255,.08)';g.fillRect(x+2,y+2,cw-4,2);g.strokeStyle='rgba(150,225,235,.18)';g.strokeRect(x+4,y+4,cw-8,ch-8);
    if(im){cover(g,im,x,y,cw,ch);const gr=g.createLinearGradient(0,y+ch-40,0,y+ch);gr.addColorStop(0,'#04020a00');gr.addColorStop(1,'#04020aee');g.fillStyle=gr;g.fillRect(x,y+ch-40,cw,40);if(!small)hud.txt(g,c.name,x+cw/2,y+ch-18,10,'#ffffff','center');hud.txt(g,'x'+n,x+cw-(small?10:14),y+(small?11:14),small?9:11,'#ffffff','center',col)}   // kleine Kacheln (viele Karten): Name erst in der Großansicht
    else if(n){const lb=c.s||c.name;hud.txt(g,lb,x+cw/2,y+ch*.38,Math.max(6,Math.min(12,Math.floor(cw*1.7/Math.max(6,lb.length)))),'#ffffff','center');if(!small)hud.txt(g,RARITY[c.r].n,x+cw/2,y+ch*.38+20,9,col,'center');hud.txt(g,'x'+n,x+cw/2,y+ch-(small?9:18),small?9:11,'#aab2e8','center')}
    else hud.txt(g,'?',x+cw/2,y+ch*.6,30,'#2a2a50','center');
-   g.strokeRect(x,y,cw,ch)});
+   g.strokeRect(x,y,cw,ch);
+   if(sm){const sn=sellable(c.id),pk=(u.sell&&u.sell[c.id])|0;   // Tausch-Modus: nichts Verkaufbares = abgedunkelt, gewählte Karten gold mit „−Anzahl“, Cursor cyan
+    if(n&&!sn){g.fillStyle='rgba(2,6,10,.62)';g.fillRect(x,y,cw,ch)}
+    if(pk){g.save();g.strokeStyle='#ffd23f';g.lineWidth=2.4;g.shadowColor='#ffd23f';g.shadowBlur=12;g.strokeRect(x+1,y+1,cw-2,ch-2);g.restore();g.fillStyle='#ffd23f';g.fillRect(x+cw/2-19,y+ch/2-13,38,26);hud.txt(g,'−'+pk,x+cw/2,y+ch/2+5,15,'#1a1200','center')}
+    if(n&&i===u.sel){g.save();g.strokeStyle='#7fe8ff';g.lineWidth=1.6;g.strokeRect(x-3,y-3,cw+6,ch+6);g.restore()}}});
   const own=SKIN_POOL.filter(([id,k])=>ownsSkin(id,k)).map(([id,k])=>id.toUpperCase()+' '+skinName(id,k));
   hud.txt(g,'FARBEN: '+(own.length?own.join(' · '):'noch keine – Booster bringen neue Farben'),W/2,y0+rows*(ch+gx)+18,12,'#c9d0ff','center');
   const ow2=STAGE_POOL.filter(i=>ownsStage(i)).map(i=>STAGE_NAMES[i]);hud.txt(g,'STAGES: NEON CITY'+(ow2.length?' · '+ow2.join(' · '):'')+'   ('+(1+ow2.length)+'/'+(1+STAGE_POOL.length)+')',W/2,y0+rows*(ch+gx)+38,12,'#c9d0ff','center');
+  if(sm){const sp=sellPreview(u.sell||{}),b=shopBtnRect(),o=lootOpenRect(),c=lootCloseRect(),ok=sp.n>0;
+   hud.kPlate(g,b.x,b.y,b.w,b.h,{col:'#7fe8ff',on:false,sk:8,t:u.t});hud.txt(g,'A – ALLE DOPPELTEN',b.x+b.w/2+4,b.y+19,12,'#d8f8ff','center');
+   hud.kPlate(g,o.x,o.y,o.w,o.h,{col:ok?'#ffd23f':'#6a6a80',on:ok,sk:8,t:u.t});hud.txt(g,'V – VERKAUFEN',o.x+o.w/2+4,o.y+19,13,ok?'#ffffff':'#8a8aa0','center',ok?'#ffd23f':null);
+   hud.kPlate(g,c.x,c.y,c.w,c.h,{col:'#8f7bff',on:false,sk:8,t:u.t});hud.txt(g,'ZURÜCK',c.x+c.w/2+4,c.y+19,13,'#d6c8ff','center');
+   const age=u.t-(u.msgAt==null?-999:u.msgAt);
+   if(u.msg&&age<260){g.save();g.globalAlpha=Math.min(1,(260-age)/40);hud.txt(g,u.msg,W/2,H-76,17,u.msgOk?'#7dff9a':'#ff6f7f','center',u.msgOk?'#7dff9a':'#ff6f7f');g.restore()}
+   else hud.txt(g,sp.n?`AUSGEWÄHLT: ${sp.n} ${sp.n===1?'Karte':'Karten'}   ·   mindestens ${sp.min} Coins  +  Zufallsbonus 0–${sp.bonus}`:'Doppelte Karten und Beutel-Items gegen Coins tauschen – eine Karte pro Sorte bleibt in der Sammlung',W/2,H-76,14,sp.n?'#ffd23f':'#9cebf2','center');
+   hud.txt(g,'Klick: +1   ·   Rechtsklick / Backspace: −1   ·   ◀ ▶ ▲ ▼ + ENTER   ·   ESC – zurück',W/2,H-16,12,'#ffffff','center')}
+  else{{const b=sellBtnRect();hud.kPlate(g,b.x,b.y,b.w,b.h,{col:'#7fe8ff',on:false,sk:8,t:u.t});hud.txt(g,'T – TAUSCHEN',b.x+b.w/2+4,b.y+19,13,'#d8f8ff','center')}
   {const b=shopBtnRect();hud.kPlate(g,b.x,b.y,b.w,b.h,{col:'#ffd23f',on:true,sk:8,t:u.t});hud.txt(g,'P – SHOP',b.x+b.w/2+4,b.y+19,13,'#ffffff','center','#ffd23f')}
   {const o=lootOpenRect(),c=lootCloseRect(),pk=LOOT.packs>0;
    hud.kPlate(g,o.x,o.y,o.w,o.h,{col:pk?'#ffd23f':'#6a6a80',on:pk,sk:8,t:u.t});hud.txt(g,'BOOSTER ÖFFNEN',o.x+o.w/2+4,o.y+19,13,pk?'#ffffff':'#8a8aa0','center',pk?'#ffd23f':null);
    hud.kPlate(g,c.x,c.y,c.w,c.h,{col:'#8f7bff',on:false,sk:8,t:u.t});hud.txt(g,'SCHLIESSEN',c.x+c.w/2+4,c.y+19,13,'#d6c8ff','center')}
-  hud.txt(g,LOOT.packs>0?'Karte anklicken – groß ansehen   ·   ENTER – Booster öffnen   ·   P – Shop   ·   B / ESC – schließen':'Karte anklicken – groß ansehen   ·   Keine Booster – Story-Modus oder Shop (P)   ·   B / ESC – schließen',W/2,H-16,12,'#ffffff','center')}
+  hud.txt(g,LOOT.packs>0?'Karte anklicken – groß ansehen   ·   ENTER – Booster öffnen   ·   P – Shop   ·   B / ESC – schließen':'Karte anklicken – groß ansehen   ·   Keine Booster – Story-Modus oder Shop (P)   ·   B / ESC – schließen',W/2,H-16,12,'#ffffff','center')}}
  g.restore();drawZoom(g,hud,u)}

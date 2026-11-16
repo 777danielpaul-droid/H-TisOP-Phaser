@@ -66,6 +66,24 @@ export function buyChar(id){if(!charPrice(id)||!CHARACTERS[id]||ownsChar(id)||LO
  unlockChar(id);if(!ownsChar(id))return false;LOOT.coins-=charPrice(id);saveLoot();return true}
 export const canBuy=i=>!!SHOP[i]&&LOOT.coins>=SHOP[i].price;
 export function buyPack(i){const o=SHOP[i];if(!o||LOOT.coins<o.price)return false;LOOT.coins-=o.price;LOOT.packs+=o.n;saveLoot();return true}
+// Karten gegen Coins tauschen (Modus 'sell' im Booster-Overlay): je Karte ein Mindestbetrag nach Seltenheit + ein Zufallsbonus 0..SELL_BONUS.
+// >>> WERTE HIER ÄNDERN <<< (Index = Seltenheit: gewöhnlich, selten, episch). Zum Vergleich: 1 Booster kostet 100 Coins und bringt ca. 35-40.
+// Verkaufbar sind nur Doppelte (SELL_KEEP Stück bleiben immer in der Sammlung) und Sonderitems im Beutel (LOOT.items); die Sammlung selbst (LOOT.cards) bleibt bei Items unangetastet.
+export const SELL_MIN=[3,10,30],SELL_BONUS=[4,10,25],SELL_KEEP=1;
+export const cardOf=id=>CARDS.find(c=>c.id===id)||null;
+export const sellable=id=>{const c=cardOf(id);if(!c)return 0;return isItem(id)?Math.max(0,itemCount(id)):Math.max(0,(LOOT.cards[id]|0)-SELL_KEEP)};
+// Auswahl {id:anzahl}: Anzahl der Karte um d ändern, begrenzt auf 0..sellable; gibt die neue Anzahl zurück
+export function sellAdjust(sel,id,d){const n=Math.max(0,Math.min(sellable(id),(sel[id]|0)+d));if(n)sel[id]=n;else delete sel[id];return n}
+// „Alle Doppelten“: jede Nicht-Item-Karte mit Überschuss komplett wählen (Sonderitems aus dem Beutel bleiben bewusst draußen)
+export function sellSelectDupes(sel){for(const k of Object.keys(sel))delete sel[k];for(const c of CARDS)if(!isItem(c.id)&&sellable(c.id)>0)sel[c.id]=sellable(c.id);return sel}
+// Vorschau: Anzahl Karten, Mindestbetrag und größtmöglicher Bonus der aktuellen Auswahl
+export function sellPreview(sel){let n=0,min=0,bonus=0;for(const id of Object.keys(sel||{})){const c=cardOf(id),k=c?Math.min(sel[id]|0,sellable(id)):0;if(k<1)continue;n+=k;min+=SELL_MIN[c.r]*k;bonus+=SELL_BONUS[c.r]*k}return{n,min,bonus}}
+// Verkaufen: zieht die Karten ab, schreibt Mindestbetrag + Zufallsbonus gut und speichert. Nichts Verkaufbares gewählt -> null (nichts passiert).
+export function sellCards(sel,rnd=Math.random){const take=[];for(const id of Object.keys(sel||{})){const c=cardOf(id),k=c?Math.min(sel[id]|0,sellable(id)):0;if(k>0)take.push([c,k])}
+ let n=0,base=0,bonus=0,maxBonus=0;
+ for(const[c,k]of take){for(let i=0;i<k;i++){base+=SELL_MIN[c.r];maxBonus+=SELL_BONUS[c.r];bonus+=Math.floor(rnd()*(SELL_BONUS[c.r]+1))}n+=k;
+  if(isItem(c.id))LOOT.items[c.id]=itemCount(c.id)-k;else LOOT.cards[c.id]=(LOOT.cards[c.id]|0)-k}
+ if(!n)return null;LOOT.coins+=base+bonus;saveLoot();return{n,base,bonus,maxBonus,total:base+bonus}}
 // Wertigkeit eines Preises 0..4 (steuert Aufdeck-Spannung und Feuerwerk in render/packopen.js):
 // 0 wenig Coins · 1 viele Coins / gewöhnliche Karte · 2 seltene Karte · 3 neue Farbe oder Stage · 4 epische Karte (JACKPOT)
 export const prizeTier=r=>!r?0:r.type==='coins'?(r.n>=35?1:0):r.type==='card'?[1,2,4][r.r]||1:3;

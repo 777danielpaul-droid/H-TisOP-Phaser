@@ -7,7 +7,7 @@ import{Arcade}from'./core/arcade.js';
 import{CHARACTERS,ROSTER}from'./core/characters.js';
 import{MOVE_LIST,charMoves}from'./core/moves.js';
 import{SPEED,GFX,GFX_PRESETS,setGfx}from'./core/config.js';
-import{openPack,buyPack,canBuy,LOOT,SHOP,CHAR_SHOP,shopCount,buyChar,ownsChar,ownsSkin,ownedStages}from'./core/loot.js';
+import{openPack,buyPack,canBuy,LOOT,SHOP,CHAR_SHOP,CARDS,shopCount,buyChar,ownsChar,ownsSkin,ownedStages,sellAdjust,sellCards,sellSelectDupes,sellPreview}from'./core/loot.js';
 import{NetClient,netServerUrl,connectPatient}from'./core/netclient.js';
 import{NetMatch}from'./core/netmatch.js';
 import{NetInput,NET,encInput}from'./core/netplay.js';
@@ -16,7 +16,7 @@ import{skinCount,skinName}from'./render/skins.js';
 import{THEMES}from'./render/stage.js';
 import{hitDealerOpt}from'./render/storyhud.js';
 import{ITEMS}from'./core/items.js';
-import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel,shopCardRect,shopBackRect,shopBtnRect,shopSelRect,boosterRect,lootOpenRect,lootCloseRect,inR,hitCardGrid,cardFaceAt}from'./render/lootui.js';
+import{hitShopCard,hitShopBack,hitShopBtn,hitShopSel,shopCardRect,shopBackRect,shopBtnRect,shopSelRect,boosterRect,lootOpenRect,lootCloseRect,inR,hitCardGrid,cardFaceAt,hitSellBtn,sellBtnRect,gridGeom,cardGridRect}from'./render/lootui.js';
 import{endBtnRect}from'./render/hover.js';
 import{Renderer}from'./render/renderer.js';
 import{Sound}from'./render/audio.js';
@@ -162,6 +162,16 @@ const lootOpen=mode=>{const u=renderer.lootUi;u.open=true;u.zoom=null;u.mode=mod
 // Booster aufreißen: Animation (render/packopen.js) mit den schon gezogenen Belohnungen; ENTER/Klick treibt sie voran, ESC überspringt (Belohnungen sind bereits gespeichert)
 const lootReveal=rw=>{const u=renderer.lootUi;u.rewards=rw;u.po=new PackOpen(rw,(n,o)=>game.sfx(n,o));u.mode='reveal';u.t=0};
 const lootNext=()=>{const u=renderer.lootUi;if(!u.po||u.po.advance()){u.mode='main';u.t=0;u.po=null}};
+// Karten tauschen (Modus 'sell'): Auswahl liegt in u.sell = {kartenId:anzahl}; Logik/Preise in core/loot.js (sellAdjust, sellCards, SELL_MIN/SELL_BONUS)
+const lootSell=()=>{const u=renderer.lootUi;u.mode='sell';u.sell={};u.sel=Math.max(0,CARDS.findIndex(c=>(LOOT.cards[c.id]|0)>0));u.msg=null;u.t=0;sound.unlock()};
+const sellMsg=(t,ok)=>{const u=renderer.lootUi;u.msg=t;u.msgOk=ok;u.msgAt=u.t};
+const sellStep=(i,d)=>{const u=renderer.lootUi,c=CARDS[i];if(!c)return;u.sel=i;const s=u.sell||(u.sell={}),was=s[c.id]|0,n=sellAdjust(s,c.id,d);
+ if(n===was){if(d>0){sellMsg((LOOT.cards[c.id]|0)<1?'Diese Karte hast du noch nicht!':'Nichts mehr übrig – eine Karte pro Sorte bleibt in der Sammlung.',false);game.sfx('block_guard',{vol:.4})}}else game.sfx('ui_round_start',{vol:.35,rate:d>0?1.5:1.1})};
+const sellAll=()=>{const u=renderer.lootUi;sellSelectDupes(u.sell||(u.sell={}));const p=sellPreview(u.sell);if(p.n)game.sfx('ui_round_start',{vol:.45,rate:1.6});else{sellMsg('Keine doppelten Karten vorhanden.',false);game.sfx('block_guard',{vol:.4})}};
+const sellDo=()=>{const u=renderer.lootUi,r=sellCards(u.sell||{});
+ if(!r){sellMsg('Erst Karten auswählen!',false);game.sfx('block_guard',{vol:.5});return}
+ u.sell={};sellMsg(`${r.n} ${r.n===1?'KARTE':'KARTEN'} GETAUSCHT:  +${r.total} COINS  (${r.base} fest + ${r.bonus} Bonus)`,true);game.sfx(r.maxBonus>0&&r.bonus>=r.maxBonus*.7?'fw_finale':'fw_rocket',{vol:.6,rate:1.5})};
+const sellMove=(dx,dy)=>{const u=renderer.lootUi,G=gridGeom(),n=CARDS.length;let i=u.sel|0;const step=dy?dy*G.cols:dx;for(let k=0;k<n;k++){i=((i+step)%n+n)%n;if((LOOT.cards[CARDS[i].id]|0)>0){u.sel=i;return}}};   // springt zur nächsten besessenen Karte
 const shopBuy=i=>{const u=renderer.lootUi;
  if(i>=SHOP.length){const c=CHAR_SHOP[i-SHOP.length];if(!c)return;u.sel=i;   // Kämpfer-Karte: einmaliger, dauerhafter Kauf
   if(ownsChar(c.id)){u.msg='Schon freigeschaltet!';u.msgOk=false;game.sfx('block_guard',{vol:.5})}
@@ -185,7 +195,8 @@ const endBtns=()=>{const A=arcade,st=A.state;if(st==='fight'||st==='select'||A.t
 function hoverTarget(){endHot=-1;const L=mouseL;if(!L||menuOpen||panelsOpen()||startOpen||intro.active||renderer.sel.launching||document.body.classList.contains('nocur'))return null;
  const u=renderer.lootUi,a=arcade,st=a.state;
  if(u.open){if(u.mode==='shop'){const j=hitShopCard(...L);if(j>=0)return shopCardRect(j);return hitShopBack(...L)?shopBackRect():null}
-  if(u.mode==='main'){if(hitShopBtn(...L))return shopBtnRect();if(LOOT.packs>0&&inR(lootOpenRect(),...L))return lootOpenRect();if(inR(lootCloseRect(),...L))return lootCloseRect()}return null}
+  if(u.mode==='sell'){const ci=hitCardGrid(...L);if(ci>=0)return cardGridRect(ci);if(hitShopBtn(...L))return shopBtnRect();if(inR(lootOpenRect(),...L))return lootOpenRect();return inR(lootCloseRect(),...L)?lootCloseRect():null}
+  if(u.mode==='main'){if(hitSellBtn(...L))return sellBtnRect();if(hitShopBtn(...L))return shopBtnRect();if(LOOT.packs>0&&inR(lootOpenRect(),...L))return lootOpenRect();if(inR(lootCloseRect(),...L))return lootCloseRect()}return null}
  if(st!=='select'){const bs=endBtns();for(let i=0;i<bs.length;i++){const r=endBtnRect(i,bs.length);if(inR(r,...L)){endHot=i;return r}}return null}
  if(!a.pvp&&lootCan()){if(hitShopSel(...L))return shopSelRect();if(inR(boosterRect(),...L))return boosterRect()}
  const md=hitMode(...L);if(md>=0)return{x:MODE_PILL.x+md*MODE_PILL.w/4,y:MODE_PILL.y,w:MODE_PILL.w/4,h:MODE_PILL.h};
@@ -195,7 +206,7 @@ function hoverTarget(){endHot=-1;const L=mouseL;if(!L||menuOpen||panelsOpen()||s
  if(CHARACTERS.custom&&a.cursor===CI()&&hitEdit(...L))return editRect();
  const off=hitCar(...L);return off===null?null:carRect(off)}
 canvas.addEventListener('mousemove',e=>{const dl=game.story&&game.story.dealer;if(dl&&dl.active){const i=hitDealerOpt(...logical(e),dl.opts.length);if(i>=0)dl.sel=i;return}
- const u=renderer.lootUi;if(u.open){if(u.mode==='shop'){const j=hitShopCard(...logical(e));if(j>=0)u.sel=j}return}
+ const u=renderer.lootUi;if(u.open){if(u.mode==='shop'){const j=hitShopCard(...logical(e));if(j>=0)u.sel=j}else if(u.mode==='sell'){const j=hitCardGrid(...logical(e));if(j>=0)u.sel=j}return}
  if(arcade.state!=='select'||menuOpen||studioIsOpen()||renderer.sel.launching)return;
  if(arcade.pvp){if(arcade.vs.step===1){const j=hitStage(...logical(e));if(j>=0&&arcade.stageOpen(j))arcade.vs.stage=j}return}
  });   // Rondell: Hover ändert nichts mehr, es wird mit ◀ ▶ bzw. Klick auf die Seitenfiguren weitergeschaltet
@@ -203,7 +214,8 @@ canvas.addEventListener('click',e=>{{const dl=game.story&&game.story.dealer;if(d
  {const u=renderer.lootUi;if(u.open){const L=logical(e);   // Overlay offen: nur dort klicken
   if(u.zoom){u.zoom=null;return}   // große Kartenansicht offen: Klick schließt sie
   if(u.mode==='shop'){const j=hitShopCard(...L);if(j>=0)shopBuy(j);else if(hitShopBack(...L)){u.mode='main';u.t=0}}
-  else if(u.mode==='main'){const ci=hitCardGrid(...L);if(ci>=0){u.zoom=cardFaceAt(ci);u.zt=0}else if(hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null;sound.unlock();shopClip.start()}else if(LOOT.packs>0&&inR(lootOpenRect(),...L))lootReveal(openPack());else if(inR(lootCloseRect(),...L))u.open=false}
+  else if(u.mode==='sell'){const ci=hitCardGrid(...L);if(ci>=0)sellStep(ci,1);else if(hitShopBtn(...L))sellAll();else if(inR(lootOpenRect(),...L))sellDo();else if(inR(lootCloseRect(),...L)){u.mode='main';u.t=0;u.sell=null}}
+  else if(u.mode==='main'){const ci=hitCardGrid(...L);if(ci>=0){u.zoom=cardFaceAt(ci);u.zt=0}else if(hitSellBtn(...L))lootSell();else if(hitShopBtn(...L)){u.mode='shop';u.sel=0;u.msg=null;sound.unlock();shopClip.start()}else if(LOOT.packs>0&&inR(lootOpenRect(),...L))lootReveal(openPack());else if(inR(lootCloseRect(),...L))u.open=false}
   else if(u.mode==='reveal'){const f=u.po&&u.po.hitSum(...L);if(f){u.zoom=f;u.zt=0}else lootNext()}
   return}}
  if(arcade.state==='select'&&!arcade.pvp&&lootCan()){const L=logical(e);if(hitShopSel(...L)){lootOpen('shop');return}if(inR(boosterRect(),...L)){lootOpen('main');return}}
@@ -217,7 +229,7 @@ canvas.addEventListener('click',e=>{{const dl=game.story&&game.story.dealer;if(d
  if(CHARACTERS.custom&&arcade.cursor===CI()&&hitEdit(...L)){openStudio();return}
  const off=hitCar(...L),n=SLOTS().length;if(off===0)startFight(arcade.cursor);else if(off!==null)arcade.cursor=(arcade.cursor+off+n)%n;});   // linke/rechte Figur = eine weiterschalten, mittlere = kämpfen
 canvas.addEventListener('contextmenu',e=>{const u=renderer.lootUi;
- if(u.open){if(u.zoom){u.zoom=null;e.preventDefault();return}if(u.mode==='shop'||u.mode==='reveal'){u.mode='main';u.t=0;u.po=null}else u.open=false;e.preventDefault();return}
+ if(u.open){if(u.zoom){u.zoom=null;e.preventDefault();return}if(u.mode==='sell'){const ci=hitCardGrid(...logical(e));if(ci>=0&&((u.sell||{})[CARDS[ci].id]|0)>0)sellStep(ci,-1);else{u.mode='main';u.t=0;u.sell=null}e.preventDefault();return}if(u.mode==='shop'||u.mode==='reveal'){u.mode='main';u.t=0;u.po=null}else u.open=false;e.preventDefault();return}
  if(!canvasMenu()||(netMatch&&netMatch.phase!=='pick'))return;const st=arcade.state;
  if(st==='select'&&arcade.pvp){arcade.vsBack();e.preventDefault()}
  else if(st==='gameover'||st==='victory'||st==='vsover'){arcade.toSelect();e.preventDefault()}});   // Rechtsklick = Zurück: Booster/Shop eine Ebene hoch, 2-Spieler-Auswahl zurück, End-Bildschirm -> Charakterwahl
@@ -309,6 +321,12 @@ addEventListener('keydown',e=>{
   if(u.open||(can&&(e.code==='KeyB'||e.code==='KeyP'))){e.preventDefault();
    if(!u.open){lootOpen(e.code==='KeyP'?'shop':'main');return}
    if(u.zoom){if(e.code==='Escape'||e.code==='Enter'||e.code==='Space'||e.code==='KeyJ'||e.code==='KeyB')u.zoom=null;return}   // große Kartenansicht: Taste schließt sie
+   if(u.mode==='sell'){   // Tausch-Modus: Cursor mit Pfeilen, ENTER/Leertaste +1, Backspace/X −1, A alle Doppelten, V verkaufen
+    const k=e.code;if(k==='Escape'||k==='KeyB'||k==='KeyT'){u.mode='main';u.t=0;u.sell=null}
+    else if(k==='ArrowLeft')sellMove(-1,0);else if(k==='ArrowRight')sellMove(1,0);else if(k==='ArrowUp')sellMove(0,-1);else if(k==='ArrowDown')sellMove(0,1);
+    else if(k==='Enter'||k==='Space'||k==='KeyJ')sellStep(u.sel|0,1);else if(k==='Backspace'||k==='Delete'||k==='KeyX')sellStep(u.sel|0,-1);
+    else if(k==='KeyA')sellAll();else if(k==='KeyV')sellDo();
+    return}
    if(u.mode==='shop'){
     if(e.code==='Escape'||e.code==='KeyB'||e.code==='KeyP'){u.mode='main';u.t=0}
     else if(e.code==='ArrowLeft'||e.code==='KeyA')u.sel=(u.sel+shopCount()-1)%shopCount();
@@ -316,6 +334,7 @@ addEventListener('keydown',e=>{
     else if(e.code==='Enter'||e.code==='Space'||e.code==='KeyJ')shopBuy(u.sel);
     return}
    if(e.code==='Escape'||e.code==='KeyB'){if(u.mode==='reveal'){u.mode='main';u.t=0;u.po=null}else u.open=false}
+   else if(e.code==='KeyT'&&u.mode==='main')lootSell();
    else if(e.code==='KeyP'&&u.mode==='main'){u.mode='shop';u.sel=0;u.msg=null;sound.unlock();shopClip.start()}
    else if(e.code==='Enter'||e.code==='Space'||e.code==='KeyJ'){if(u.mode==='reveal')lootNext();else if(LOOT.packs>0)lootReveal(openPack())}
    return}}
