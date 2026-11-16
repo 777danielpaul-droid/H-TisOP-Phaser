@@ -15,3 +15,7 @@ Ohne Bild zeigt das Spiel die Karte weiter als Text-Karte. Neue Karten: Eintrag 
 
 `python3 tools/make-cards.py` erzeugt alle Karten als `.webp` (600×840) aus den Sprite-Atlanten: Hintergrund in der Figurenfarbe + eine Kampfpose. Pose/Farbe pro Karte stehen oben im Skript (`CARDS`). Danach `node tools/build.mjs`.
 Die übrigen Karten (`drink`) sind weiter Text-Karten, bis Bilder mit gleicher ID hier liegen.
+
+## Kartenrückseite
+
+`assets/cards/back.webp` ist die Rückseite aller Karten (vor dem Aufdecken). Neu zeichnen: `python3 tools/make-cardback.py`, danach `node tools/build.mjs`. Fehlt die Datei, zeigt das Spiel die alte Text-Rückseite.
