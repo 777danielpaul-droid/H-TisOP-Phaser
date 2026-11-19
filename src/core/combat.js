@@ -3,8 +3,6 @@ import{meleeHit}from'./melee.js';
 
 import{hitSounds}from'./sfx.js';
 
-import{A}from'../render/rig.js';
-import{R}from'../render/sprites.js';
 // Trefferauflösung pro Frame: Normals/Specials, Projektile, Projektil-Clash.
 export function resolveCombat(game){
  const{p1,p2}=game;

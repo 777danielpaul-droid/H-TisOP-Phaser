@@ -1,13 +1,13 @@
 
 
-import{R}from'./sprites.js';
 // Zweite Farbe je Figur: der Atlas wird beim ersten Gebrauch per Farbtausch (HSV) umgefärbt und als eigenes Bild gemerkt.
 // Neue Farbe = Eintrag in SKINS (name, Farbpunkt für die Auswahl) + passender Zweig in recolor().
 // Skin 0 = Originalfarben (unverändert); Alpha, Linien und dunkle Schattierungen bleiben erhalten.
 export const SKINS={
  tiger:[{name:'BLAU',col:'#2f6bff'},{name:'WEISS',col:'#f1f3ff'},{name:'ROT',col:'#ff4a3a'},{name:'GRÜN',col:'#3adf6a'}],   // Skin 2+ nur aus Boostern (core/loot.js)
  st3g0:[{name:'GRÜN',col:'#7dff4a'},{name:'GRAUBLAU',col:'#7b93b8'},{name:'ROT',col:'#ff5a4a'},{name:'BLAU',col:'#4a7bff'}],
- kitsune:[{name:'GRAU',col:'#9a9aa3'},{name:'LILA',col:'#a47bd8'},{name:'ORANGE',col:'#ff9a3a'},{name:'EISBLAU',col:'#7fd0ff'}]};
+ kitsune:[{name:'GRAU',col:'#9a9aa3'},{name:'LILA',col:'#a47bd8'},{name:'ORANGE',col:'#ff9a3a'},{name:'EISBLAU',col:'#7fd0ff'}],
+ leon:[{name:'GOLD',col:'#ffaa22'},{name:'WEISS',col:'#f0f0f5'},{name:'ROT',col:'#ff4a3a'},{name:'SCHWARZ',col:'#2a2a30'}]};
 export const skinCount=id=>(SKINS[id]||[]).length;
 export const skinName=(id,k)=>{const s=SKINS[id];return s&&s[k]?s[k].name:''};
 export const sm=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
@@ -26,11 +26,14 @@ export const RULES={
   return[h+(212-h)*w,s*(1-w*.5),v*(1-w*.04)]},
  // Kitsune: graues Fell (wenig Sättigung, mittel hell, leicht bläulich) -> lila; Bandagen (warm), Augen, Kleidung, helle Staub-/Schlierenwolken bleiben
  kitsune:(h,s,v,r,b)=>{if(s>=.26||b<r-.024)return null;const w=sm(.16,.34,v)*(1-sm(.80,.92,v));if(w<.01)return null;
-  return[266,s*(1-w)+(.24+.14*v)*w,Math.min(1,v*(1+.04*w))]}};
+  return[266,s*(1-w)+(.24+.14*v)*w,Math.min(1,v*(1+.04*w))]},
+ // Leon: goldenes Fell -> weiß
+ leon:(h,s,v)=>{const w=sm(.2,.5,s)*(1-sm(40,70,Math.abs(h-25)))*sm(.18,.45,v);if(w<.003)return null;
+  return[h,s*(1-w*.9),Math.min(1,.30+v*.80)*w+v*(1-w)]}};
 // Booster-Skins (2+): Tiger/ST3-G0 = Farbton verschieben, Kitsune (graues Fell) = Tönung
 export const shift=d=>(h,s,v)=>s>.18&&v>.1?[h+d,s,v]:null;
 export const tint=(hue,sat)=>(h,s,v,r,b)=>{if(s>=.26||b<r-.024)return null;const w=sm(.16,.34,v)*(1-sm(.80,.92,v));if(w<.01)return null;return[hue,s*(1-w)+sat*w,v]};
-export const EXTRA={tiger:{2:shift(150),3:shift(255)},st3g0:{2:shift(250),3:shift(120)},kitsune:{2:tint(24,.5),3:tint(200,.35)}};
+export const EXTRA={tiger:{2:shift(150),3:shift(255)},st3g0:{2:shift(250),3:shift(120)},kitsune:{2:tint(24,.5),3:tint(200,.35)},leon:{2:shift(140),3:shift(240)}};
 export function recolor(id,data,skin){   // data = RGBA-Bytes (ImageData.data), wird direkt verändert
  const rule=skin>0&&(skin>=2?EXTRA[id]&&EXTRA[id][skin]:RULES[id]);if(!rule)return data;
  for(let i=0;i<data.length;i+=4){if(data[i+3]===0)continue;

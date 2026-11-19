@@ -10,7 +10,7 @@ const{Dealer,DEALER,MOODS,ITEM_SHOP,LINES,wrapText,resetDealerMemory}=await impo
 const{RABE_ANIMS,SPRITE_CHARS}=await import('../src/render/sprites.js');
 const{GROUND}=await import('../src/core/config.js');
 // ---- Daten: Preis zentral, Figur vorhanden aber nicht im Roster ----
-assert.equal(CHAR_PRICE.rabe,10,'Testpreis 10 Coins');assert.equal(charPrice('rabe'),10);assert.equal(CHAR_SHOP.length,1);assert.equal(shopCount(),SHOP.length+1);
+assert.equal(CHAR_PRICE.rabe,10,'Testpreis 10 Coins');assert.equal(charPrice('rabe'),10);assert.equal(CHAR_SHOP.length,5);assert.equal(shopCount(),SHOP.length+5);   // KORVUS, A1LIEN, ST3-G0, LEON, ANUBIS
 assert(CHARACTERS.rabe&&CHARACTERS.rabe.sprites==='rabe'&&CHARACTERS.rabe.mods&&CHARACTERS.rabe.mods.fireball&&CHARACTERS.rabe.mods.super,'Rabe als Kämpfer mit Moveset');
 assert(!ROSTER.includes('rabe')&&!ownsChar('rabe'),'zu Beginn nicht spielbar');
 console.log('  ✓ Daten: Preis zentral (CHAR_PRICE), Rabe zu Beginn gesperrt');
@@ -34,7 +34,7 @@ for(const k of['idle','walk','crouch','air','dash','airdash','punch','kick','hea
 console.log('  ✓ Sprites:',names.size,'Frames, alle im Atlas; Kampf-/Sprech-Animationen vollständig');
 // Fall-/Aufsteh-/Sprung-Bögen (Flügel-Sprung): Frames im Atlas und in den Animationen verdrahtet
 for(let i=0;i<7;i++)assert(meta.frames['f_'+i],'Fall-Frame f_'+i);for(let i=0;i<8;i++)assert(meta.frames['u_'+i],'Aufsteh-Frame u_'+i);for(let i=0;i<17;i++)assert(meta.frames['j_'+i],'Sprung-Frame j_'+i);
-assert(RABE_ANIMS.air.frames.length>=12&&RABE_ANIMS.air.frames.every(f=>/^j_\d+a$/.test(f)&&meta.frames[f]),'Sprung nutzt die Flügel-Frames (an der Körpermitte verankert)');
+assert(RABE_ANIMS.air.frames.length>=12&&RABE_ANIMS.air.frames.every(f=>/^(?:j_\d+|nf_\d+)a$/.test(f)&&meta.frames[f]),'Sprung nutzt die Flügel-Frames (an der Körpermitte verankert)');
 assert(RABE_ANIMS.kd.frames.every(f=>/^f_/.test(f))&&RABE_ANIMS.wakeup.frames.length===8&&RABE_ANIMS.wakeup.frames.every(f=>/^u_/.test(f)),'Fallen + Aufstehen aus den neuen Bögen');
 console.log('  ✓ Sprung mit Flügeln, Fallen und Aufstehen verdrahtet');
 // ---- Story: Händler ----

@@ -1,8 +1,6 @@
-import{H,W}from'../core/config.js';
 
 
 
-import{R}from'./sprites.js';
 // Stage-Themes (ein Level pro Gegner). Der statische Hintergrund deckt die ganze WELT ab (größer als der Bildschirm)
 // und wird je Theme einmal in ein Offscreen-Canvas gerendert. Die Kamera skaliert/verschiebt ihn zusammen mit den Fightern.
 export const rnd=seed=>{let s=seed;return()=>(s=(s*16807)%2147483647)/2147483647};
@@ -40,7 +38,7 @@ export class Stage{
   m.restore();m.save();m.shadowColor=T.moon[0];m.shadowBlur=18;m.strokeStyle=mx(T.moon[0],'#ffffff',.5)+'cc';m.lineWidth=1.6;m.beginPath();m.arc(0,0,MR,0,7);m.stroke();m.restore();
   this.moonImg=mc;this.moonHR=HR;this.moonPos=[W/2,T.style==='temple'?230:190];this.stars=null;
   }
-  this.dyn={lant:[],blink:[],torch:[],search:null};const D=this.dyn,ST=T.style,hash=k=>{const q=Math.sin(k*12.9898)*43758.5453;return q-Math.floor(q)};
+  this.dyn={lant:[],blink:[],torch:[],search:null};const D=this.dyn,ST=T.style;
   if(!noSky){   // Skyline/Kulissen ganz hinten gehören zum Hintergrundbild -> bei eigenem Hintergrund weglassen (nur Boden bleibt)
   if(ST==='temple')this.buildTemple(g,R,D);else if(ST==='docks')this.buildDocks(g,R,D);
   if(ST==='city'){
@@ -161,6 +159,7 @@ export class Stage{
    g.fillStyle='#ffa04a';for(let i=0;i<80;i++){const x=w.x0+(((hh(i*3)*W0+Math.sin(t*.7+i)*26)%W0)+W0)%W0,y=this.floor-((hh(i*7)*520+t*(18+hh(i)*34))%520);g.globalAlpha=.25+.5*hh(i*5)*Math.max(0,Math.sin(t*2+i));g.fillRect(x,y,1.6+hh(i)*1.6,1.6+hh(i)*1.6)}}   // aufsteigende Glut
   g.globalAlpha=.25+Math.sin(t*3)*.1;g.strokeStyle=T.line;g.lineWidth=2;g.beginPath();g.moveTo(w.x0,this.floor-40);g.lineTo(w.x1,this.floor-40);g.stroke();g.restore()}
  // Bildschirmraum (unskaliert): Scanlines + Vignette
- overlay(g){if(!this.scan)return;g.save();g.fillStyle=g.createPattern(this.scan,'repeat');g.fillRect(0,0,this.W,this.H);
-  const v=g.createRadialGradient(this.W/2,this.H/2,this.H*.4,this.W/2,this.H/2,this.H*.95);v.addColorStop(0,'#0000');v.addColorStop(1,'#000000aa');g.fillStyle=v;g.fillRect(0,0,this.W,this.H);g.restore()}
+ overlay(g,vig=1){if(!this.scan)return;   // vig: Stärke der dunklen Bildränder (1 = normal, Kampf; im Auswahlmenü schwächer, damit die Sterne durchscheinen)
+  g.save();g.fillStyle=g.createPattern(this.scan,'repeat');g.fillRect(0,0,this.W,this.H);
+  const v=g.createRadialGradient(this.W/2,this.H/2,this.H*.4,this.W/2,this.H/2,this.H*.95);v.addColorStop(0,'#0000');v.addColorStop(1,'rgba(0,0,0,'+(.667*vig)+')');g.fillStyle=v;g.fillRect(0,0,this.W,this.H);g.restore()}
 }

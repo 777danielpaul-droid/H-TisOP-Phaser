@@ -6,8 +6,8 @@ import{PadNav,menuKey,padLabel}from'./core/gamepad.js';
 import{Arcade}from'./core/arcade.js';
 import{CHARACTERS,ROSTER}from'./core/characters.js';
 import{MOVE_LIST,charMoves}from'./core/moves.js';
-import{SPEED,GFX,GFX_PRESETS,setGfx}from'./core/config.js';
-import{openPack,buyPack,canBuy,LOOT,SHOP,CHAR_SHOP,CARDS,shopCount,buyChar,ownsChar,ownsSkin,ownedStages,sellAdjust,sellCards,sellSelectDupes,sellPreview}from'./core/loot.js';
+import{SPEED,GFX,setGfx}from'./core/config.js';
+import{openPack,buyPack,LOOT,SHOP,CHAR_SHOP,CHAR_REQ,charReqMet,CARDS,shopCount,buyChar,ownsChar,ownsSkin,ownedStages,sellAdjust,sellCards,sellSelectDupes,sellPreview}from'./core/loot.js';
 import{NetClient,netServerUrl,connectPatient}from'./core/netclient.js';
 import{NetMatch}from'./core/netmatch.js';
 import{NetInput,NET,encInput}from'./core/netplay.js';
@@ -27,9 +27,11 @@ import{BgPanel}from'./render/bgpanel.js';
 import{Intro}from'./render/intro.js';
 import{ShopClip}from'./render/shopclip.js';
 import{MusicStore,MusicPanel}from'./render/musicpanel.js';
+import{DevConsole}from'./render/devconsole.js';
+import{registerDevCommands}from'./core/devcmds.js';
 import{PackOpen}from'./render/packopen.js';
 // Einstiegspunkt: Vollbild-Canvas, Eingabe, KI, Game-Loop (fester Schritt) und Pause-Menü (M).
-console.info('H!TisOP Maus-Update v3 aktiv');loadFonts();   // eingebettete Schriften registrieren (Canvas + Menü)
+loadFonts();   // eingebettete Schriften registrieren (Canvas + Menü)
 const $=id=>document.getElementById(id);
 const load=(k,d)=>{try{return localStorage.getItem(k)||d}catch(e){return d}},save=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};   // Auswahl merken (falls Browser-Speicher verfügbar)
 let saved=Math.max(0,Math.min(AI_LEVELS.length-1,+load('tf_difficulty',0)||0));
@@ -48,6 +50,8 @@ const musicStore=new MusicStore();
 const applyPl=k=>sound.setPlaylist(k,musicStore.items(k),musicStore.on[k],musicStore.shuf[k]);
 const musicUi=new MusicPanel(musicStore,{onOpen:()=>clearInputs(),onClose:()=>{clearInputs();canvas.focus()},onChange:applyPl,now:k=>sound.plNow(k)});musicUi.mount();
 musicStore.init().then(()=>{for(const k of['menu','fight'])applyPl(k);musicUi.refresh()});
+// ---- Entwicklerkonsole (Strg+Alt+D): Eingabezeile + Ausgabebereich, Befehle per devUi.add(). Nicht im Intro, Online-Kampf, Pausenmenü oder bei offenem Panel. Offen = Kampf pausiert. ----
+const devUi=new DevConsole({blocked:()=>intro.active||shopClip.active||menuOpen||!!netMatch||studioIsOpen()||bgUi.isOpen||musicUi.isOpen||netUi.isOpen,onOpen:()=>clearInputs(),onClose:()=>{clearInputs();canvas.focus()}});registerDevCommands(devUi,{game,arcade});devUi.mount();
 // ---- Sound: Lautstärke/Stumm gemerkt; Audio startet erst nach der ersten Tasten-/Klick-Geste (Browser-Regel) ----
 const sound=new Sound();game.audio=sound;sound.setVolume(+load('tf_volume',.7));sound.setMuted(load('tf_mute','0')==='1');
 for(const ev of['keydown','pointerdown'])addEventListener(ev,()=>sound.unlock());
@@ -99,7 +103,7 @@ const startTg=$('startToggle');if(startTg)startTg.onclick=()=>{startManual();can
 // Mauszeiger selbst: 2 s ohne Bewegung unsichtbar, bei Bewegung wieder sichtbar (nur im Titelmenü)
 // Gilt jetzt in ALLEN Menüs (Titel, Charakter-/Stage-Wahl, Shop/Booster, Game Over / Sieg, Pause, Panels): Zeiger sichtbar bei Bewegung, nach 2 s Ruhe weg. Im Kampf bleibt er aus.
 let startCurT=0,curWas=false,mouseL=null,endHot=-1;
-const panelsOpen=()=>studioIsOpen()||bgUi.isOpen||musicUi.isOpen||netUi.isOpen;
+const panelsOpen=()=>studioIsOpen()||bgUi.isOpen||musicUi.isOpen||netUi.isOpen||devUi.isOpen;
 const menuish=()=>!intro.active&&(startOpen||menuOpen||panelsOpen()||renderer.lootUi.open||(arcade.state!=='fight'&&!renderer.sel.launching));
 const curShow=()=>{const b=document.body,m=menuish();b.classList.remove('nocur');if(m)b.classList.add('curon');clearTimeout(startCurT);if(m)startCurT=setTimeout(()=>{if(menuish())b.classList.add('nocur')},2000)};
 window.addEventListener('mousemove',e=>{if(Math.abs(e.movementX||0)+Math.abs(e.movementY||0)<3)return;curShow();if(start&&startOpen&&!intro.active){if(startIsMin()){if(!startPinned&&performance.now()>startQuiet)startMin(false)}else startIdleArm()}});   // Mausbewegung während des Intros / direkt danach (Klick zum Überspringen) klappt das Menü nicht auf
@@ -176,6 +180,7 @@ const sellMove=(dx,dy)=>{const u=renderer.lootUi,G=gridGeom(),n=CARDS.length;let
 const shopBuy=i=>{const u=renderer.lootUi;
  if(i>=SHOP.length){const c=CHAR_SHOP[i-SHOP.length];if(!c)return;u.sel=i;   // Kämpfer-Karte: einmaliger, dauerhafter Kauf
   if(ownsChar(c.id)){u.msg='Schon freigeschaltet!';u.msgOk=false;game.sfx('block_guard',{vol:.5})}
+  else if(!charReqMet(c.id)){u.msg=CHAR_REQ[c.id].txt+'!';u.msgOk=false;game.sfx('block_guard',{vol:.5})}   // z. B. A1LIEN: erst Kapitel 3 abschließen
   else if(buyChar(c.id)){u.msg=CHARACTERS[c.id].name+' FREIGESCHALTET!';u.msgOk=true;game.sfx('fw_finale',{vol:.6})}
   else{u.msg='Zu wenig Coins!';u.msgOk=false;game.sfx('block_guard',{vol:.5})}u.msgAt=u.t;return}
  const o=SHOP[i];if(!o)return;u.sel=i;
@@ -202,7 +207,7 @@ function hoverTarget(){endHot=-1;const L=mouseL;if(!L||menuOpen||panelsOpen()||s
  if(start&&hitStartSel(...L))return startSelRect();
  if(!a.pvp&&lootCan()){if(hitShopSel(...L))return shopSelRect();if(inR(boosterRect(),...L))return boosterRect()}
  const md=hitMode(...L);if(md>=0)return{x:MODE_PILL.x+md*MODE_PILL.w/4,y:MODE_PILL.y,w:MODE_PILL.w/4,h:MODE_PILL.h};
- if(a.mode==='melee'&&a.vs.step===0&&!a.vs.locked[0]&&!a.vs.locked[1]){const mo=hitMeleeOpt(...L);if(mo>=0&&(mo!==1||a.cpu))return MELEE_OPTS[mo]}
+ if(a.mode==='melee'&&a.vs.step===0&&!a.vs.locked[0]&&!a.vs.locked[1]){const mo=hitMeleeOpt(...L,a.cpu);if(mo>=0)return MELEE_OPTS[mo]}
  if(a.pvp){const v=a.vs;if(v.step===1){const j=hitStage(...L);return j>=0&&a.stageOpen(j)?stageRect(j):null}const h=hitVsCar(...L);return h?vcarRect(h.pl,h.off):null}
  if(a.mode==='story'&&hitChapter(...L))return CHAPTER_RECT;
  if(CHARACTERS.custom&&a.cursor===CI()&&hitEdit(...L))return editRect();
@@ -225,7 +230,7 @@ canvas.addEventListener('click',e=>{{const dl=game.story&&game.story.dealer;if(d
  if(arcade.state!=='select'&&canvasMenu()){const L=logical(e),bs=endBtns();for(let i=0;i<bs.length;i++)if(inR(endBtnRect(i,bs.length),...L)){bs[i].fn();return}return}
  if(arcade.state!=='select'||menuOpen||studioIsOpen()||renderer.sel.launching)return;const L=logical(e);
  const md=hitMode(...L);if(md>=0){arcade.setMode(['arcade','story','versus','melee'][md]);return}
- if(arcade.mode==='melee'&&arcade.vs.step===0&&!arcade.vs.locked[0]&&!arcade.vs.locked[1]){const mo=hitMeleeOpt(...L);if(mo>=0){if(mo===0)arcade.toggleCpu();else if(mo===1&&arcade.cpu)setDiff((arcade.difficulty+1)%AI_LEVELS.length);else if(mo===2)arcade.cycleStocks();return}}
+ if(arcade.mode==='melee'&&arcade.vs.step===0&&!arcade.vs.locked[0]&&!arcade.vs.locked[1]){const mo=hitMeleeOpt(...L,arcade.cpu);if(mo>=0){if(mo===0)arcade.toggleCpu();else if(mo===1)setDiff((arcade.difficulty+1)%AI_LEVELS.length);else if(mo===2)arcade.cycleStocks();return}}
  if(arcade.pvp){const v=arcade.vs;if(v.step===1){const j=hitStage(...L);if(j>=0&&arcade.stageOpen(j)){v.stage=j;startVersus()}}
   else{const h=hitVsCar(...L);if(h){if(h.off===0)arcade.vsConfirm(h.pl);else arcade.vsMove(h.pl,h.off)}}return}   // Seitenfigur = dieses Rondell eine weiter, Mitte = bestätigen
  if(arcade.mode==='story'&&hitChapter(...L)){if(arcade.cycleChapter())game.sfx('ui_round_start',{vol:.5,rate:1.4});return}   // Klick auf die Kapitel-Zeile
@@ -296,7 +301,7 @@ function netBarUpdate(){const m=netMatch;if(!m||m.phase==='pick'||m.phase==='clo
 addEventListener('keydown',e=>{
  if(intro.key(e)){e.preventDefault();return}
  if(shopClip.key(e)){e.preventDefault();return}   // Shop-Clip läuft: Enter/Esc/Leertaste überspringt, andere Tasten werden verschluckt   // Intro läuft: Enter/Esc überspringt, andere Tasten werden verschluckt
- if(studioIsOpen()||bgUi.isOpen||musicUi.isOpen||netUi.isOpen)return;   // Editor für die eigene Figur / Hintergrund-Panel / Online-Lobby haben Vorrang (Tippen in Feldern)
+ if(studioIsOpen()||bgUi.isOpen||musicUi.isOpen||netUi.isOpen||devUi.isOpen)return;   // Editor für die eigene Figur / Hintergrund-Panel / Online-Lobby haben Vorrang (Tippen in Feldern)
  if(e.code==='KeyH'&&!menuOpen&&(startOpen||(arcade.state==='select'&&!renderer.sel.launching&&!renderer.lootUi.open))){bgUi.open();e.preventDefault();return}   // H = eigenen Hintergrund einfügen (Titelmenü + Auswahl)
  if(e.code==='KeyN'&&!menuOpen&&(startOpen||(arcade.state==='select'&&!renderer.sel.launching&&!renderer.lootUi.open))){musicUi.open();e.preventDefault();return}   // N = eigene Musik (Titelmenü + Auswahl)
  if(e.code==='KeyO'&&!menuOpen&&!netMatch&&(startOpen||(arcade.state==='select'&&!renderer.sel.launching&&!renderer.lootUi.open))){netOpen(startOpen?'start':'select');e.preventDefault();return}   // O = Online-Lobby (Titelmenü + Auswahl)
@@ -320,7 +325,7 @@ addEventListener('keydown',e=>{
  {const sty=game.story;   // Sonderitems aus den Boostern (Story): 1/2/3 benutzen, Q = nächstes wählen, 0 (Controller R3) = gewähltes benutzen
   if(sty&&arcade.state==='fight'&&!menuOpen&&game.phase==='fight'){const di={Digit1:0,Digit2:1,Digit3:2}[e.code];
    if(di!==undefined||e.code==='Digit0'||e.code==='KeyQ'){e.preventDefault();if(e.repeat)return;if(e.code==='KeyQ')sty.cycleItem();else sty.useItem(ITEMS[di===undefined?sty.isel:di].id);return}}}
- {const u=renderer.lootUi,st=arcade.state,can=lootCan();   // Booster-Overlay (B) mit Shop (P)
+ {const u=renderer.lootUi,can=lootCan();   // Booster-Overlay (B) mit Shop (P)
   if(u.open||(can&&(e.code==='KeyB'||e.code==='KeyP'))){e.preventDefault();
    if(!u.open){lootOpen(e.code==='KeyP'?'shop':'main');return}
    if(u.zoom){if(e.code==='Escape'||e.code==='Enter'||e.code==='Space'||e.code==='KeyJ'||e.code==='KeyB')u.zoom=null;return}   // große Kartenansicht: Taste schließt sie
@@ -372,7 +377,7 @@ addEventListener('keydown',e=>{
  if(e.code==='F2'){game.debug=!game.debug;e.preventDefault()}
  if(e.code==='Enter'||e.code==='KeyR')arcade.confirm();
  if(e.code==='Escape'&&(arcade.state==='gameover'||arcade.state==='victory'||arcade.state==='vsover'))arcade.toSelect()});
-addEventListener('blur',()=>{if(!menuOpen&&!studioIsOpen()&&!bgUi.busy()&&!musicUi.busy()&&!intro.active&&!netUi.isOpen&&!netMatch)setMenu(true)}); // Fenster verlassen => Menü/Pause
+// Fenster verlassen: KEIN automatisches Pausenmenü mehr (Demokämpfe auf der Startseite laufen im Hintergrund weiter)
 // ---- Game-Loop: Akkumulator, Schrittlänge folgt dem Spieltempo ----
 let last=performance.now(),acc=0,slowAcc=0,autoT=0;
 function assignPads(){const l=navigator.getGamepads?[...navigator.getGamepads()]:[],pads=l.map((g,i)=>g&&g.connected?i:-1).filter(i=>i>=0);
@@ -420,10 +425,10 @@ function loop(now){if(intro.active){last=now;padMenu(now);sound.music('menu');re
  acc+=Math.min(100,dt);last=now;const STEP=1000/(60*(netMatch?SPEED:speed)*(startOpen?1:game.timeScale||1));   // Online: festes Tempo (beide Geräte müssen gleich schnell rechnen)
  while(acc>=STEP){if(startOpen){demo.step()}
   else if(netMatch&&netMatch.phase!=='pick'){if(arcade.state!=='select'&&netMatch.step())arcade.update();else{acc=netMatch&&netMatch.phase==='play'?Math.min(acc,STEP*3):0;break}}   // Online: nur rechnen, wenn die Eingabe des Gegners da ist (Lockstep)
-  else if(!menuOpen&&arcade.state!=='select'){game.step();arcade.update()}acc-=STEP}
+  else if(!menuOpen&&!devUi.isOpen&&arcade.state!=='select'){game.step();arcade.update()}acc-=STEP}
  if(netMatch){netMatch.flush();netMatch.poll()}netBarUpdate();
  if(startOpen)renderer.drawDemo(demo.game);else renderer.draw(game);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 sound.unlock();sound.music('menu');   // Menümusik schon beim Intro: Audio sofort vorbereiten (Browser geben es frei, sobald sie dürfen, spätestens bei der ersten Taste/Klick)
 intro.start();   // als Letztes: alles ist eingerichtet, das Video startet sofort (kein Startknopf), die Menümusik setzt ein, sobald der Browser Ton erlaubt
-window.__net=()=>netMatch;window.__intro=intro;window.__shopclip=shopClip;window.__music=musicUi;window.__bgui=bgUi;window.__reveal=lootReveal;window.__lootOpen=lootOpen;window.__renderer=renderer;window.__demo=demo;window.__game=game;window.__arcade=arcade;
+window.__net=()=>netMatch;window.__intro=intro;window.__shopclip=shopClip;window.__music=musicUi;window.__dev=devUi;window.__bgui=bgUi;window.__reveal=lootReveal;window.__lootOpen=lootOpen;window.__renderer=renderer;window.__demo=demo;window.__game=game;window.__arcade=arcade;

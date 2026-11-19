@@ -1,14 +1,9 @@
-import{hit}from'./combat.js';
-import{AIR,BARRIER,BOUNCE,GROUND,H,MELEE,PHYS,SPAM,WALL_L,WALL_R}from'./config.js';
+import{AIR,BARRIER,BOUNCE,GROUND,MELEE,PHYS,SPAM,WALL_L,WALL_R}from'./config.js';
 import{Hitbox}from'./hitbox.js';
 import{buildMoves}from'./moves.js';
 import{strike,swingSound}from'./sfx.js';
-import{Story}from'./story.js';
 
 
-import{Renderer}from'../render/renderer.js';
-import{A}from'../render/rig.js';
-import{R}from'../render/sprites.js';
 export const FACE_STATES=['idle','walk','crouch'];
 export const RANK={L:1,M:2,H:3};
 export let UID=0;

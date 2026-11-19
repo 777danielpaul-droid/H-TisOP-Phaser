@@ -1,14 +1,12 @@
 import{H,W}from'../core/config.js';
 import{CHARACTERS}from'../core/characters.js';
 import{isItem}from'../core/items.js';
-import{CARDS,CHAR_SHOP,LOOT,RARITY,SHOP,SKIN_POOL,STAGE_NAMES,STAGE_POOL,canBuy,canBuyChar,cardsOwned,ownsChar,ownsSkin,ownsStage,sellPreview,sellable,shopCount}from'../core/loot.js';
+import{CARDS,CHAR_REQ,CHAR_SHOP,LOOT,RARITY,SHOP,SKIN_POOL,STAGE_NAMES,STAGE_POOL,canBuy,canBuyChar,cardsOwned,charReqMet,ownsChar,ownsSkin,ownsStage,sellPreview,sellable,shopCount}from'../core/loot.js';
 import{drawFullFrame}from'./sprites.js';
 
-import{Story}from'../core/story.js';
 
 
 import{skinName}from'./skins.js';
-import{R}from'./sprites.js';
 // Booster-Overlay (Taste B im Startmenü bzw. nach Story-Ende): Übersicht mit Sammlung, Booster öffnen mit Karten-Aufdeckung, Shop (Taste P / Button) zum Kaufen von Boostern für Coins.
 // u = {open, mode:'main'|'reveal'|'shop'|'sell' (Karten gegen Coins tauschen; u.sell = {kartenId:anzahl}), rewards, t, sel, msg, msgAt}  (Zustand liegt in renderer.lootUi, Tasten in main.js)
 export const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -45,13 +43,16 @@ export function prizeFace(r){if(r.type==='coins')return{col:'#ffd23f',t1:'COINS'
  return{col:r.col,t1:r.char.toUpperCase()+' SKIN',t2:r.name,t3:'NEU · Taste C im Menü',id:null}}
 // ---- Shop: Klickflächen (logische 960×540) ----
 export const inR=(r,x,y)=>x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h;
-export const shopCardRect=i=>{const n=shopCount(),w=n>3?200:220,h=250,gap=n>3?22:30,x0=W/2-(w*n+gap*(n-1))/2;return{x:x0+i*(w+gap),y:128,w,h}};   // Booster-Angebote + Kämpfer-Karten nebeneinander
+export const shopCardRect=i=>{const n=shopCount(),w=n>7?112:n>6?120:n>4?145:n>3?190:220,h=250,gap=n>7?6:n>6?10:n>4?12:n>3?20:30,x0=W/2-(w*n+gap*(n-1))/2;return{x:x0+i*(w+gap),y:128,w,h}};   // Booster-Angebote + Kämpfer-Karten nebeneinander
 export const shopBackRect=()=>({x:W/2-80,y:H-84,w:160,h:28});
-export const shopSelRect=()=>({x:W-18-76-5-76-5-76,y:14,w:76,h:26});   // vier gleich breite Knöpfe oben rechts (STARTSEITE · SHOP · BOOSTER · COINS), zusammen so breit wie die 4 Modus-Knöpfe links
+// Leiste oben rechts (STARTSEITE · SHOP · BOOSTER · COINS): exakt an der Mittelachse gespiegelte Modus-Leiste links (MODE_PILL in select.js: gleiche Knopfgröße, gleiche Abstände, gleiche Höhe, gleicher Abstand zum Titel)
+const topBtn=i=>{const m={x:14,y:12,w:318,h:26},sw=m.w/4,k=3-i,w=sw-6,x=m.x+k*sw+(k?3:0);return{x:W-(x+w),y:m.y,w,h:m.h}};
+export const shopSelRect=()=>topBtn(1);
 export const hitShopSel=(lx,ly)=>inR(shopSelRect(),lx,ly);
-export const startSelRect=()=>({x:shopSelRect().x-5-94,y:14,w:94,h:26});   // „STARTSEITE“: 4. Knopf oben rechts (spiegelt die 4 Modus-Knöpfe links), führt zurück zur Startseite mit dem Demokampf
+export const startSelRect=()=>topBtn(0);   // „STARTSEITE“: 1. Knopf der Leiste (Spiegel von MELEE links), führt zurück zur Startseite mit dem Demokampf
 export const hitStartSel=(lx,ly)=>inR(startSelRect(),lx,ly);
-export const boosterRect=()=>({x:W-18-76-5-76,y:14,w:76,h:26});   // kompakter Booster-Zähler oben rechts
+export const boosterRect=()=>topBtn(2);   // Booster-Zähler oben rechts
+export const coinsRect=()=>topBtn(3);   // Coins-Anzeige (Spiegel von ARCADE links)
 export const lootOpenRect=()=>({x:W/2-196,y:H-62,w:186,h:26});
 export const lootCloseRect=()=>({x:W/2+10,y:H-62,w:186,h:26});   // Booster-Übersicht: „Booster öffnen“ / „Schließen“ per Maus
 export const sellBtnRect=()=>({x:18,y:16,w:150,h:28});   // „TAUSCHEN“-Knopf (Karten gegen Coins) links oben in der Booster-Übersicht; im Tausch-Modus liegt „ALLE DOPPELTEN“ auf shopBtnRect
@@ -97,21 +98,22 @@ export function drawShop(g,hud,u){const sel=u.sel|0;
  SHOP.forEach((o,i)=>{const r=shopCardRect(i),on=i===sel,ok=canBuy(i),col=ok?'#65e5ed':'#536d78',cx=r.x+r.w/2;
   g.save();g.translate(cx,r.y+r.h/2);const sc=on?1.05+.012*Math.sin(u.t*.12):.97;g.scale(sc,sc);g.translate(-cx,-(r.y+r.h/2));g.globalAlpha=on?1:.88;
   g.shadowColor=on?'#58ddeb':'#000';g.shadowBlur=on?22:10;g.fillStyle='#02070c';hud.kChamfer(g,r.x,r.y,r.w,r.h,15);g.fill();g.shadowBlur=0;const shell=g.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);shell.addColorStop(0,'#647b83');shell.addColorStop(.16,'#172a33');shell.addColorStop(.7,'#050d13');shell.addColorStop(1,'#344b54');g.fillStyle=shell;hud.kChamfer(g,r.x+2,r.y+2,r.w-4,r.h-4,13);g.fill();g.strokeStyle=on?'#9dfaff':'rgba(145,197,205,.42)';g.lineWidth=on?1.8:1;hud.kChamfer(g,r.x+4,r.y+4,r.w-8,r.h-8,11);g.stroke();g.fillStyle='rgba(255,255,255,.18)';g.fillRect(r.x+15,r.y+7,r.w*.3,1.5);g.strokeStyle='rgba(132,217,225,.18)';hud.kChamfer(g,r.x+9,r.y+9,r.w-18,r.h-18,8);g.stroke();
-  boosterArt(g,hud,cx,r.y+88,76,SHOP_PACK_H,ok?'#69e9ef':'#596c83',o.n,on?-.05:0,SHOP_STYLE[i%SHOP_STYLE.length],ok?1:.5);
-  hud.txt(g,o.n===1?'1 BOOSTER':o.n+' BOOSTER',cx,r.y+170,19,'#ffffff','center',on?col:null);
-  if(o.n>1)hud.txt(g,'SPARE '+Math.round((1-o.price/(o.n*SHOP[0].price))*100)+' %',cx,r.y+188,11,'#7dff9a','center');
-  hud.txt(g,o.price+' CREDITS',cx,r.y+222,20,ok?'#a9faff':'#78909a','center',ok&&on?'#65e5ed':null);
-  if(!ok)hud.txt(g,'noch '+(o.price-LOOT.coins)+' fehlen',cx,r.y+r.h-8,10,'#ff9aa6','center');
+  boosterArt(g,hud,cx,r.y+88,r.w<130?64:76,SHOP_PACK_H,ok?'#69e9ef':'#596c83',o.n,on?-.05:0,SHOP_STYLE[i%SHOP_STYLE.length],ok?1:.5);
+  hud.txt(g,o.n===1?'1 BOOSTER':o.n+' BOOSTER',cx,r.y+170,r.w<130?16:19,'#ffffff','center',on?col:null);
+  if(o.n>1)hud.txt(g,'SPARE '+Math.round((1-o.price/(o.n*SHOP[0].price))*100)+' %',cx,r.y+188,r.w<130?10:11,'#7dff9a','center');
+  hud.txt(g,o.price+' CREDITS',cx,r.y+222,r.w<130?16:20,ok?'#a9faff':'#78909a','center',ok&&on?'#65e5ed':null);
+  if(!ok)hud.txt(g,'noch '+(o.price-LOOT.coins)+' fehlen',cx,r.y+r.h-8,r.w<130?9:10,'#ff9aa6','center');
   g.restore()});
  CHAR_SHOP.forEach((o,j)=>{const i=SHOP.length+j,r=shopCardRect(i),on=i===sel,own=ownsChar(o.id),ok=canBuyChar(o.id),ch=CHARACTERS[o.id],col=own?'#7dff9a':ok?'#65e5ed':'#536d78',cx=r.x+r.w/2;
   g.save();g.translate(cx,r.y+r.h/2);const sc=on?1.05+.012*Math.sin(u.t*.12):.97;g.scale(sc,sc);g.translate(-cx,-(r.y+r.h/2));g.globalAlpha=on?1:.88;
   g.shadowColor=on?'#58ddeb':'#000';g.shadowBlur=on?22:10;g.fillStyle='#02070c';hud.kChamfer(g,r.x,r.y,r.w,r.h,15);g.fill();g.shadowBlur=0;const shell=g.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);shell.addColorStop(0,'#647b83');shell.addColorStop(.16,'#172a33');shell.addColorStop(.7,'#050d13');shell.addColorStop(1,'#344b54');g.fillStyle=shell;hud.kChamfer(g,r.x+2,r.y+2,r.w-4,r.h-4,13);g.fill();g.strokeStyle=on?'#9dfaff':'rgba(145,197,205,.42)';g.lineWidth=on?1.8:1;hud.kChamfer(g,r.x+4,r.y+4,r.w-8,r.h-8,11);g.stroke();g.fillStyle='rgba(255,255,255,.18)';g.fillRect(r.x+15,r.y+7,r.w*.3,1.5);g.strokeStyle='rgba(132,217,225,.18)';hud.kChamfer(g,r.x+9,r.y+9,r.w-18,r.h-18,8);g.stroke();
-  g.save();g.shadowColor=ch.glow;g.shadowBlur=on?18:8;drawFullFrame(g,ch,r.x+30,r.y+12,r.w-60,128);g.restore();
-  hud.txt(g,ch.name,cx,r.y+170,19,'#ffffff','center',on?col:null);
-  hud.txt(g,'KÄMPFER FREISCHALTEN',cx,r.y+188,10,'#9bbcc2','center');
-  if(own)hud.txt(g,'BESITZT ✓',cx,r.y+222,20,'#7dff9a','center',on?'#7dff9a':null);
-  else{hud.txt(g,o.price+' CREDITS',cx,r.y+222,20,ok?'#a9faff':'#78909a','center',ok&&on?'#65e5ed':null);
-   if(!ok)hud.txt(g,'noch '+(o.price-LOOT.coins)+' fehlen',cx,r.y+r.h-8,10,'#ff9aa6','center');else hud.txt(g,'einmaliger Kauf · dauerhaft',cx,r.y+r.h-8,10,'#9bbcc2','center')}
+  g.save();g.shadowColor=ch.glow;g.shadowBlur=on?18:8;drawFullFrame(g,ch,r.x+(r.w<130?14:30),r.y+12,r.w-(r.w<130?28:60),128);g.restore();
+  hud.txt(g,ch.name,cx,r.y+170,r.w<115?14:r.w<130?16:19,'#ffffff','center',on?col:null);
+  hud.txt(g,'KÄMPFER FREISCHALTEN',cx,r.y+188,r.w<115?7:r.w<130?8:10,'#9bbcc2','center');
+  if(own)hud.txt(g,'BESITZT ✓',cx,r.y+222,r.w<115?14:r.w<130?16:20,'#7dff9a','center',on?'#7dff9a':null);
+  else if(!charReqMet(o.id)){hud.txt(g,'GESPERRT',cx,r.y+222,r.w<115?14:r.w<130?16:20,'#78909a','center');hud.txt(g,CHAR_REQ[o.id].txt,cx,r.y+r.h-8,r.w<115?7:r.w<130?8:10,'#ff9aa6','center')}   // Voraussetzung (z. B. Kapitel 3) noch nicht erfüllt
+  else{hud.txt(g,o.price+' CREDITS',cx,r.y+222,r.w<115?14:r.w<130?16:20,ok?'#a9faff':'#78909a','center',ok&&on?'#65e5ed':null);
+   if(!ok)hud.txt(g,'noch '+(o.price-LOOT.coins)+' fehlen',cx,r.y+r.h-8,r.w<115?8:r.w<130?9:10,'#ff9aa6','center');else hud.txt(g,r.w<130?'dauerhaft frei':'einmaliger Kauf · dauerhaft',cx,r.y+r.h-8,r.w<115?8:r.w<130?9:10,'#9bbcc2','center')}
   g.restore()});
  const b=shopBackRect();hud.kBtn(g,b.x,b.y,b.w,b.h,'ZURÜCK',{col:'#b98bff',t:u.t});
  const age=u.t-(u.msgAt==null?-999:u.msgAt);if(u.msg&&age<110){g.save();g.globalAlpha=Math.min(1,(110-age)/30);hud.txt(g,u.msg,W/2,H-112,20,u.msgOk?'#7dff9a':'#ff6f7f','center',u.msgOk?'#7dff9a':'#ff6f7f');g.restore()}

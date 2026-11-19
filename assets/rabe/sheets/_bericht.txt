@@ -3,9 +3,15 @@
 - kampf.png: 12 Posen erkannt
 - fall.png: 15 Posen erkannt
 - sprung.png: 17 Posen erkannt
+- neu_sprite.png: 4 Posen erkannt
+- neu_angriff.png: 4 Posen erkannt
+- neu_flug.png: 4 Posen erkannt
+- neu_kick.png: 4 Posen erkannt
+- neu_schlag.png: 4 Posen erkannt
 Maßstab i: Höhe 610 px -> 300 (x0.492)
 Maßstab t: Höhe 500 px -> 300 (x0.600)
 Maßstab c: x0.866 (Idle x 1.76)
 Maßstab u/f: Höhe 246 px -> 300 (x1.220, relativ zu Idle 2.48)
 Maßstab j: Höhe 255 px -> 300 (x1.176, relativ zu Idle 2.39)
-Atlas 4096x1032, 1299 KB, 77 Frames
+Maßstab neu: Höhe 495 px -> 300 (x0.606)
+Atlas 4096x1569, 1906 KB, 110 Frames

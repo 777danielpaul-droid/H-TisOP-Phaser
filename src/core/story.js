@@ -1,43 +1,43 @@
 import{AIController}from'./ai.js';
 import{Dealer}from'./blackmarket.js';
 import{CHARACTERS}from'./characters.js';
-import{EFFECT,GROUND,H}from'./config.js';
+import{EFFECT,GROUND}from'./config.js';
 import{Fighter}from'./fighter.js';
-import{Game}from'./game.js';
 import{ITEMS,itemBlock,itemOf}from'./items.js';
 import{addPack,itemCount,takeItem}from'./loot.js';
 
 // Story-Modus: Seitenscroller-Level. Der Spieler läuft nach rechts; an festen Punkten (ENC) wird die Kamera gesperrt und Insektenkrieger
 // (Mantis) springen in Gruppen von beiden Seiten herein. Erst wenn alle besiegt sind, geht es weiter (Checkpoint nach jeder Welle).
 // Rein logisch (kein DOM) -> headless testbar. Werte hier justierbar.
-export const LV={x0:-800,x1:1900,start:-700,half:560};   // Levelgrenzen, Startpunkt, halbe Breite des gesperrten Kampffelds
+export const LV={x0:-800,x1:2400,start:-700,half:560};   // Levelgrenzen, Startpunkt, halbe Breite des gesperrten Kampffelds
 // Kapitel: je eigene Wellen (enc), Level-Look (stage = Index in THEMES, ground/line/lamp für die Straße), Textbausteine und Wellen-Limit (capBase + Welle, max cap).
 // npc = Schwarzmarkthändler KORVUS (core/blackmarket.js): x = Standort (zwischen den Wellen ansprechbar, bei einer Welle duckt er sich weg).
 // enc-Felder: x = Auslöse-Position, n = Anzahl Mantis, boss = Boss-Figur (1 = Alpha-Mantis) und at = Platz in der Spawn-Reihenfolge (0 = zuerst).
 export const CHAPTERS=[
- {id:1,name:'DER SCHWARM',stage:0,capBase:2,cap:5,npc:{x:-480},props:[{k:'crate',x:-600},{k:'barrel',x:-120},{k:'sign',x:330},{k:'crate',x:820},{k:'barrel',x:1200},{k:'sign',x:1560}],look:{ground:['#14101f','#050309'],line:'#4a3b78',lamp:'255,210,120',acc:'#7dff9a'},
+ {id:1,name:'DER SCHWARM',stage:0,capBase:2,cap:5,npc:{x:-480},props:[{k:'crate',x:-600},{k:'barrel',x:-120},{k:'sign',x:330},{k:'crate',x:820},{k:'barrel',x:1200},{k:'sign',x:1560},{k:'crate',x:1750},{k:'barrel',x:2050},{k:'sign',x:2280}],look:{ground:['#14101f','#050309'],line:'#4a3b78',lamp:'255,210,120',acc:'#7dff9a'},
   intro:['Die Stadt schläft nicht mehr. Aus den Gassen kriechen Insektenkrieger.','Kämpfe dich durch das Viertel – sie kommen in Gruppen.'],
-  win:{title:'SCHWARM BESIEGT',say:'Die Stadt ist sicher – vorerst.'},
+  win:{title:'LEON BESIEGT',say:'Der Herrscher der Savanne ist geschlagen – der Schwarm zieht sich zurück!'},
   enc:[
    {x:-300,n:2,title:'ERSTE WELLE',say:'Etwas raschelt zwischen den Häusern …'},
    {x:150,n:3,title:'ZWEITE WELLE',say:'Es werden immer mehr.'},
    {x:600,n:4,title:'DRITTE WELLE',say:'Der Schwarm hat dich eingekreist!'},
    {x:1000,n:5,title:'VIERTE WELLE',say:'Sie greifen von beiden Seiten an – bleib in Bewegung!'},
-   {x:1380,n:4,boss:1,title:'DER ALPHA',say:'Der Anführer des Schwarms steigt herab.'}]},
+   {x:1380,n:4,boss:1,title:'DER ALPHA',say:'Der Anführer des Schwarms steigt herab.'},
+   {x:1800,n:2,boss:'leonBoss',at:0,title:'LEON',say:'Ein gewaltiges Brüllen erschüttert die Stadt – der Herrscher der Savanne fordert dich heraus!'}]},
  {id:2,name:'DER DÄMON ERWACHT',stage:2,capBase:3,cap:6,npc:{x:-480},props:[{k:'barrel',x:-560},{k:'crate',x:-200},{k:'crate',x:420},{k:'barrel',x:900},{k:'sign',x:1250},{k:'crate',x:1600}],look:{ground:['#0c2a22','#030a07'],line:'#52ffa8',lamp:'120,255,200',acc:'#ff6a7a'},
   intro:['Der Schwarm war nur der Vorbote. Im Hafen regt sich etwas viel Größeres.','Mehr Krieger, härtere Wellen – und am Ende wartet er.'],
-  win:{title:'DÄMON BESIEGT',say:'Das Glühen im Hafen erlischt.'},
+  win:{title:'ST3-G0 BESIEGT',say:'Die Panzer-Echse bricht zusammen – der Weg in den Kern ist frei.'},
   enc:[
    {x:-300,n:4,title:'ERSTE WELLE',say:'Diesmal sind es gleich mehr.'},
    {x:150,n:5,title:'ZWEITE WELLE',say:'Aus den Containern kriechen sie hervor.'},
    {x:600,n:6,title:'DRITTE WELLE',say:'Der Schwarm ist gewachsen – lass dich nicht einkreisen!'},
    {x:1000,n:7,title:'VIERTE WELLE',say:'Sie kommen aus allen Richtungen. Der Boden bebt.'},
-   {x:1380,n:2,boss:'cyberdemon',at:0,title:'CYBERDÄMON',say:'Rotes Glühen unter der Haut – der Dämon des Kerns.'}]},
- // Kapitel 3: gemischte Wellen (mix = [[Figur, Anzahl], …], gleichmäßig durchgemischt) aus Mantis + Mini-Cyberdämonen, Finale wieder der große Cyberdämon.
+   {x:1380,n:2,boss:'st3g0Boss',at:0,title:'ST3-G0',say:'Die Panzer-Echse versperrt den Weg zum Kern. Der Boden bebt unter ihren Schritten.'}]},
+ // Kapitel 3: gemischte Wellen (mix = [[Figur, Anzahl], …], gleichmäßig durchgemischt) aus Mantis + Mini-A1LIEN, Finale: A1LIEN ('cyberdemon'). Boss-Reihenfolge: Kap. 1 LEON ('leonBoss'), Kap. 2 ST3-G0 ('st3g0Boss'), Kap. 3 A1LIEN, Kap. 4 ANUBIS ('anubisBoss').
  // hurdles = Hindernisse zwischen den Wellen (x = Mitte, w = Breite, h = Höhe): am Boden kommt man nicht durch – man muss drüberspringen (nur beim Laufen aktiv, im Kampf stören sie nicht).
  {id:3,name:'DER KERN',stage:1,capBase:3,cap:7,npc:{x:-480},look:{ground:['#2a0c14','#0a0206'],line:'#ff5a6e',lamp:'255,130,110',acc:'#ffb347'},
   intro:['Der Hafen ist gefallen – doch das Glühen kommt von weiter unten, aus dem Kern der Stadt.','Zwischen den Wellen versperren Trümmer den Weg. Spring drüber – und halte dich bereit.'],
-  win:{title:'KERN ERLOSCHEN',say:'Das Glühen ist verschwunden. Die Stadt atmet auf.'},
+  win:{title:'A1LIEN BESIEGT',say:'Das Glühen im Kern erlischt – doch tief unter den Trümmern öffnet sich ein Tor.'},
   hurdles:[{x:-60,w:70,h:70},{x:380,w:80,h:95},{x:790,w:70,h:80},{x:1190,w:90,h:105}],
   props:[{k:'crate',x:-640},{k:'barrel',x:-330},{k:'sign',x:-160},{k:'crate',x:260},{k:'barrel',x:520},{k:'sign',x:700},{k:'crate',x:940},{k:'barrel',x:1100},{k:'crate',x:1500},{k:'sign',x:1640}],
   enc:[
@@ -45,7 +45,20 @@ export const CHAPTERS=[
    {x:150,mix:[['mantis',3],['miniDemon',2]],title:'ZWEITE WELLE',say:'Das Glühen wird stärker.'},
    {x:600,mix:[['mantis',2],['miniDemon',3]],title:'DRITTE WELLE',say:'Die kleinen Dämonen sind schneller als sie aussehen!'},
    {x:1000,mix:[['mantis',3],['miniDemon',3]],title:'VIERTE WELLE',say:'Sie kommen von allen Seiten – spring, wenn es eng wird.'},
-   {x:1380,n:2,boss:'cyberdemon',at:0,title:'CYBERDÄMON',say:'Er ist zurück – größer, wütender. Der Kern pulsiert.'}]}];
+   {x:1380,n:2,boss:'cyberdemon',at:0,title:'A1LIEN',say:'Rotes Glühen unter der Haut – der Dämon des Kerns.'}]},
+ // Kapitel 4: Das Totenreich (Stage 3 = Labyrinth). Mehr Gegner als Kapitel 3, ein Alpha-Mantis in der Vorwelle, Finale: ANUBIS ('anubisBoss'). Kapitel 4 ist das letzte Kapitel: Abschluss = Story durchgespielt (zählt als Durchlauf, schaltet LEON frei).
+ {id:4,name:'DAS TOTENREICH',stage:3,capBase:4,cap:8,npc:{x:-480},look:{ground:['#1f1507','#080501'],line:'#ffd45a',lamp:'255,190,90',acc:'#ffd45a'},
+  intro:['Unter dem Kern liegt das Totenreich – Fackeln, Stein und der Geruch von altem Staub.','Seine Wächter lassen niemanden vorbei. Am Ende wartet ihr Herr.'],
+  win:{title:'ANUBIS BESIEGT',say:'Der Wächter der Unterwelt ist gefallen. Die Stadt atmet auf.'},
+  hurdles:[{x:-60,w:70,h:70},{x:380,w:80,h:95},{x:790,w:70,h:80},{x:1190,w:90,h:105},{x:1590,w:80,h:100}],
+  props:[{k:'barrel',x:-640},{k:'sign',x:-160},{k:'crate',x:240},{k:'barrel',x:520},{k:'sign',x:700},{k:'crate',x:960},{k:'barrel',x:1100},{k:'crate',x:1480},{k:'sign',x:1700},{k:'barrel',x:2000}],
+  enc:[
+   {x:-300,mix:[['mantis',3],['miniDemon',2]],title:'ERSTE WELLE',say:'Die Wächter des Totenreichs erwachen.'},
+   {x:150,mix:[['mantis',4],['miniDemon',2]],title:'ZWEITE WELLE',say:'Aus den Nischen der Gruft kriechen sie hervor.'},
+   {x:600,mix:[['mantis',3],['miniDemon',4]],title:'DRITTE WELLE',say:'Die Fackeln flackern – etwas Großes nähert sich.'},
+   {x:1000,mix:[['mantis',4],['miniDemon',4]],title:'VIERTE WELLE',say:'Sie kommen aus allen Richtungen. Spring, wenn es eng wird!'},
+   {x:1380,mix:[['mantis',3],['miniDemon',3]],boss:1,at:2,title:'DER ALPHA',say:'Der Alpha der Gruft führt die letzte Vorhut an.'},
+   {x:1800,mix:[['miniDemon',2]],boss:'anubisBoss',at:0,title:'ANUBIS',say:'Das Tor zur Unterwelt öffnet sich – Anubis, der Wächter der Unterwelt, tritt hervor.'}]}];
 export const ENC=CHAPTERS[0].enc;   // Kapitel 1 (Rückwärtskompatibilität: Tests/HUD)
 // KI für Schwarm-Gegner: nur die nächsten 2-3 greifen an, der Rest kreist in Abstand (sonst Dauer-Überzahl)
 export class MobAI extends AIController{
@@ -130,7 +143,7 @@ export class Story{
  // Boss unter 50 % Leben: Wutphase – lädt Hyper-Meter auf und ruft 2 weitere Mantis (einmal pro Kampf)
  rageCheck(){const g=this.g,b=this.mobs.find(m=>m.char.storyBoss&&m.state!=='ko');if(!b||this.rage||b.hp>b.maxHp*.5)return;
   this.rage=true;b.meter=Math.max(b.meter,150);this.queue.push({side:-1,elite:false},{side:1,elite:false});this.sd=Math.min(this.sd,20);
-  this.msg={t:150,title:'DER DÄMON RASTET AUS',say:'Der Schwarm eilt ihm zu Hilfe!'};g.shake=Math.max(g.shake,12);g.flash=Math.max(g.flash,10);g.flashColor=b.char.glow;g.fx.ps.ring(b.x,b.y-100,b.char.glow,200);g.sfx('heavy_hit_impact',{vol:.8})}
+  this.msg={t:150,title:(b.char.name?b.char.name+' RASTET AUS':'DER BOSS RASTET AUS'),say:'Der Schwarm eilt ihm zu Hilfe!'};g.shake=Math.max(g.shake,12);g.flash=Math.max(g.flash,10);g.flashColor=b.char.glow;g.fx.ps.ring(b.x,b.y-100,b.char.glow,200);g.sfx('heavy_hit_impact',{vol:.8})}
  // Körper nicht übereinanderlaufen (Spieler + Mantis)
  separate(){const fs=[this.g.p1,...this.alive()];
   for(let i=0;i<fs.length;i++)for(let j=i+1;j<fs.length;j++){const a=fs[i],b=fs[j];if(Math.abs(a.y-b.y)>90||a.state==='knockdown'||b.state==='knockdown')continue;

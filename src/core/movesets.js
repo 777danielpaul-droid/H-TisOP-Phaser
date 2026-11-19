@@ -103,4 +103,20 @@ const rabe={...norm({su:0,rc:-1,dmg:1.02,reach:6}),
  '6H':{label:'Schnabelhieb',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:13,ac:4,rc:19,dmg:84,lv:'high',lunge:7,box:[10,-162,116,66],hs:26,bs:16,glow:1},
  super:{label:'Rabenschwarm',info:'HYPER: Ein Schwarm aus Schatten stürzt nach vorn – 9 Treffer + Launcher',anim:'hyper',beam:0,fx:'swarm',glow:1,dmg:30,su:20,ac:50,rc:26,multi:6,minScale:.5,box:[-20,-200,460,220],launch:{vx:5,vy:-13},inv:[0,34],hstop:2,shake:6}};
 
-export const MODS={tiger,st3g0,kitsune,anubis,cyberdemon,rabe};
+// ---------- LEON: Löwenkrieger – kraftvoll, Prankenhiebe, High-Kick-Launcher ----------
+// Stärke: hohe HP, hoher Schaden, High-Kick-Launcher mit viel Reichweite, wuchtige Specials.
+// Schwäche: mittleres Tempo, schwere Angriffe haben etwas mehr Startup.
+const leon={...norm({su:0,rc:0,dmg:1.04,reach:6}),
+ fireball:{label:'Solar-Pranke',info:'Goldene Schnittwelle: J = schnell, L = stark',su:9,rc:16,proj:P({frame:9,y:-120,vx:10.5,w:104,h:68,dmg:50,hs:16,bs:9,life:76,look:'claw'}),
+  v:{L:{su:7,rc:13,proj:P({frame:7,y:-120,vx:11.5,w:84,h:54,dmg:40,hs:14,bs:8,life:60,look:'claw'})},
+     H:{su:13,rc:22,proj:P({frame:13,y:-120,vx:9.5,w:132,h:84,dmg:74,hs:20,bs:13,life:100,look:'claw'})}}},
+ rising:{label:'Löwen-Kick',info:'Unverwundbarer Aufwärts-Highkick, Launcher',su:4,ac:8,rc:23,dmg:88,inv:[1,9],launch:{vx:2,vy:-17}},
+ rush:{label:'Pranken-Hagel',info:'3 wuchtige Prankenhiebe + Launcher – auf Block bestrafbar',anim:'heavy',su:7,ac:12,rc:23,dmg:35,hs:18,bs:12,pb:3,multi:3,lunge:11,box:[10,-126,122,82],launch:{vx:3,vy:-13},hstop:4,shake:3,glow:1},
+ back:{label:'Mähnen-Feger',info:'Rundum-Tritt, trifft auch hinter ihm (Anti-Cross-up)',anim:'kick',crouch:false,lv:'mid',su:8,ac:5,rc:19,dmg:66,hs:22,bs:13,pb:4,box:[-160,-100,310,100],hard:false,hstop:6,shake:3,glow:1},
+ airsp:{label:'Meteor-Tritt',info:'Steiler Sturztritt, Knockdown',su:5,dmg:82,box:[-10,-70,105,100],dive:{vx:3.3,vy:17},hard:true,land:12,hstop:8,shake:5},
+ '6M':{label:'Löwen-Stoß',info:'Schneller Vorstoß-Poke',anim:'punch',su:7,ac:3,rc:13,dmg:54,lv:'mid',box:[10,-124,110,44],lunge:6,hs:21,bs:12},
+ '6H':{label:'Prankenhieb',info:'Überkopf-Angriff, trifft hoch',anim:'upper',su:13,ac:4,rc:19,dmg:86,lv:'high',lunge:7,box:[10,-160,118,66],hs:26,bs:16,glow:1},
+ super:{label:'Solar-Inferno',info:'HYPER: Prankenhagel mit Schockwellen-Stoß – 10 Treffer + Launcher',anim:'hyper',beam:0,glow:1,dmg:30,su:18,ac:52,rc:26,multi:5,minScale:.5,box:[30,-210,520,210],launch:{vx:5,vy:-13},inv:[0,34],hstop:2,shake:6}};
+leon.airsuper={label:'Sternschnuppen-Sturz',info:'HYPER in der Luft: Sturzangriff mit Boden-Prall',dmg:32};
+
+export const MODS={tiger,st3g0,kitsune,anubis,cyberdemon,rabe,leon};

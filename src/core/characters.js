@@ -1,12 +1,8 @@
-import{Arcade}from'./arcade.js';
-import{H,W}from'./config.js';
 import{MODS}from'./movesets.js';
-import{Story}from'./story.js';
 import{loadUnlocks,saveUnlock}from'./unlocks.js';
 
 
 
-import{R}from'../render/sprites.js';
 // Story-Modus-Gegner (Insektenkrieger): ohne Projektile; Specials sind Nahkampf (Sprungtritt, Wirbel, Sprintschlag). Nicht im Roster.
 export const MANTIS_MODS={
  fireball:{label:'Sprungtritt',info:'Springender Tritt',anim:'kick',su:12,ac:6,rc:20,dmg:55,hs:24,bs:14,box:[10,-120,140,60],lunge:8,proj:undefined,glow:0},
@@ -33,25 +29,45 @@ export const CHARACTERS={
   ai:[{min:100,max:330,b:'S',dx:-1,p:.16},{min:90,max:260,b:'M',dx:1,p:.18},{min:90,max:270,b:'H',dx:1,p:.14},{min:140,max:320,b:'S',dx:0,dy:1,p:.12}]},
  rabe:{id:'rabe',name:'KORVUS',desc:'Schwarzmarkthändler · Schattensicheln & Federsturm',unlockable:true,hp:980,walk:1.04,dmg:1.02,def:.98,jump:1.1,dash:1.1,airJumps:1,meter:1.05,pal:'tiger',glow:'#9d5cff',sprites:'rabe',defeat:true,mods:MODS.rabe,
   pros:'Schattensicheln (J/L), Federsturm gegen Cross-ups, Rabenflug als Anti-Air, hohe Sprünge, schneller Dash',cons:'Wenig Rüstung, Krallen-Rausch auf Block bestrafbar, Sicheln nur mittelschnell',
-  ai:[{min:100,max:330,b:'S',dx:-1,p:.15},{min:90,max:260,b:'M',dx:1,p:.16},{min:90,max:260,b:'H',dx:1,p:.12},{min:140,max:320,b:'S',dx:0,dy:1,p:.1}]},
+  ai:[{min:100,max:330,b:'S',dx:0,p:.15},{min:100,max:260,b:'S',dx:-1,p:.12},{min:90,max:260,b:'M',dx:1,p:.16},{min:90,max:260,b:'H',dx:1,p:.12},{min:140,max:320,b:'S',dx:0,dy:1,p:.1}]},
+ leon:{id:'leon',name:'LEON',desc:'Löwenkrieger · kraftvoll mit High-Kick-Launcher',unlockable:true,hp:1040,walk:1.05,dmg:1.05,def:.96,jump:1.02,dash:1.15,airJumps:1,meter:1,pal:'tiger',glow:'#ff9a22',sprites:'leon',defeat:true,mods:MODS.leon,
+  pros:'Hohe HP, kraftvolle Normals, High-Kick-Launcher, weitreichende Spezialangriffe',cons:'Große Trefferfläche, Spezialangriffe erfordern gutes Timing',
+  ai:[{min:100,max:330,b:'S',dx:-1,p:.15},{min:100,max:260,b:'S',dx:1,p:.12},{min:90,max:250,b:'M',dx:1,p:.15},{min:90,max:260,b:'H',dx:1,p:.12},{min:140,max:320,b:'S',dx:0,dy:1,p:.1}]},
+ leonBoss:{id:'leonBoss',name:'LEON',desc:'Löwenkrieger · Story-Boss Kapitel 1',storyBoss:true,hp:1300,walk:1.02,dmg:1.05,def:.94,jump:1.02,dash:1.15,airJumps:1,meter:1,pal:'tiger',glow:'#ff9a22',sprites:'leon',spriteScale:1.12,size:1.12,defeat:true,mods:MODS.leon,
+  pros:'Hohe HP, kraftvolle Normals, High-Kick-Launcher, weitreichende Spezialangriffe',cons:'Große Trefferfläche, Spezialangriffe erfordern gutes Timing',
+  ai:[{min:100,max:330,b:'S',dx:-1,p:.16},{min:100,max:260,b:'S',dx:1,p:.14},{min:90,max:250,b:'M',dx:1,p:.16},{min:90,max:260,b:'H',dx:1,p:.14},{min:140,max:320,b:'S',dx:0,dy:1,p:.12}]},
  mantis:{id:'mantis',name:'MANTIS',desc:'Insektenkrieger',hp:190,walk:1,dmg:.6,def:1,jump:1,dash:1,airJumps:0,meter:.01,pal:'tiger',glow:'#7dff9a',sprites:'mantis',noSpecialBlock:true,defeat:true,mods:MANTIS_MODS,
   ai:[{min:100,max:300,b:'S',dx:0,p:.14},{min:90,max:220,b:'S',dx:1,p:.1},{min:90,max:240,b:'M',dx:1,p:.16}]},
  mantisAlpha:{id:'mantisAlpha',name:'ALPHA-MANTIS',desc:'Schwarm-Anführer',hp:650,walk:.92,dmg:.95,def:1,jump:1,dash:1,airJumps:0,meter:.01,pal:'tiger',glow:'#ff7a3a',sprites:'mantis',noSpecialBlock:true,spriteScale:1.25,size:1.25,defeat:true,mods:ALPHA_MODS,
   ai:[{min:100,max:320,b:'S',dx:0,p:.16},{min:90,max:240,b:'S',dx:1,p:.12},{min:90,max:260,b:'H',dx:1,p:.14}]},
- miniDemon:{id:'miniDemon',name:'MINI-CYBERDÄMON',desc:'Kleiner Dämon des Kerns · Story-Gegner Kapitel 3',hp:380,walk:1.05,dmg:.75,def:1,jump:.9,dash:1,airJumps:0,meter:.01,pal:'tiger',glow:'#ff5a3a',sprites:'cyberdemon',spriteScale:.78,size:.78,noSpecialBlock:true,defeat:true,
+ miniDemon:{id:'miniDemon',name:'MINI-A1LIEN',desc:'Kleiner Dämon des Kerns · Story-Gegner Kapitel 3',hp:380,walk:1.05,dmg:.75,def:1,jump:.9,dash:1,airJumps:0,meter:.01,pal:'tiger',glow:'#ff5a3a',sprites:'cyberdemon',spriteScale:.78,size:.78,noSpecialBlock:true,defeat:true,
   mods:{...MODS.cyberdemon,super:{cost:9999},airsuper:{cost:9999}},   // kein Hyper (wie Mantis); Specials/Normals vom großen Cyberdämon
   ai:[{min:100,max:300,b:'S',dx:-1,p:.12},{min:90,max:230,b:'M',dx:1,p:.16},{min:90,max:240,b:'H',dx:1,p:.12}]},
- cyberdemon:{id:'cyberdemon',name:'CYBERDÄMON',desc:'Dämon des Kerns · Story-Boss Kapitel 2',storyBoss:true,hp:1350,walk:.88,dmg:1,def:.92,jump:.85,dash:.95,airJumps:0,meter:1,pal:'tiger',glow:'#ff2a44',sprites:'cyberdemon',spriteScale:1.22,size:1.22,defeat:true,mods:MODS.cyberdemon,
+ cyberdemon:{id:'cyberdemon',name:'A1LIEN',desc:'Dämon des Kerns',storyBoss:true,hp:1350,walk:.88,dmg:1,def:.92,jump:.85,dash:.95,airJumps:0,meter:1,pal:'tiger',glow:'#ff2a44',sprites:'cyberdemon',spriteScale:1.22,size:1.22,defeat:true,mods:MODS.cyberdemon,
   pros:'Sehr viel HP, riesige Reichweite, rote Klauenwellen, Rüstungs-Ansturm, Blutrausch',cons:'Langsam, schwere Moves mit langem Startup, kein Doppelsprung',
   ai:[{min:100,max:340,b:'S',dx:-1,p:.16},{min:90,max:280,b:'M',dx:1,p:.18},{min:90,max:300,b:'H',dx:1,p:.14},{min:140,max:340,b:'S',dx:0,dy:1,p:.12}]},
+ st3g0Boss:{id:'st3g0Boss',name:'ST3-G0',desc:'Panzer-Echse · Story-Boss Kapitel 2',storyBoss:true,hp:1350,walk:.95,dmg:1.05,def:.92,jump:.95,dash:1.05,airJumps:1,meter:1,pal:'tiger',glow:'#7dff4a',sprites:'st3g0',spriteScale:1.15,size:1.15,defeat:true,mods:MODS.st3g0,   // Kapitel-2-Endgegner: gleiche Moves/Sprites wie der spielbare ST3-G0 (eigene ID, damit die Boss-Logik nur ihn betrifft), mehr HP, etwas größer
+  pros:'Viel HP, Rüstungs-Sprint, Schwanzfeger gegen Cross-ups, solide Reichweite',cons:'Mittleres Tempo, Welle nur mittelschnell, Sprint nach Block bestrafbar',
+  ai:[{min:100,max:330,b:'S',dx:-1,p:.16},{min:90,max:250,b:'M',dx:1,p:.16},{min:90,max:250,b:'H',dx:1,p:.14},{min:140,max:320,b:'S',dx:0,dy:1,p:.12}]},
+ anubisBoss:{id:'anubisBoss',name:'ANUBIS',desc:'Wächter der Unterwelt · Story-Boss Kapitel 4',storyBoss:true,hp:1450,walk:1.05,dmg:1.08,def:.92,jump:1,dash:1.1,airJumps:1,meter:1.15,pal:'tiger',glow:'#ffd45a',sprites:'anubis',spriteScale:1.12,size:1.12,defeat:true,mods:MODS.anubis,   // Kapitel-4-Endgegner: gleiche Moves/Sprites wie der freischaltbare ANUBIS (eigene ID, damit die Boss-Logik nur ihn betrifft), mehr HP, etwas größer
+  pros:'Viel HP, harte Normals, Seelenwellen, Schweifhieb gegen Cross-ups, Richterspruch mit Launcher',cons:'Etwas langsamere Sprünge, Richterspruch auf Block bestrafbar, keine Rüstung',
+  ai:[{min:100,max:330,b:'S',dx:-1,p:.16},{min:90,max:260,b:'M',dx:1,p:.18},{min:90,max:270,b:'H',dx:1,p:.14},{min:140,max:320,b:'S',dx:0,dy:1,p:.12}]},
  wolf:{id:'wolf',name:'WOLF',desc:'(nicht im Arcade-Roster)',hp:1050,walk:.94,dmg:1.06,pal:'wolf',glow:'#ff3a55',mods:{'5H':{dmg:100}}}};
 // Arcade: spielbare Figuren (Reihenfolge der Auswahl), Gegner-Reihenfolge (ohne die eigene Figur)
-export const ROSTER=['tiger','st3g0','kitsune'];
-export const LADDER=['tiger','st3g0','kitsune'];
-// Endgegner: steht in jedem Arcade-Durchlauf als letzte Stufe (außer man spielt ihn selbst); wer das Arcade einmal schafft, schaltet ihn als spielbaren Kämpfer frei (Browser-Speicher, siehe unlocks.js).
+export const ROSTER=['tiger','kitsune'];   // ST3-G0 und LEON sind nicht mehr von Anfang an wählbar (Leon: Story 1x durchspielen oder Shop; ST3-G0: 3 Durchläufe oder Shop)
+export const LADDER=['tiger','kitsune'];
+// Endgegner: steht in jedem Arcade-Durchlauf als letzte Stufe (außer man spielt ihn selbst) und ist Endboss von Story-Kapitel 4 ('anubisBoss'). Spielbar wird er per Shop-Kauf ODER nach 4 Durchläufen (CLEAR_UNLOCKS), nicht mehr durch einmaliges Durchspielen (Browser-Speicher, siehe unlocks.js).
 export const BOSS='anubis';
-// Freischaltbare Kämpfer: Anubis (Arcade durchspielen) und KORVUS der Rabe (Kauf im Shop / beim Schwarzmarkthändler, Preis: CHAR_PRICE in loot.js)
-export const UNLOCKABLE=[BOSS,'rabe'];
+// Freischaltbare Kämpfer: Anubis (Shop-Kauf ODER 4 Durchläufe), KORVUS der Rabe, A1LIEN (Kauf im Shop, Preis: CHAR_PRICE in loot.js; A1LIEN erst nach Kapitel 3, siehe CHAR_REQ), ST3-G0 (Shop-Kauf ODER 3 Durchläufe) und LEON (Shop-Kauf ODER 1x Story durchspielen = Kapitel 4 geschafft)
+export const UNLOCKABLE=[BOSS,'rabe','cyberdemon','st3g0','leon'];
+// Durchläufe: ein Durchlauf = Arcade geschafft ODER letztes Story-Kapitel (4) geschafft (Zähler in unlocks.js, Auswertung in arcade.js countClear). Nach n Durchläufen wird die Figur auch ohne Kauf freigeschaltet. Anzahlen hier ändern.
+// ST3-G0 nach 3 Durchläufen, ANUBIS nach 4 Durchläufen.
+export const CLEAR_UNLOCKS=[{id:'st3g0',n:3},{id:'anubis',n:4}];
+export const CLEAR_UNLOCK=CLEAR_UNLOCKS[0];   // Rückwärtskompatibel (ST3-G0)
+// LEON: wird auch ohne Kauf freigeschaltet, sobald die Story 1x durchgespielt wurde (letztes Kapitel = STORY_CHAPTERS geschafft).
+export const STORY_CLEAR_UNLOCK={id:'leon',n:1};
 for(const id of loadUnlocks())if(UNLOCKABLE.includes(id)&&CHARACTERS[id]&&!ROSTER.includes(id))ROSTER.push(id);
+export const STORY_CHAPTERS=4;   // Anzahl Story-Kapitel = CHAPTERS.length in story.js (kann hier nicht importiert werden: Kreisimport; tests/story4.test.js prüft die Gleichheit)
+if(loadUnlocks().includes('storydone'+STORY_CHAPTERS))unlockChar('leon');
 // true = gerade neu freigeschaltet
 export function unlockChar(id){if(!CHARACTERS[id]||ROSTER.includes(id))return false;ROSTER.push(id);saveUnlock(id);return true}

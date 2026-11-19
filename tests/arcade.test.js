@@ -6,7 +6,7 @@ import{Fighter}from'../src/core/fighter.js';
 import{InputBuffer}from'../src/core/input.js';
 import{AIController}from'../src/core/ai.js';
 import{Arcade}from'../src/core/arcade.js';
-import{CHARACTERS,ROSTER,BOSS}from'../src/core/characters.js';
+import{CHARACTERS,ROSTER,BOSS,unlockChar}from'../src/core/characters.js';
 import{ROUND}from'../src/core/config.js';
 const ok=n=>console.log('  ✓',n);
 function setup(){const i1=new InputBuffer(),ai=new AIController(0);
@@ -32,7 +32,7 @@ for(const pid of ROSTER){const{g,a,p1,p2,ai}=setup();assert.equal(a.state,'selec
 {const{g,a,p1}=setup();assert.ok(!ROSTER.includes(BOSS)||true);const had=ROSTER.includes(BOSS);
  a.start('tiger');assert.equal(a.opponents[a.opponents.length-1],BOSS);a.stage=a.total-1;a.beginStage();assert.ok(a.isBoss(),'letzte Stufe = Endgegner');assert.equal(a.ai.level,1,'Endgegner: KI eine Stufe härter (Schwierigkeit 0 -> 1)');
  assert.equal(g.fighters[1].char.id,BOSS);winMatch(g,p1);a.update();assert.equal(a.state,'victory');
- assert.equal(a.newUnlock,had?null:BOSS);assert.ok(ROSTER.includes(BOSS),'Anubis ist jetzt in der Auswahl');
+ assert.equal(a.newUnlock,null,'einmal Durchspielen schaltet Anubis nicht mehr frei (Shop-Kauf ODER 4 Durchläufe, siehe tests/anubisunlock.test.js)');assert.equal(ROSTER.includes(BOSS),had);unlockChar(BOSS);assert.ok(ROSTER.includes(BOSS),'Anubis ist (nach Freischaltung) in der Auswahl');
  a.confirm();a.start(BOSS);assert.ok(!a.opponents.includes(BOSS),'als Anubis kein Endgegner');assert.ok(!a.isBoss());assert.equal(a.total,ROSTER.length-1)}
 ok('Endgegner Anubis: letzte Stufe, KI +1, Durchspielen schaltet ihn frei');
 // 3) Mehrere Stages: Arena-Wechsel (auch mehr Gegner als Arenen), STAGE CLEAR, automatisches Weiter

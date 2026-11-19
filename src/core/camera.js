@@ -1,7 +1,5 @@
 import{CAMERA,GROUND,H,MELEE,W,WORLD}from'./config.js';
-import{Story}from'./story.js';
 
-import{cl}from'../render/lootui.js';
 export const MWORLD={...WORLD,y1:MELEE.y1+90};   // Melee: Kamera darf unter die Plattform schauen (Fallende, Blast-Zone unten)
 // Virtuelle Kamera. (x,y) = Weltkoordinate in der Bildschirmmitte, zoom = Skalierung (1 = normal, <1 = herausgezoomt).
 // Rein rechnerisch (kein DOM) -> Teil der Spiellogik und headless testbar.

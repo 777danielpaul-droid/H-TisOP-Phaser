@@ -1,12 +1,10 @@
 import{DEALER,wrapText}from'../core/blackmarket.js';
-import{CHARACTERS}from'../core/characters.js';
+import{CHARACTERS,CLEAR_UNLOCKS}from'../core/characters.js';
 import{GROUND,H,W}from'../core/config.js';
 import{ITEMS}from'../core/items.js';
-import{LOOT,itemCount}from'../core/loot.js';
-import{CHAPTERS,LV,Story}from'../core/story.js';
+import{LOOT,itemCount,ownsChar}from'../core/loot.js';
+import{CHAPTERS,LV}from'../core/story.js';
 
-import{Intro}from'./intro.js';
-import{A}from'./rig.js';
 import{drawPortrait,drawSpriteFrame}from'./sprites.js';
 // Story-Modus: Welt (Straße, Laternen), Lebensbalken der Mantis, HUD (Balken, Fortschritt, Wellen-Banner, Intro/Ende).
 export function storyWorld(g,game,t){const x0=LV.x0-400,x1=LV.x1+400,L=(game.story&&game.story.cfg||CHAPTERS[0]).look;g.save();
@@ -91,6 +89,9 @@ export function drawStoryHud(g,hud,game,t,cv){const s=game.story,p=game.p1,A=gam
   hud.txt(g,v?s.cfg.win.title:'BESIEGT',W/2,230,v&&s.cfg.win.title.length>14?46:54,'#ffffff','center',v?ACC:'#ff4a5a');
   hud.txt(g,v?s.cfg.win.say:'ENTER – weiter ab Checkpoint',W/2,280,18,'#e8ecff','center');
   if(v&&A.hasNextChapter){const nx=CHAPTERS[s.ch];hud.txt(g,`ENTER – Kapitel ${nx.id}: ${nx.name}`,W/2,318,20,'#ffffff','center',nx.look.acc)}
+  if(v&&s.ch===3&&!ownsChar('cyberdemon'))hud.txt(g,`NEU IM SHOP: ${CHARACTERS.cyberdemon.name} – als Kämpfer kaufbar (Taste P)`,W/2,A.hasNextChapter?378:340,18,'#ffb347','center','#ffb347');   // Kapitel 3 geschafft (steht unter der ESC-Zeile): A1LIEN wird im Shop kaufbar
+  if(v&&!A.hasNextChapter&&!ownsChar('anubis')){const au=CLEAR_UNLOCKS.find(u=>u.id==='anubis');hud.txt(g,`${CHARACTERS.anubis.name}: im Shop kaufbar (Taste P)${au?` oder nach ${au.n} Durchläufen frei`:''}`,W/2,340,18,'#ffd45a','center','#ffd45a')}   // Story durchgespielt: Hinweis auf Anubis
+  if(v&&A.newUnlock)hud.txt(g,`NEUER KÄMPFER FREIGESCHALTET: ${CHARACTERS[A.newUnlock].name}`,W/2,372,18,'#7dff4a','center','#7dff4a');   // z. B. ST3-G0 nach dem 3. Durchlauf
   hud.txt(g,'ESC – Menü'+(LOOT.packs>0?`   ·   B – Booster öffnen (${LOOT.packs})`:''),W/2,v&&A.hasNextChapter?348:308,14,'#9aa4e8','center')}
  drawItemBar(g,hud,game,t);
  drawDealerUi(g,hud,game,t);

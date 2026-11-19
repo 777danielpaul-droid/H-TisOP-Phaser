@@ -1,6 +1,6 @@
 import{CHARACTERS}from'./characters.js';
 import{GROUND}from'./config.js';
-import{CHAR_SHOP,LOOT,SHOP,addItem,buyChar,buyPack,charPrice,itemCount,ownsChar,saveLoot}from'./loot.js';
+import{LOOT,SHOP,addItem,buyChar,buyPack,charPrice,itemCount,ownsChar}from'./loot.js';
 // Schwarzmarkthändler KORVUS (anthropomorpher Rabe): interaktiver NPC im Story-Modus. Derselbe Rabe ist als Kämpfer (CHARACTERS.rabe) im Shop kaufbar.
 // Rein logisch (kein DOM) -> headless testbar (tests/blackmarket.test.js). Darstellung: render/storyhud.js (drawDealer, drawDealerUi), Tasten/Klicks: main.js.
 // Angebote: Booster-Packs = SHOP (core/loot.js, gleiche Preise wie der Ingame-Shop), Gegenstände = ITEM_SHOP (sofort benutzt), Kämpfer = CHAR_SHOP (Preis zentral: CHAR_PRICE in core/loot.js).
@@ -53,7 +53,6 @@ export class Dealer{
  // Kann angesprochen werden? Nur zwischen den Wellen, Spieler lebt und steht am Boden
  get canTalk(){const s=this.s,p=s.g.p1;return s.state==='walk'&&s.g.phase==='fight'&&p.hp>0}
  get typing(){return this.shown<this.say.length}
- get lines(){return wrapText(this.say.slice(0,Math.floor(this.shown)))}
  update(){this.t++;const p=this.g.p1,can=this.canTalk;
   this.alpha=this.s.state==='walk'?Math.min(1,this.alpha+.06):Math.max(0,this.alpha-.1);   // Welle beginnt: er duckt sich weg
   this.facing=p.x<this.x?-1:1;

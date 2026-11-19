@@ -1,8 +1,4 @@
-import{pick}from'../core/loot.js';
-import{Story}from'../core/story.js';
 
-import{Sound}from'./audio.js';
-import{Stage}from'./stage.js';
 // Eigene Musik: je eine Playlist für die MENÜ-Musik (Titelmenü, Auswahlbildschirme) und für die KAMPF-Musik (Kämpfe + Zwischenbildschirme).
 //  - Lieder per „Lieder wählen“ oder Drag & Drop auf die jeweilige Spalte hinzufügen (MP3, OGG, WAV, M4A/AAC, FLAC, Opus – je nach Browser).
 //  - Reihenfolge ändern (▲▼), einzelne Lieder oder alles entfernen, „Eigene Playlist verwenden“ an/aus, zufällige Reihenfolge.

@@ -1,12 +1,9 @@
 import{CHARACTERS,ROSTER,unlockChar}from'./characters.js';
-import{H,W}from'./config.js';
 import{isItem}from'./items.js';
+import{loadUnlocks}from'./unlocks.js';
 
-import{Story}from'./story.js';
 
-import{card}from'../render/lootui.js';
 import{SKINS,skinName}from'../render/skins.js';
-import{Stage,THEMES,rnd}from'../render/stage.js';
 // Beute: Booster-Packs (fallen im Story-Modus aus Gegnern), Coins (für einen späteren Shop), Sammelkarten, freischaltbare Skins.
 // Alles im Browser gespeichert (localStorage 'hitisop.loot'). Rein logisch -> headless testbar.
 export const KEY='hitisop.loot';
@@ -19,7 +16,7 @@ export const CARDS=[
  {id:'alpha',name:'Alpha-Mantis',r:2,txt:'Anführer des Schwarms.'},{id:'anubis',name:'ANUBIS',r:2,txt:'Wächter der Unterwelt.'},{id:'koenigin',name:'Schwarm-Königin',r:2,txt:'Niemand hat sie je gesehen.'},
  {id:'sichel',name:'Schattensichel',r:1,txt:'Ein violetter Bogen aus Nacht.'},{id:'schwarm',name:'Rabenschwarm',r:1,txt:'Hyper: Der Schwarm stürmt vor.'},
  {id:'blutrausch',name:'Blutrausch',r:1,txt:'Klauenhagel mit beiden Händen.'},{id:'blitz',name:'Blitz-Kamehameha',r:1,txt:'Hyper: Ein Blitz, ein Strahl.'},
- {id:'korvus',name:'KORVUS',r:2,txt:'Rabenfürst mit Sichel.'},{id:'cyberdemon',name:'CYBERDEMON',r:2,txt:'Glühende Klauen aus der Tiefe.'},
+ {id:'korvus',name:'KORVUS',r:2,txt:'Rabenfürst mit Sichel.'},{id:'cyberdemon',name:'A1LIEN',r:2,txt:'Glühende Klauen aus der Tiefe.'},
  {id:'elixir',s:'ELIXIR',name:'Schattenelixier',r:1,txt:'Heilt 70 % Leben. Story: Taste 2.'},{id:'crystal',s:'KRISTALL',name:'Hyper-Kristall',r:1,txt:'+100 Hyper-Meter. Story: Taste 3.'},
  // --- Attacken-, Hyper- und Siegerposen-Karten (Bilder: tools/make-cards.py) ---
  {id:'tigerklaue',name:'Tigerklaue',r:1,txt:'Special: Aufwärtshaken mit Wirbel.'},{id:'flugtritt',name:'Flugtritt',r:0,txt:'Der Tritt kommt aus der Luft.'},
@@ -36,7 +33,18 @@ export const CARDS=[
  {id:'fluegelsprung',name:'Flügelsprung',r:1,txt:'Violette Flügel, weit gespreizt.'},
  {id:'klauenwelle',name:'Klauenwelle',r:1,txt:'Special: Rote Welle aus Klauen.'},{id:'gegenhand',name:'Gegenhand-Hieb',r:1,txt:'Der zweite Hieb sitzt härter.'},
  {id:'daemonenatem',name:'Atem des Kerns',r:0,txt:'Er atmet. Das reicht.'}];
-export const SKIN_POOL=[];for(const id of['tiger','st3g0','kitsune'])for(const k of[1,2,3])SKIN_POOL.push([id,k]);   // Zu Beginn hat jede Figur nur Farbe 0; alle weiteren Farben kommen nur aus Boostern
+// Reihenfolge im Reward Vault (Sammlung + Tausch-Modus): nach Figur gruppiert. Je Figur zuerst die Charakterkarte, dann Normals, Specials, Hypers, Siegerpose
+// (Figur = Sprite-Ordner der Karte in tools/make-cards.py). Danach Karten ohne Eintrag, ganz hinten die Sonderitems. Neue Karte: id hier an der passenden Stelle eintragen.
+export const CARD_ORDER=[
+ 'tiger','wirbel','flugtritt','tigerklaue','blitz','blitzladung','siegesbruell','tiger_sieg',                         // H!T
+ 'st3g0','klauenhieb','drachenuppercut','feueratem','drachenfluegel',                                                 // ST3-G0
+ 'kitsune','fuchshieb','fuchssprung','fuchsfeuer','neunschwanz','meditation',                                         // KITSUNE
+ 'anubis','goldtritt','schakalblock','goldsichel','seelenwelle',                                                      // ANUBIS
+ 'korvus','fluegelsprung','sichel','schwarm','rabendornen','korvus_sieg',                                             // KORVUS
+ 'cyberdemon','gegenhand','blutrausch','klauenwelle','daemonenatem',                                                  // A1LIEN
+ 'larve','spaeher','krieger','alpha','koenigin'];                                                                     // Mantis-Schwarm
+{const rank=c=>{const i=CARD_ORDER.indexOf(c.id);return i>=0?i:isItem(c.id)?2e6:1e6};CARDS.sort((a,b)=>rank(a)-rank(b))}   // stabil: Karten mit gleichem Rang behalten ihre Reihenfolge; Sammlung speichert nach id, die Sortierung ändert keinen Spielstand
+export const SKIN_POOL=[];for(const id of['tiger','st3g0','kitsune','leon'])for(const k of[1,2,3])SKIN_POOL.push([id,k]);   // Zu Beginn hat jede Figur nur Farbe 0; alle weiteren Farben kommen nur aus Boostern
 export const STAGE_NAMES=['NEON CITY','CRIMSON TEMPLE','TOXIC DOCKS','LABYRINTH'];   // Reihenfolge wie THEMES in render/stage.js; Stage 0 ist frei, alle weiteren kommen nur aus Boostern
 export const STAGE_POOL=[1,2,3];
 export const LOOT={packs:0,coins:0,cards:{},skins:{},stages:[],items:{}};   // items = benutzbare Sonderitems im Beutel (Anzahl je id, siehe core/items.js)
@@ -55,14 +63,17 @@ export const addPack=(n=1)=>{LOOT.packs+=n;saveLoot()};
 export const SHOP=[{n:1,price:100},{n:3,price:270},{n:5,price:425}];
 // Kämpfer im Shop (Karte hinter den Boostern): EIN dauerhafter Kauf je Figur, danach in der Charakterwahl spielbar (Freischaltung in unlocks.js, Münzen in LOOT.coins).
 // >>> PREIS HIER ÄNDERN <<< (Testpreis 10 Coins; später einfach die Zahl erhöhen – Shop-Karte, Händler-Dialog und Kauflogik lesen ausschließlich diesen Wert).
-export const CHAR_PRICE={rabe:10};
+export const CHAR_PRICE={rabe:10,cyberdemon:150,st3g0:150,leon:150,anubis:200};   // ST3-G0 gibt es alternativ gratis nach 3 Durchläufen, ANUBIS nach 4 Durchläufen (CLEAR_UNLOCKS in characters.js), LEON nach 1x Story durchspielen (Kapitel 4)
+// Voraussetzung, damit ein Kämpfer im Shop gekauft werden darf (Flag in 'hitisop.unlocks'). A1LIEN (cyberdemon): erst nach dem Ende von Kapitel 3 (Flag 'storydone3', gesetzt in arcade.js). Zum Testen: Seite mit ?unlock=storydone3 öffnen.
+export const CHAR_REQ={cyberdemon:{flag:'storydone3',txt:'Schließe Kapitel 3 ab'}};
+export const charReqMet=id=>!CHAR_REQ[id]||loadUnlocks().includes(CHAR_REQ[id].flag);
 export const CHAR_SHOP=Object.keys(CHAR_PRICE).map(id=>({id,price:CHAR_PRICE[id]}));
 export const shopCount=()=>SHOP.length+CHAR_SHOP.length;   // Karten im Shop: erst die Booster (Index 0..SHOP.length-1), dann die Kämpfer
 export const charPrice=id=>CHAR_PRICE[id]|0;
 export const ownsChar=id=>ROSTER.includes(id);   // spielbar = freigeschaltet (Browser-Speicher 'hitisop.unlocks')
-export const canBuyChar=id=>charPrice(id)>0&&!!CHARACTERS[id]&&!ownsChar(id)&&LOOT.coins>=charPrice(id);
-// Kämpfer kaufen: erst freischalten + speichern, dann Münzen abbuchen (so wird nie bezahlt, ohne freizuschalten). Doppelkauf unmöglich: schon besessen -> false, keine Abbuchung.
-export function buyChar(id){if(!charPrice(id)||!CHARACTERS[id]||ownsChar(id)||LOOT.coins<charPrice(id))return false;
+export const canBuyChar=id=>charPrice(id)>0&&!!CHARACTERS[id]&&!ownsChar(id)&&charReqMet(id)&&LOOT.coins>=charPrice(id);
+// Kämpfer kaufen: erst freischalten + speichern, dann Münzen abbuchen (so wird nie bezahlt, ohne freizuschalten). Doppelkauf unmöglich: schon besessen -> false, keine Abbuchung. Voraussetzung (CHAR_REQ) nicht erfüllt -> false.
+export function buyChar(id){if(!charPrice(id)||!CHARACTERS[id]||ownsChar(id)||!charReqMet(id)||LOOT.coins<charPrice(id))return false;
  unlockChar(id);if(!ownsChar(id))return false;LOOT.coins-=charPrice(id);saveLoot();return true}
 export const canBuy=i=>!!SHOP[i]&&LOOT.coins>=SHOP[i].price;
 export function buyPack(i){const o=SHOP[i];if(!o||LOOT.coins<o.price)return false;LOOT.coins-=o.price;LOOT.packs+=o.n;saveLoot();return true}

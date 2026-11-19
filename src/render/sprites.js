@@ -1,7 +1,4 @@
-import{hit}from'../core/combat.js';
-import{H}from'../core/config.js';
 
-import{Story}from'../core/story.js';
 
 import{attackFx}from'./rig.js';
 import{recolor,skinCount}from'./skins.js';
@@ -165,20 +162,40 @@ export const CYBERDEMON_ANIMS={
 export const RABE_FRAME_SC={c_0:1.18,c_1:1.26,c_2:1.12,c_3:1.2,c_4:1.24,c_5:1.16,c_6:1.14,c_7:1.14,c_8:1.1,c_9:1.2,c_10:1.18,c_11:1.1};
 export const RABE_ANIMS={
  idle:{frames:['i_0','i_1','i_2','i_1'],loop:1,fps:3},
- walk:{frames:['c_0','c_1','c_0','c_1'],loop:1,fps:8,bob:3,lean:.03},
- crouch:{frames:['c_1'],squash:.9},cblock:{frames:['c_1'],squash:.88},
- air:{frames:['j_3a','j_4a','j_5a','j_6a','j_7a','j_8a','j_8a','j_8a','j_8a','j_8a','j_8a','j_11a','j_12a','j_13a','j_14a','j_15a'],lean:.03},   // Sprung (Frame nach Flugbahn, siehe Fighter.updateAnim): Absprung -> violette Flügel öffnen -> am Scheitel gespreizt -> Flügel falten
- dash:{frames:['c_10'],lean:.05},airdash:{frames:['c_10a'],lean:.14},
- punch:{frames:['c_0','c_2','c_2','c_0']},cpunch:{frames:['c_1','c_4','c_4'],squash:.94},jpunch:{frames:['c_5a','c_5a']},
- kick:{frames:['c_0','c_3','c_3','c_0']},ckick:{frames:['c_4','c_4','c_1']},jkick:{frames:['c_3a','c_3a']},
- heavy:{frames:['c_1','c_6','c_6','c_6','c_0']},jheavy:{frames:['c_6a','c_6a']},
- upper:{frames:['c_4','c_6','c_6','c_6','c_0']},
- special:{frames:['c_1','c_1','c_7','c_7','c_0']},   // Schattensichel: Ausholen -> Abschuss (Sichel fliegt los) -> zurück
- hyper:{frames:['c_8','c_8','c_9','c_9','c_11','c_6','c_6','c_11','c_11','c_0']},   // Rabenschwarm: Aura laden -> Dornen -> Brüllen -> Sichelschwung
+ walk:{frames:['ns_0','nk_0','ns_0','nk_3'],loop:1,fps:8,bob:3,lean:.03},
+ crouch:{frames:['nf_0'],squash:.92},cblock:{frames:['nf_0'],squash:.88},
+ air:{frames:['nf_0a','nf_1a','nf_1a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_3a','nf_3a','nf_3a','nf_3a'],lean:.03},   // Hochauflösender Flügelsprung aus neu_flug: Absprung -> violette Schwingen öffnen -> Gleitflug am Scheitel -> Flügel anlegen
+ dash:{frames:['ns_2'],lean:.08},airdash:{frames:['nf_2a'],lean:.16},
+ punch:{frames:['nc_0','nc_1','nc_2','nc_2','nc_3']},cpunch:{frames:['nf_0','nc_1','nc_2','nf_0'],squash:.92},jpunch:{frames:['nc_2a','nc_3a','nc_3a']},
+ kick:{frames:['nk_0','nk_1','nk_2','nk_2','nk_3']},ckick:{frames:['nf_0','nk_2','nk_2','nf_0'],squash:.92},jkick:{frames:['ns_1a','nk_2a','nk_2a']},
+ heavy:{frames:['na_0','na_1','na_2','na_2','na_3']},jheavy:{frames:['na_2a','na_2a','na_2a']},
+ upper:{frames:['na_0','nk_1','ns_1','na_2','na_3']},
+ special:{frames:['na_0','na_1','c_7','na_2','ns_0']},   // Schattensichel: Ausholen mit neuer Pose -> Abschuss -> Sichelschwung
+ hyper:{frames:['c_8','c_8','c_9','c_9','c_11','na_2','na_2','c_11','c_11','ns_0']},   // Rabenschwarm: Aura laden -> Dornen -> Brüllen -> mächtiger neuer Sichelschwung
  hit:{frames:['c_1'],lean:-.16,shiftX:-12},airhit:{frames:['f_0a','f_1a','f_2a']},   // Luft-Treffer: nach hinten kippen (Frames f_0-f_2 des Fall-Bogens)
  block:{frames:['c_0']},
  kd:{frames:['f_3','f_4','f_5','f_6']},wakeup:{frames:['u_0','u_1','u_2','u_3','u_4','u_5','u_6','u_7']},   // Aufschlagen -> liegen bleiben | Aufstehen (hockend -> aufrecht)
  win:{frames:['c_11','c_8'],loop:1,fps:2},defeat:{frames:['f_3','f_4','f_5','f_6']}};
+// LEON (Löwenkrieger): Frames p_<Bogen>_<Zelle> aus assets/leon (6 Posen-Bögen, tools/import-leon-sheets.py). 'a' = an der Körpermitte verankert (Luft).
+//  1: Grundstellung, Jab, gerader Schlag, Rückzug | 2: Vorbereitung, Ausholen, mächtiger Prankenhieb, Schwung
+//  3: Bereitstellung, Knie heben, Low-Kick, Absetzen | 4: Bereitstellung, Knie hoch, High-Kick (Launcher), Drehung
+//  5: Absprung, Steigflug, Sprungangriff/Flugtritt, Landung | 6: Treffer, Taumeln, Sturz, Liegen
+export const LEON_ANIMS={
+ idle:{frames:['p_1_0','p_1_3'],loop:1,fps:4},
+ walk:{frames:['p_1_0','p_3_0','p_1_3','p_3_3'],loop:1,fps:7,bob:3,lean:.03},
+ crouch:{frames:['p_5_3'],squash:.88},cblock:{frames:['p_5_3'],squash:.88},
+ air:{frames:['p_5_1a','p_5_2a']},
+ dash:{frames:['p_5_0'],lean:.08},airdash:{frames:['p_5_2a'],lean:.15},
+ punch:{frames:['p_1_0','p_1_1','p_1_2','p_1_2','p_1_3']},cpunch:{frames:['p_5_3','p_1_1'],squash:.9},jpunch:{frames:['p_5_2a']},
+ kick:{frames:['p_3_0','p_3_1','p_3_2','p_3_2','p_3_3']},ckick:{frames:['p_5_3','p_3_2'],squash:.88},jkick:{frames:['p_5_2a']},
+ heavy:{frames:['p_2_0','p_2_1','p_2_2','p_2_2','p_2_3']},jheavy:{frames:['p_5_2a']},
+ upper:{frames:['p_4_0','p_4_1','p_4_2','p_4_2','p_4_3']},
+ special:{frames:['p_2_0','p_2_1','p_2_2','p_2_2','p_2_3']},
+ hyper:{frames:['p_2_0','p_2_1','p_4_2','p_2_2','p_2_2','p_2_2','p_2_3','p_1_0']},
+ hit:{frames:['p_6_0'],lean:-.14,shiftX:-10},airhit:{frames:['p_6_1a','p_6_2a']},
+ block:{frames:['p_1_3']},
+ kd:{frames:['p_6_2','p_6_3']},wakeup:{frames:['p_6_3','p_6_2','p_5_3','p_1_0']},
+ win:{frames:['p_1_0','p_2_3'],loop:1,fps:2},defeat:{frames:['p_6_3']}};
 export const SPRITE_CHARS={
  cyberdemon:{anims:CYBERDEMON_ANIMS,fist:[200,-125],height:215,fightScale:1,lie:['i_3']},
  mantis:{anims:MANTIS_ANIMS,fist:[120,-130],height:190,fightScale:.88,lie:['p_4_1']},
@@ -186,7 +203,8 @@ export const SPRITE_CHARS={
  st3g0:{anims:ST3G0_ANIMS,fist:[135,-150],height:190,fightScale:.92,lie:['p_3_1','p_3_2','p_3_3'],pose:POSE_ST3G0},
  anubis:{anims:ANUBIS_ANIMS,fist:[113,-137],height:215,fightScale:1,lie:['p_4_2','p_4_3']},
  rabe:{anims:RABE_ANIMS,fist:[112,-132],height:205,fightScale:.96,lie:['f_3'],frameSc:RABE_FRAME_SC},
- kitsune:{anims:KITSUNE_ANIMS,fist:[100,-121],height:190,fightScale:.83,lie:['p_9_3','p_11_0'],pose:POSE_KITSUNE,frameSc:KITSUNE_FRAME_SC}};   // fightScale: Kampfposen kleiner als die Sieg-/Niederlagen-Pose (fullAnims bleiben in voller Größe)
+ kitsune:{anims:KITSUNE_ANIMS,fist:[100,-121],height:190,fightScale:.83,lie:['p_9_3','p_11_0'],pose:POSE_KITSUNE,frameSc:KITSUNE_FRAME_SC},
+ leon:{anims:LEON_ANIMS,fist:[120,-135],height:195,fightScale:.9,lie:['p_6_3']}};   // fightScale: Kampfposen kleiner als die Sieg-/Niederlagen-Pose (fullAnims bleiben in voller Größe)
 // Eigene Figur (Upload im Startmenü): Sprite-Definition zur Laufzeit eintragen; Atlas liefert window.__SPRITES__[id]={meta,img}
 export function registerSpriteChar(id,def){SPRITE_CHARS[id]=def}
 // Umgefärbtes Atlas-Bild (Skin >0) als Canvas; ohne Canvas/DOM oder bei gesperrtem Canvas (file://) -> Original

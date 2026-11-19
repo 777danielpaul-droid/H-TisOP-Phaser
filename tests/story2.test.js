@@ -8,8 +8,8 @@ if(CHAPTERS.length<2)fail('Kapitel 2 fehlt');
 const c1=CHAPTERS[0].enc,c2=CHAPTERS[1].enc;
 if(ENC!==c1)fail('ENC muss Kapitel 1 sein');
 for(let i=0;i<4;i++)if(!(c2[i].n>c1[i].n))fail('Kapitel 2 Welle '+(i+1)+' hat nicht mehr Mantis als Kapitel 1');
-if(c2[4].boss!=='cyberdemon')fail('Kapitel 2 endet nicht mit dem Cyberdämon');
-const cd=CHARACTERS.cyberdemon;if(!cd||!cd.storyBoss||cd.hp<=CHARACTERS.mantisAlpha.hp)fail('Cyberdämon-Daten');
+if(c2[4].boss!=='st3g0Boss')fail('Kapitel 2 endet nicht mit ST3-G0');
+const cd=CHARACTERS.st3g0Boss;if(!cd||!cd.storyBoss||cd.hp<=CHARACTERS.mantisAlpha.hp)fail('ST3-G0-Boss-Daten');
 console.log('Daten OK: Wellen',c1.map(e=>e.n).join('/'),'->',c2.map(e=>e.n).join('/'),'+ Boss');
 
 const bot=new AIController(2),dummy=new AIController(0);

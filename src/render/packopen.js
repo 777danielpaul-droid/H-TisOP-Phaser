@@ -5,7 +5,6 @@ import{ParticleSystem}from'../core/particles.js';
 
 import{card,cardImg,packSprite,packStyle,prizeFace}from'./lootui.js';
 
-import{R}from'./sprites.js';
 // Booster aufreißen (ersetzt die alte Kartenreihe beim Öffnen). Ablauf, alles in 60-Hz-Frames:
 //  idle  Päckchen fliegt ein und schwebt            -> ENTER / Klick = aufreißen
 //  tear  Wackeln + Risslinie, dann reißt oben ab, Licht + Funken schießen heraus

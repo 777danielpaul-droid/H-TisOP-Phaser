@@ -1,10 +1,5 @@
-import{H,W}from'../core/config.js';
-import{pick}from'../core/loot.js';
 
-import{Story}from'../core/story.js';
 
-import{cover}from'./lootui.js';
-import{Renderer}from'./renderer.js';
 // Eigene Hintergründe (Bild oder Video). Die Dateien liegen als Blob in IndexedDB (große Videos passen nicht in localStorage),
 // die Einstellungen (Abdunklung, Anpassung, Bewegung, Häuser) in localStorage. Nichts wird hochgeladen – alles bleibt im Browser.
 // Slots: 'all' = gilt überall, 'title' = Titelmenü, 'select' = Auswahlbildschirme, 'fight' = Kampf (inkl. Story/Melee/Zwischenscreens).

@@ -1,21 +1,19 @@
-import{hit}from'../core/combat.js';
 import{BARRIER,EFFECT,GFX,GROUND,H,HOUSE,W,WALL_L,WALL_R,WORLD}from'../core/config.js';
-import{Fighter}from'../core/fighter.js';
 import{sparkDraw,sparkIdx}from'../core/particles.js';
-import{LOOT,SHOP}from'../core/loot.js';
+import{LOOT}from'../core/loot.js';
 
 
 import{Backdrop}from'./backdrop.js';
 import{PostFX}from'./fx.js';
 import{GLPost}from'./gl.js';
 import{buildHouse}from'./houses.js';
+import{NeonFog}from'./fog.js';
 import{Hud}from'./hud.js';
-import{drawLoot,shopSelRect,startSelRect}from'./lootui.js';
+import{drawLoot,shopSelRect,startSelRect,boosterRect,coinsRect}from'./lootui.js';
 import{HoverFx,drawEndBtns}from'./hover.js';
 import{drawMeleeHud,meleeHalo,meleeStage}from'./meleehud.js';
-import{A,drawFighter,drawTrail}from'./rig.js';
+import{drawFighter,drawTrail}from'./rig.js';
 import{SelectScreen}from'./select.js';
-import{R}from'./sprites.js';
 import{Stage,THEMES}from'./stage.js';
 import{drawStoryHud,storyMobBars,storyWorld}from'./storyhud.js';
 // Render-Pipeline:  [Screen-Shake] → [Kamera-Transform: Stage, Fighter, Projektile, Partikel, Debug-Boxen] → restore → [HUD unskaliert]
@@ -39,15 +37,17 @@ export class Renderer{
   return{bloom:(.5+(game.aberr||0)*.25)*GFX.bloom,ab:ab>=.05?ab*.0065:0,vc:low>0?[(90+120*low)/255,0,20/255]:[0,0,8/255],va:low>0?Math.min(.85,k+.2):k+.2,grain:GFX.grain?.05:0,t}}
  // Startmenü (Charakterwahl): Stage 1 als Hintergrund, Kamera neutral
  drawSelect(game){const g=this.gs,s=this.scale,A=game.arcade;if(this.useGL)this.uiClear();{const n=performance.now(),d=this._selLast?Math.min(3,(n-this._selLast)/16.667):1;this._selLast=n;this.selT+=d}g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);
-  const st=this.stages[0],T=this.selT/60;if(!this.bd.draw(g,W,H,'select',{dimAdd:.2})){st.draw(g,T);g.fillStyle='#05020ccc';g.fillRect(0,0,W,H)}   // eigener Hintergrund (Bild/Video) oder Stage 1
-  this.post.beams(g,W,H,T,'#7a5cff');this.post.dust(g,W,H,T,'#c9b8ff',60,.8);st.overlay(g);this.sel.draw(g,A,this.selT,W,H);
+  const st=this.stages[0],T=this.selT/60;if(!this.bd.draw(g,W,H,'select',{dimAdd:0})){st.draw(g,T)}   // eigener Hintergrund (Bild/Video) oder Stage 1; bewusst KEIN abdunkelnder Schleier mehr: Sterne und Himmel scheinen dort durch, wo keine HUD-Fläche liegt
+  this.post.beams(g,W,H,T,'#7a5cff');this.post.dust(g,W,H,T,'#c9b8ff',60,.8);st.overlay(g,.3);this.sel.draw(g,A,this.selT,W,H);
   if(this.useGL)this.glFinish({bloom:.5*GFX.bloom,ab:0,vc:[0,0,.03],va:0,grain:GFX.grain?.06:0,t:this.selT});else{this.post.bloom(g,this.cv,.5);this.post.grain(g,this.cv,.06)}
-  const u=this.g;u.setTransform(s,0,0,s,0,0);if(!this.sel.launching){const h=this.hud,t=this.selT,pw=76,ph=26,gap=5,y=14,x2=W-18-pw,x1=x2-gap-pw,pk=LOOT.packs>0;   // Booster + Coins oben rechts (Anzahl der gesammelten)
-   h.kBtn(u,x1,y,pw,ph,'BOOSTER '+LOOT.packs,{col:'#7fe8ff',on:pk,dim:!pk,t,size:10});
-   h.kBtn(u,x2,y,pw,ph,'COINS '+LOOT.coins,{col:'#b98bff',t,size:10});
-   {const r=startSelRect();h.kBtn(u,r.x,r.y,r.w,r.h,'STARTSEITE',{col:'#7fe8ff',t,size:10})}   // 4. Knopf rechts: zurück zur Startseite (Demokampf)
-   if(!A.pvp){const sb=shopSelRect();h.kBtn(u,sb.x,sb.y,sb.w,sb.h,'SHOP',{col:'#b98bff',t,size:12});   // Shop-Knopf neben dem Booster-Zähler
-    h.txt(u,'B – BOOSTER ÖFFNEN  ·  P – SHOP',W-18,y+ph+16,10,pk?'#ffd23f':'#8f95d8','right')}}
+  const u=this.g;u.setTransform(s,0,0,s,0,0);if(!this.sel.launching){const h=this.hud,t=this.selT,pk=LOOT.packs>0,bb=boosterRect(),cb=coinsRect();   // Booster + Coins oben rechts (Anzahl der gesammelten)
+   // Obere Leiste rechts = exaktes Spiegelbild der Modus-Leiste links (modePill in select.js): Schräge gespiegelt (flip), Farbwechsel cyan/violett spiegelbildlich, gleiche Schriftgröße
+   //   links:  ARCADE(cyan) · STORY(violett) · 2 SPIELER(cyan) · MELEE(violett)   rechts: STARTSEITE(violett) · SHOP(cyan) · BOOSTER(violett) · COINS(cyan)
+   h.kBtn(u,bb.x,bb.y,bb.w,bb.h,'BOOSTER '+LOOT.packs,{col:'#b98bff',on:pk,dim:!pk,t,size:12,flip:true});
+   h.kBtn(u,cb.x,cb.y,cb.w,cb.h,'COINS '+LOOT.coins,{col:'#7fe8ff',t,size:12,flip:true});
+   {const r=startSelRect();h.kBtn(u,r.x,r.y,r.w,r.h,'STARTSEITE',{col:'#b98bff',t,size:12,flip:true})}   // 4. Knopf rechts: zurück zur Startseite (Demokampf)
+   if(!A.pvp){const sb=shopSelRect();h.kBtn(u,sb.x,sb.y,sb.w,sb.h,'SHOP',{col:'#7fe8ff',t,size:12,flip:true});   // Shop-Knopf neben dem Booster-Zähler
+    h.txt(u,'B – BOOSTER ÖFFNEN  ·  P – SHOP',cb.x+cb.w,cb.y+cb.h+16,10,'#7d86c8','right')}}
   drawLoot(u,this.hud,this.lootUi);this.hov.draw(u)}
  draw(game){if(this.useGL&&!this.glp.ok)this.applyGfx();if(game.arcade&&game.arcade.state==='select')return this.drawSelect(game);
   const g=this.gs,ui=this.g,s=this.scale,t=game.frame/60,cam=game.camera;this.stage=this.stages[(game.stageIndex||0)%this.stages.length];this.stage.camX=cam.x;for(const st of this.stages)if(st!==this.stage&&st!==this.stages[0]){st.cache=null;st.cacheT=null;st.cacheS=null} // Speicher sparen: nur aktuelles Level + Menü-Hintergrund halten
@@ -85,7 +85,7 @@ drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTr
  // H!T (tiger) = Blitzaura, alle anderen = Flammenaura. Aufsteigende Energie-Streifen, Boden-Glühen + Druckringe, pulsierende Flammenzungen.
  // Zwei Durchgänge: front=false hinter der Figur (große Flammen, Glühen), front=true davor (halbtransparente Innenflammen mit Kontur, Streifen, Blitze, vordere Ringhälfte) -> die Figur steht IN der Aura.
  celeb(g,game,front){const c=game.celeb;if(!c)return;const SK=.72;   // Gesamtgröße der Flammenaura (1 = alt): Flammenschichten und Zungen-Ansatzpunkte rücken enger zusammen, die einzelnen Zacken/Zungen behalten ihre Originalgröße
-  const f=c.f,id=f.char.id,AS=id==='tiger'?null:this.auraSprite(id),kind=id==='tiger'?'bolt':AS?'sprite':'aura',k=Math.min(1,c.t/30),T=c.t/60,sz=f.char.size||1,cx=f.x,gy=f.y,bh=210*sz,bw=62*sz,fx=Math.max(.35,GFX.rays);
+  const f=c.f,id=f.char.id,AS=null,kind=id==='tiger'?'bolt':'fog',k=Math.min(1,c.t/30),T=c.t/60,sz=f.char.size||1,cx=f.x,gy=f.y,bh=210*sz,bw=62*sz,fx=Math.max(.35,GFX.rays);
   const gl=f.char.glow||'#ffffff',P=kind==='bolt'?{o:'#2a8cff',m:'#5fd0ff',i:'#d8fbff',c:'#ffffff',s:['#3fe0ff','#ffffff','#7df9ff']}
    :{o:gl,m:gl,i:AS?AS.meta.i:'#ffe9a8',c:'#ffffff',s:[gl,AS?AS.meta.i:'#ffd23f','#ffffff']};
   const H=n=>{const v=Math.sin(n*12.9898)*43758.5453;return v-Math.floor(v)};
@@ -106,6 +106,10 @@ drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTr
   const bolt=(x0,y0,ang,len,seed,wd,al=1,br=1)=>{const n=9;let px=x0,py=y0,a=ang,mx=x0,my=y0,ma=ang;g.beginPath();g.moveTo(x0,y0);for(let q=0;q<n;q++){a+=(H(seed+q*3.7)-.5)*2.2;px+=Math.cos(a)*len/n;py+=Math.sin(a)*len/n;g.lineTo(px,py);if(q===3){mx=px;my=py;ma=a}}
    g.lineJoin='round';g.lineCap='round';g.strokeStyle=P.m;g.globalAlpha=.45*k*al;g.lineWidth=wd*4.5;g.stroke();g.strokeStyle=P.c;g.globalAlpha=Math.min(1,k*al);g.lineWidth=wd;g.stroke();
    if(br)bolt(mx,my,ma+(H(seed+50)<.5?-1:1)*(.7+H(seed+51)*.6),len*.5,seed+9,wd*.7,al,0)};   // Abzweig
+  // Nebel-Aura (render/fog.js): Neonnebel in der Figurenfarbe um den Gewinner; ersetzt Flammen-/Spritesheet-Aura aller Figuren, H!T hat ihn zusätzlich zur Blitzaura.
+  // Hinten (front=false) wird der Nebel gemalt, vorn (front=true) nur noch einmal schwach über die Figur gelegt (sie steht IM Nebel).
+  {const fm=this.auraFog||(this.auraFog={}),fg=fm[id]||(fm[id]=new NeonFog()),fw=bh*3.3,fh=bh*2.05,r={x:cx-fw/2,y:gy-bh*1.5,w:fw,h:fh,hole:cx};
+   g.save();g.globalAlpha=k*.95;if(!front){fg.draw(g,c.t,r,gl,1);g.globalCompositeOperation='lighter';g.globalAlpha=k*.85;fg.blit(g,r,1)}else{g.globalCompositeOperation='lighter';fg.blit(g,r,.3)}g.restore()}   // Normal malen + additiv nachlegen = leuchtender Nebel
   g.save();g.globalCompositeOperation='lighter';
   // Boden: pulsierendes Glühen + auslaufende Druckringe (flache Ellipsen)
   g.save();g.translate(cx,gy+4);g.scale(1,.26);{const R0=(170+Math.sin(T*6)*14)*sz,rg=g.createRadialGradient(0,0,6,0,0,R0);rg.addColorStop(0,P.c+'cc');rg.addColorStop(.35,P.m+'77');rg.addColorStop(1,P.o+'00');if(!front){g.globalAlpha=k*.9;g.fillStyle=rg;g.beginPath();g.arc(0,0,R0,0,6.283);g.fill()}
@@ -149,9 +153,6 @@ drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTr
   const edge=(g,y0,y1)=>{g.save();g.shadowColor=T.line;g.shadowBlur=14;g.strokeStyle=T.line;g.lineWidth=3;g.beginPath();g.moveTo(ew,y0);g.lineTo(ew,y1);g.stroke();g.restore()};
   const plant=(g,x,y,sc)=>{g.fillStyle='#3a2420';g.beginPath();g.moveTo(x-12*sc,y-26*sc);g.lineTo(x+12*sc,y-26*sc);g.lineTo(x+8*sc,y);g.lineTo(x-8*sc,y);g.fill();
    for(let i=0;i<9;i++){const a=-Math.PI/2+(i-4)*.32,l=(40+R()*34)*sc;g.strokeStyle=i%2?'#2f8a52':'#46b86a';g.lineWidth=7*sc;g.lineCap='round';g.beginPath();g.moveTo(x,y-26*sc);g.quadraticCurveTo(x+Math.cos(a)*l*.5,y-26*sc+Math.sin(a)*l*.7,x+Math.cos(a)*l,y-26*sc+Math.sin(a)*l);g.stroke()}};
-  const night=(g,wx,wy,ww,wh)=>{const sk=g.createLinearGradient(0,wy,0,wy+wh);sk.addColorStop(0,T.sky[1]);sk.addColorStop(.6,T.sky[3]);sk.addColorStop(1,T.sky[2]);g.fillStyle=sk;g.fillRect(wx,wy,ww,wh);
-   for(let x=wx;x<wx+ww;x+=14){const bh=18+R()*50;g.fillStyle='#050208';g.fillRect(x,wy+wh-bh,12,bh);g.fillStyle=T.lights[1];g.globalAlpha=.7;g.fillRect(x+3,wy+wh-bh+6,2,3);g.globalAlpha=1}
-   g.fillStyle=T.moon[0];g.globalAlpha=.8;g.beginPath();g.arc(wx+ww*.75,wy+24,10,0,7);g.fill();g.globalAlpha=1;g.strokeStyle='#1a0f14';g.lineWidth=6;g.strokeRect(wx,wy,ww,wh);g.lineWidth=3;g.beginPath();g.moveTo(wx+ww/3,wy);g.lineTo(wx+ww/3,wy+wh);g.moveTo(wx+ww*2/3,wy);g.lineTo(wx+ww*2/3,wy+wh);g.stroke()};
   const glow=(g,x,y,r,col)=>{g.save();g.globalCompositeOperation='lighter';const lg=g.createRadialGradient(x,y,4,x,y,r);lg.addColorStop(0,col);lg.addColorStop(1,'#0000');g.fillStyle=lg;g.fillRect(x-r,y-r,r*2,r*2);g.restore()};
   const neon=(g,x,y,w,h,txt,col,fs=17)=>{g.save();g.shadowColor=col;g.shadowBlur=14;g.strokeStyle=col;g.lineWidth=2.2;g.strokeRect(x,y,w,h);g.fillStyle=col;g.font=`bold ${fs}px "Courier New",monospace`;g.textAlign='center';g.fillText(txt,x+w/2,y+h/2+fs*.35);g.restore()};
   if(T.style&&T.style!=='city'){ // Level mit eigenem Gebäude-Design (Tempel, Docks, Labyrinth): siehe houses.js

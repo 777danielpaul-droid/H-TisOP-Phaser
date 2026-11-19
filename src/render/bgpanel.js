@@ -1,11 +1,5 @@
-import{H,W}from'../core/config.js';
-import{pick}from'../core/loot.js';
-import{Story}from'../core/story.js';
 
 import{BG_NAMES,BG_SLOTS,bgKind,resolveSlot}from'./backdrop.js';
-import{cover}from'./lootui.js';
-import{R}from'./sprites.js';
-import{Stage}from'./stage.js';
 // Oberfläche für eigene Hintergründe (DOM, liegt über dem Canvas):
 //  - Drag & Drop: Datei irgendwo ins Fenster ziehen (Titelmenü, Auswahl, Kampf, Menü …) => Hintergrund für ÜBERALL.
 //    Ist das Panel offen, kann man die Datei auch auf eine Zeile ziehen => nur für diesen Bereich.

@@ -1,5 +1,4 @@
 
-import{Stage}from'./stage.js';
 // WebAudio-Soundbank. Samples liegen als Data-URI in window.__SFX__ (vom Build aus /sfx eingebettet, läuft also per Doppelklick).
 // Browser starten Audio erst nach einer Nutzer-Geste -> unlock() beim ersten Tastendruck/Klick. Leichte Tonhöhen-Variation gegen Wiederholung,
 // Mindestabstand je Sound (Mehrfachtreffer/Hyper-Beam) und Stimmen-Limit. Kompressor am Ausgang, damit geschichtete Treffer nicht übersteuern.

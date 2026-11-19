@@ -1,12 +1,11 @@
 import{AI_LEVELS}from'./ai.js';
-import{BOSS,CHARACTERS,LADDER,ROSTER,unlockChar}from'./characters.js';
+import{BOSS,CHARACTERS,CLEAR_UNLOCKS,LADDER,ROSTER,unlockChar}from'./characters.js';
 import{MELEE,ROUND}from'./config.js';
 import{ownedStages,ownsSkin,ownsStage}from'./loot.js';
 import{CHAPTERS,Story}from'./story.js';
-import{loadUnlocks,saveUnlock}from'./unlocks.js';
+import{addClear,loadUnlocks,saveUnlock}from'./unlocks.js';
 
 import{skinCount}from'../render/skins.js';
-import{Stage}from'../render/stage.js';
 export const MAX_DIFF=AI_LEVELS.length-1;   // höchste wählbare Schwierigkeit (aktuell ALPTRAUM)
 // Arcade-Modus: Charakterwahl -> nacheinander gegen alle anderen spielbaren Figuren (je 2 Runden-Siege = Stage geschafft).
 // Zustände: select | fight | clear | gameover | victory. Rein logisch (kein DOM) -> testbar.
@@ -74,12 +73,14 @@ export class Arcade{
  next(){this.stage++;this.beginStage()}
  // Enter-Taste: je nach Zustand weiter / nochmal / zurück zur Auswahl
  confirm(){if(this.state==='vsover')this.rematchVs();else if(this.state==='clear')this.next();else if(this.state==='gameover')this.retry();else if(this.state==='victory'){if(this.hasNextChapter)this.startStory(this.player,this.chapter+1);else this.toSelect()}}
+ // Ein Durchlauf (Arcade geschafft / letztes Story-Kapitel geschafft) zählt; nach CLEAR_UNLOCKS[i].n Durchläufen wird die Figur freigeschaltet (ST3-G0: 3, Anubis: 4). newUnlock = zuerst freigeschaltete Figur (Meldung auf dem Siegesbildschirm)
+ countClear(){const n=addClear();for(const u of CLEAR_UNLOCKS)if(n>=u.n&&unlockChar(u.id)&&!this.newUnlock)this.newUnlock=u.id}
  // nach jedem game.step(): Match-Ende auswerten
  update(){const g=this.game;
   if(this.mode==='story'&&g.story){const s=g.story;   // Story: Ende = Spieler besiegt (gameover) oder Level geschafft (victory)
-   if(this.state==='fight'){if(g.phase==='storyover'&&g.pf>=90){this.state='gameover';this.t=0}else if(s.state==='done'&&s.doneT>260){this.state='victory';this.t=0;this.unlockChapter(this.chapter+1)}}else this.t++;return}
+   if(this.state==='fight'){if(g.phase==='storyover'&&g.pf>=90){this.state='gameover';this.t=0}else if(s.state==='done'&&s.doneT>260){this.state='victory';this.t=0;this.unlockChapter(this.chapter+1);saveUnlock('storydone'+this.chapter);if(this.chapter>=CHAPTERS.length){if(unlockChar('leon')&&!this.newUnlock)this.newUnlock='leon';this.countClear()}}}else this.t++;return}
   if(this.state==='fight'&&g.phase==='match'&&g.pf>=70){
-   if(this.pvp)this.state='vsover';else if(this.p1.wins>=ROUND.wins)this.state=this.stage>=this.total-1?'victory':'clear';else this.state='gameover';this.t=0;if(this.state==='victory'&&this.player!==BOSS&&unlockChar(BOSS))this.newUnlock=BOSS}
+   if(this.pvp)this.state='vsover';else if(this.p1.wins>=ROUND.wins)this.state=this.stage>=this.total-1?'victory':'clear';else this.state='gameover';this.t=0;if(this.state==='victory')this.countClear()}
   else if(this.state==='clear'){if(++this.t>=240)this.next()}   // automatisch weiter (Enter überspringt)
   else this.t++}
 }

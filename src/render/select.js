@@ -1,35 +1,42 @@
 import{Arcade}from'../core/arcade.js';
 import{BOSS,CHARACTERS,ROSTER}from'../core/characters.js';
-import{H,MELEE,W}from'../core/config.js';
+import{W}from'../core/config.js';
 import{ownsSkin}from'../core/loot.js';
 
 import{ParticleSystem}from'../core/particles.js';
-import{CHAPTERS,Story}from'../core/story.js';
+import{CHAPTERS}from'../core/story.js';
 
 import{F_DISP,F_TECH}from'./fonts.js';
 
-import{mix}from'./meleehud.js';
-import{A,drawFighter}from'./rig.js';
+import{drawFighter}from'./rig.js';
 import{SKINS,skinCount,skinName}from'./skins.js';
-import{R,drawFullFrame}from'./sprites.js';
-import{Stage,THEMES}from'./stage.js';
+import{drawFullFrame}from'./sprites.js';
+import{THEMES}from'./stage.js';
+import{NeonFog}from'./fog.js';
 // Startmenü: Kämpferliste links (kleine Figuren ohne Rahmen), rechts Profil des gewählten/gehoverten Kämpfers (Porträt + Kampfwerte).
 export const GRID={cols:3,w:146,h:176,x:30,y:116};
 // Rondell (Arcade/Story): immer 3 Figuren sichtbar, die mittlere ist die gewählte. Links/Rechts schaltet eine weiter.
-export const CAR={cx:255,spacing:166,base:366,sideBase:340,sc:.78,scSide:.5};
-// Zelle für den Versus-Raster (2-Spieler-Menü nutzt weiter das Raster)
-export const cardRect=(i,n=4)=>({x:GRID.x+(i%GRID.cols)*GRID.w,y:GRID.y+Math.floor(i/GRID.cols)*GRID.h,w:GRID.w,h:GRID.h});
+export const CAR={cx:246,spacing:166,base:366,sideBase:340,sc:.78,scSide:.5};   // cx = Mitte der Combatant Bay (BAY.x + BAY.w/2)
+// 3D-Tiefe der Combatant Bay (Arcade/Story): Jede Figur hat eine echte Z-Koordinate (Abstand von der Kamera). Die gewählte steht bei z=0 ganz vorn, alle übrigen bei z=back dahinter,
+// dazwischen schwebt die Nebelebene (z=fog). Bildposition und Größe ergeben sich per Perspektive aus z (Maßstab k=f/(f+z)); Bodenlinie = Horizont + Kamerahöhe*k.
+// Gewählt: k=1 -> CAR.base/CAR.sc, hinten: k≈.64 -> CAR.sideBase/CAR.scSide (gleiche Klickflächen wie bisher, siehe carRect).
+export const CAR_Z={f:500,back:280,fog:150};
+export const carK=z=>CAR_Z.f/(CAR_Z.f+z);
+CAR_Z.camH=(CAR.base-CAR.sideBase)/(1-carK(CAR_Z.back));CAR_Z.horizon=CAR.base-CAR_Z.camH;
+export const carZ=d=>CAR_Z.back*Math.min(1,Math.abs(d));   // Rondell-Abstand d (0 = gewählt) -> Tiefe z; gleitet beim Drehen stufenlos von hinten nach vorn
+export const carProject=d=>{const z=carZ(d),k=carK(z);return{z,k,x:CAR.cx+d*(CAR.spacing/carK(CAR_Z.back))*k,y:CAR_Z.horizon+CAR_Z.camH*k}};
 // Klickfläche je Rondell-Platz: off -1 = linke Figur, 0 = Mitte, 1 = rechte Figur
 export const carRect=off=>off===0?{x:CAR.cx-78,y:170,w:156,h:250}:{x:CAR.cx+off*CAR.spacing-58,y:210,w:116,h:170};
 export function hitCar(lx,ly){for(const off of[0,-1,1]){const r=carRect(off);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return off}return null}
 // Klickfläche „✎ EDIT“ unter dem Namen der eigenen Figur (nur wenn sie in der Mitte steht)
 export const editRect=()=>({x:CAR.cx-28,y:CAR.base+66,w:56,h:18});
 export function hitEdit(lx,ly){const r=editRect();return lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h}
-export function hitCard(lx,ly,n=4){for(let i=0;i<n;i++){const r=cardRect(i,n);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
 // Modus-Schalter oben links (ARCADE | 2 SPIELER | MELEE) – klickbar, Taste TAB. Rückgabe 0 | 1 | 2
 // Melee-Optionen als klickbare Felder (Spieler 2 Mensch/CPU, CPU-Stärke, Stocks)
-export const MELEE_OPTS=[0,1,2].map(i=>({x:690,y:10+i*30,w:262,h:24}));
-export function hitMeleeOpt(lx,ly){for(let i=0;i<3;i++){const r=MELEE_OPTS[i];if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
+// „GEGEN CPU“ sitzt in der oberen Leiste auf dem (im Melee freien) SHOP-Platz = Spiegel von „2 SPIELER“ links (gleiche Geometrie wie topBtn(1) in lootui.js).
+// CPU-Stärke und Stocks erscheinen erst bei aktivem CPU in einer zweiten Reihe darunter, rechtsbündig mit COINS.
+export const MELEE_OPTS=[{x:710.5,y:12,w:73.5,h:26},{x:710.5,y:46,w:113.25,h:26},{x:832.75,y:46,w:113.25,h:26}];
+export function hitMeleeOpt(lx,ly,cpu=true){for(let i=0;i<3;i++){if(i&&!cpu)break;const r=MELEE_OPTS[i];if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
 export const MODE_PILL={x:14,y:12,w:318,h:26};
 export const CHAPTER_RECT={x:W-300,y:478,w:284,h:28};   // gleiche Fläche wie hitChapter
 export function hitChapter(lx,ly){return lx>=W-300&&lx<=W-16&&ly>=478&&ly<=506}   // Kapitel-Zeile im Story-Menü (rechts unten)
@@ -40,16 +47,17 @@ export function hitStage(lx,ly,n=5){for(let i=0;i<n;i++){const r=stageRect(i,n);
 export const P1C='#6fe3ff',P2C='#b98bff';
 // 2-Spieler-Kämpferwahl: eigene Karten (4 Kämpfer + Platz für die eigene Figur), unabhängig von der Kämpferliste des Arcade-Menüs
 // 2-Spieler/Melee: je Spieler ein Rondell (P1 oben, P2 unten, auf Höhe seines Profil-Blocks)
-export const VCAR={cx:255,spacing:150,sc:.6,scSide:.38};
+export const VCAR={cx:246,spacing:150,sc:.6,scSide:.38};   // cx = Mitte der Bay (wie CAR.cx)
 export const vsY0=pl=>pl===1?104:304;
 export const vcarRect=(pl,off)=>{const y0=vsY0(pl);return off===0?{x:VCAR.cx-64,y:y0+34,w:128,h:150}:{x:VCAR.cx+off*VCAR.spacing-46,y:y0+60,w:92,h:110}};
 export function hitVsCar(lx,ly){for(const pl of[1,2])for(const off of[0,-1,1]){const r=vcarRect(pl,off);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return{pl,off}}return null}
-export const vsCardRect=(i,n=4)=>cardRect(i,n);   // gleiches Raster wie im Arcade-Menü
-export function hitVsCard(lx,ly,n=4){for(let i=0;i<n;i++){const r=vsCardRect(i,n);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return i}return -1}
 export const DIFF=['LEICHT','NORMAL','HART','ALPTRAUM'],DCOL=['#7fe8ff','#9b9bff','#d38bff','#ff4d5e'];
-export const FIG={tiger:.9,st3g0:.88,kitsune:.86,rabe:.88};   // Größenausgleich je Figur in der Liste
-export const PX=508,PW=422;   // Profilbereich rechts (x, Breite)
-export const VTEXT={tiger:['LET\'S GO','上吧！'],st3g0:['UNLIKELY','不太可能'],kitsune:['TRY!','试试吧！'],anubis:['JUDGMENT','审判'],rabe:['NEVERMORE','永不复返',1]};   // Schriftzug im Übergangsvideo + chinesische Übersetzung
+export const FIG={tiger:.9,st3g0:.88,kitsune:.86,rabe:.88,leon:.9};   // Größenausgleich je Figur in der Liste
+// Combatant Bay (links) und Subject-Data-Konsole (rechts) sind exakte Spiegelbilder an der Mittelachse x=W/2: gleiche Größe, gleicher Randabstand, Schrägen gespiegelt.
+export const BAY={x:16,y:104,w:460,h:394};
+export const PNL={x:W-BAY.x-BAY.w,y:BAY.y,w:BAY.w,h:BAY.h};
+export const PX=PNL.x+20,PW=PNL.w-34;   // Profilbereich rechts (x, Breite) – liegt innerhalb von PNL (PX-20 .. PX+PW+14)
+export const VTEXT={tiger:['LET\'S GO','上吧！'],st3g0:['UNLIKELY','不太可能'],kitsune:['TRY!','试试吧！'],anubis:['JUDGMENT','审判'],rabe:['NEVERMORE','永不复返',1],leon:['ROAR!','咆哮！']};   // Schriftzug im Übergangsvideo + chinesische Übersetzung
 export const DIM='#8f95d8',TXT='#d6dcff';
 export class SelectScreen{
  constructor(hud){this.hud=hud;this.fakes={};this.ln=null;this.fw=null;this._lt=null;this.sfx=null;this.vids={};try{const ids=new Set(ROSTER);if(typeof window!=='undefined'&&window.__VIDEOS__)for(const k in window.__VIDEOS__)ids.add(k);for(const id of ids)this.vid(id)}catch(e){}}   // auch noch nicht freigeschaltete Figuren (Anubis) vorladen, damit das Video beim ersten Start sofort bereit ist
@@ -111,23 +119,24 @@ export class SelectScreen{
  // Text in Zeilen umbrechen (Breite in Logik-Pixeln)
  wrap(g,s,size,maxW){const out=[];let line='';for(const w of String(s).split(' ')){const tr=line?line+' '+w:w;if(line&&this.hud.mw(g,tr,size)>maxW){out.push(line);line=w}else line=tr}if(line)out.push(line);return out}
  draw(g,arcade,t,W,H){if(arcade.pvp)return this.drawVs(g,arcade,t,W,H);const hud=this.hud;
-  // Main character bay: dark glass console, machined corners and restrained cyan telemetry.
-  g.save();hud.kChamfer(g,18,104,466,394,18);const bay=g.createLinearGradient(0,104,0,498);bay.addColorStop(0,'rgba(7,19,28,.54)');bay.addColorStop(1,'rgba(2,7,13,.18)');g.fillStyle=bay;g.fill();g.strokeStyle='rgba(89,207,225,.34)';g.lineWidth=1;g.stroke();
-  hud.lab(g,'HOLOGRAPHIC COMBATANT BAY',34,124,9,'#78d8e7','left',2,null,'700');hud.kRule(g,34,466,134,'#4faebe',null,.55);
-  g.fillStyle='rgba(107,226,240,.45)';g.fillRect(34,482,58,2);g.fillStyle='rgba(107,226,240,.14)';g.fillRect(98,482,368,1);
-  hud.lab(g,'BIO-SIGNATURE',34,475,8,'#668e9c','left',1,null,'700');hud.lab(g,'SYNC  /  READY',466,475,8,'#7be5ee','right',1,null,'700');g.restore();
-  // Deck rails: machined dark-chrome hardware ties the character bay and profile console together.
-  g.save();g.strokeStyle='rgba(144,198,207,.22)';g.lineWidth=1;g.beginPath();g.moveTo(18,96);g.lineTo(942,96);g.moveTo(18,504);g.lineTo(942,504);g.stroke();
-  g.fillStyle='rgba(100,226,235,.8)';g.fillRect(18,95,74,2);g.fillRect(868,503,74,2);
+  // Main character bay: dark glass console, machined corners and restrained cyan telemetry. Spiegelbild der Subject-Data-Konsole rechts (profile()).
+  const bay=g.createLinearGradient(0,BAY.y,0,BAY.y+BAY.h);bay.addColorStop(0,'rgba(7,19,28,.54)');bay.addColorStop(1,'rgba(2,7,13,.18)');
+  this.consoleFrame(g,BAY,false,bay);g.save();
+  {const sc=CHARACTERS[[...ROSTER,'custom'][arcade.cursor]];hud.kVRule(g,BAY.x+BAY.w-8,138,492,(sc&&sc.glow)||'#3fe0ff',.72)}   // Gegenstück zur senkrechten Linie am inneren Rand der Subject-Data-Konsole (profile())
+  hud.lab(g,'HOLOGRAPHIC COMBATANT BAY',BAY.x+18,122,9,'#78d8e7','left',2,null,'700');hud.kRule(g,BAY.x+18,BAY.x+18+260,129,'#4faebe','r',.55);
+  hud.lab(g,'BIO-SIGNATURE',BAY.x+18,475,8,'#668e9c','left',1,null,'700');hud.lab(g,'SYNC  /  READY',BAY.x+BAY.w-18,475,8,'#7be5ee','right',1,null,'700');g.restore();
+  // Deck rails: machined dark-chrome hardware ties the character bay and profile console together (links/rechts gespiegelt).
+  g.save();g.strokeStyle='rgba(144,198,207,.22)';g.lineWidth=1;g.beginPath();g.moveTo(BAY.x,96);g.lineTo(W-BAY.x,96);g.moveTo(BAY.x,504);g.lineTo(W-BAY.x,504);g.stroke();
+  g.fillStyle='rgba(100,226,235,.8)';for(const ry of[95,503]){g.fillRect(BAY.x,ry,74,2);g.fillRect(W-BAY.x-74,ry,74,2)}
   hud.lab(g,'XENOS COMBAT SYSTEM  /  PERSONNEL INTERFACE',480,18,8,'#7299a2','center',2,null,'700');
-  hud.lab(g,'BAY 01',28,146,8,'#6d9aa4','left',2,null,'700');hud.lab(g,'PROFILE  /  02',930,146,8,'#6d9aa4','right',2,null,'700');g.restore();
+  hud.lab(g,'BAY 01',28,146,8,'#6d9aa4','left',2,null,'700');hud.lab(g,'PROFILE  /  02',W-28,146,8,'#6d9aa4','right',2,null,'700');g.restore();
   this.modePill(g,arcade,t);
   // Titel (klein, links oben) + Unterzeile
   hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#7fe8ff','#7fe8ff'],'center',null,t,false,true,900,4);g.restore();
    hud.fancy(g,'H!TisOP',W/2+2,64,40,['#b98bff','#b98bff'],'center',null,t,false,true,900,4);
    hud.fancy(g,'H!TisOP',W/2,64,40,['#ffffff','#bfb0ff'],'center','#8f6bff',t,false,false,900,4)});
   hud.kSub(g,'WÄHLE DEINEN KÄMPFER',W/2,88,13,'#9fe8ff',4,t);
-  const slots=[...ROSTER,'custom'],N=slots.length,cur=arcade.cursor;
+  const slots=[...ROSTER,'custom'],cur=arcade.cursor;
   this.carousel(g,slots,cur,arcade,t);
   this.profile(g,slots[cur],arcade,t,W);
   if(this.ln){const ln=this.ln;
@@ -147,51 +156,72 @@ export class SelectScreen{
   let df=((cur-this.rp)%N+N)%N;if(df>N/2)df-=N;   // kürzeste Richtung zum Ziel
   this.rp+=Math.abs(df)<.002?df:df*(1-Math.exp(-dt*.24));this.rp=((this.rp%N)+N)%N;
   const items=[];
-  for(let i=0;i<N;i++){let d=((i-this.rp)%N+N)%N;if(d>N/2)d-=N;if(Math.abs(d)<=1.7)items.push({i,d})}
-  items.sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));   // äußere zuerst, die Mitte liegt oben
-  const lerp=(a,b,k)=>a+(b-a)*k;
-  for(const{i,d}of items){const id=slots[i],ch=CHARACTERS[id],ad=Math.min(1,Math.abs(d)),sel=Math.abs(d)<.5,cx=CAR.cx+d*CAR.spacing,base=lerp(CAR.base,CAR.sideBase,ad),
+  for(let i=0;i<N;i++){let d=((i-this.rp)%N+N)%N;if(d>N/2)d-=N;if(Math.abs(d)<=1.7)items.push({i,d,...carProject(d)})}
+  items.sort((a,b)=>b.z-a.z||Math.abs(b.d)-Math.abs(a.d));   // Z-Sortierung: hinten zuerst, die gewählte Figur (z=0) liegt ganz vorn
+  const lerp=(a,b,k)=>a+(b-a)*k,behind=o=>o.z>CAR_Z.fog;
+  // part: 'body' = Dock + Figur, 'label' = Name/Farbpunkte/Edit, 'all' = beides
+  const one=(o,part)=>{const{i,d,k,x:cx,y:base}=o,id=slots[i],ch=CHARACTERS[id],ad=Math.min(1,Math.abs(d)),sel=Math.abs(d)<.5,
     fade=Math.abs(d)>1?Math.max(0,1-(Math.abs(d)-1)/.7):1,col=ch?ch.glow||'#fff':'#3fe0ff';
    g.save();g.globalAlpha=(this.ln?(i===cur?1:.18):lerp(1,.5,ad))*fade;
-   // Physischer Character-Dock: eingelassene Obsidian-Kapsel mit gefräster Chromkante.
-   const podW=lerp(132,92,ad),podH=lerp(218,166,ad),podX=cx-podW/2,podY=base-podH+28;
-   g.save();hud.kChamfer(g,podX,podY,podW,podH,14);const pg=g.createLinearGradient(podX,podY,podX+podW,podY+podH);
-   pg.addColorStop(0,'rgba(95,137,148,.34)');pg.addColorStop(.18,'rgba(18,37,47,.92)');pg.addColorStop(.62,'rgba(3,10,16,.96)');pg.addColorStop(1,'rgba(36,54,62,.72)');g.fillStyle=pg;g.fill();
-   g.strokeStyle=sel?'rgba(180,250,252,.9)':'rgba(112,161,174,.42)';g.lineWidth=sel?1.6:1;g.stroke();
-   hud.kChamfer(g,podX+4,podY+4,podW-8,podH-8,11);g.strokeStyle='rgba(255,255,255,.12)';g.lineWidth=.7;g.stroke();
-   g.save();hud.kChamfer(g,podX+8,podY+12,podW-16,podH-42,10);g.clip();
-   const well=g.createRadialGradient(cx,podY+podH*.52,4,cx,podY+podH*.52,podW*.72);well.addColorStop(0,col+(sel?'30':'16'));well.addColorStop(1,'#0000');g.fillStyle=well;g.fillRect(podX+8,podY+12,podW-16,podH-42);
-   g.fillStyle='rgba(220,250,255,.055)';for(let yy=podY+20;yy<podY+podH-34;yy+=7)g.fillRect(podX+8,yy,podW-16,1);
-   g.restore();g.fillStyle=sel?'rgba(104,237,242,.9)':'rgba(105,160,174,.48)';g.fillRect(podX+12,podY+podH-24,podW-24,1.5);
-   g.fillStyle=sel?'#eaffff':'#72939d';g.fillRect(podX+12,podY+podH-18,Math.max(12,(podW-24)*(sel?1:.42)),2);
-   if(sel){g.save();g.globalCompositeOperation='lighter';g.shadowColor=col;g.shadowBlur=18;g.strokeStyle=col;g.lineWidth=1;hud.kChamfer(g,podX-4,podY-4,podW+8,podH+8,16);g.stroke();g.restore()}
-   g.restore();
-   // Bodenlicht / Magnetischer Dock-Ring
-   const rw=lerp(86,42,ad),gl=g.createRadialGradient(cx,base+4,2,cx,base+4,rw);gl.addColorStop(0,col+(ad<.5?'aa':'33'));gl.addColorStop(1,'#0000');g.fillStyle=gl;g.beginPath();g.ellipse(cx,base+4,rw,rw*.22,0,0,7);g.fill();
-   if(ch){const f=this.fake(id,t/2),s=lerp(CAR.sc,CAR.scSide,ad)*(FIG[id]||1);f.skin=arcade.skinOf(id);f.x=cx;f.y=base;g.save();g.translate(cx,base);g.scale(s,s);g.translate(-cx,-base);drawFighter(g,f,t/60,1,base);g.restore()}
-   else{const k=lerp(1.8,1,ad);g.strokeStyle=col;g.lineWidth=3*k;g.lineCap='round';g.beginPath();g.moveTo(cx-16*k,base-50*k);g.lineTo(cx+16*k,base-50*k);g.moveTo(cx,base-66*k);g.lineTo(cx,base-34*k);g.stroke()}
-   const nm=ch?ch.name:'EIGENE FIGUR',nsz=lerp(28,16,ad);
-   hud.fam(F_DISP,()=>hud.fancy(g,nm,cx,base+lerp(34,22,ad),nsz,sel?['#ffffff',col]:['#cfc6ee','#a79bd6'],'center',sel?col:null,t,false,false,400,1));
-   if(ch&&sel)this.skinDots(g,ch,arcade.skinOf(id),cx,base+52,true);
-   if(ch&&ch.custom&&sel){const e=editRect();hud.kBtn(g,e.x,e.y,e.w-6,e.h,'EDIT',{col,on:true,t,size:10})}
-   g.restore()}
+   if(part!=='label'){
+    if(behind(o)&&'filter' in g)g.filter='blur('+(1+ad*.9).toFixed(1)+'px) brightness(.85)';   // Tiefenunschärfe: Figuren hinter dem Nebel
+    // Physischer Character-Dock: eingelassene Obsidian-Kapsel mit gefräster Chromkante.
+    const podW=132*k,podH=218*k,podX=cx-podW/2,podY=base-podH+28*k;
+    g.save();hud.kChamfer(g,podX,podY,podW,podH,14);const pg=g.createLinearGradient(podX,podY,podX+podW,podY+podH);
+    pg.addColorStop(0,'rgba(95,137,148,.34)');pg.addColorStop(.18,'rgba(18,37,47,.92)');pg.addColorStop(.62,'rgba(3,10,16,.96)');pg.addColorStop(1,'rgba(36,54,62,.72)');g.fillStyle=pg;g.fill();
+    g.strokeStyle=sel?'rgba(180,250,252,.9)':'rgba(112,161,174,.42)';g.lineWidth=sel?1.6:1;g.stroke();
+    hud.kChamfer(g,podX+4,podY+4,podW-8,podH-8,11);g.strokeStyle='rgba(255,255,255,.12)';g.lineWidth=.7;g.stroke();
+    g.save();hud.kChamfer(g,podX+8,podY+12,podW-16,podH-42,10);g.clip();
+    const well=g.createRadialGradient(cx,podY+podH*.52,4,cx,podY+podH*.52,podW*.72);well.addColorStop(0,col+(sel?'30':'16'));well.addColorStop(1,'#0000');g.fillStyle=well;g.fillRect(podX+8,podY+12,podW-16,podH-42);
+    g.fillStyle='rgba(220,250,255,.055)';for(let yy=podY+20;yy<podY+podH-34;yy+=7)g.fillRect(podX+8,yy,podW-16,1);
+    g.restore();g.fillStyle=sel?'rgba(104,237,242,.9)':'rgba(105,160,174,.48)';g.fillRect(podX+12,podY+podH-24,podW-24,1.5);
+    g.fillStyle=sel?'#eaffff':'#72939d';g.fillRect(podX+12,podY+podH-18,Math.max(12,(podW-24)*(sel?1:.42)),2);
+    if(sel){g.save();g.globalCompositeOperation='lighter';g.shadowColor=col;g.shadowBlur=18;g.strokeStyle=col;g.lineWidth=1;hud.kChamfer(g,podX-4,podY-4,podW+8,podH+8,16);g.stroke();g.restore()}
+    g.restore();
+    // Bodenlicht / Magnetischer Dock-Ring
+    const rw=86*k,gl=g.createRadialGradient(cx,base+4,2,cx,base+4,rw);gl.addColorStop(0,col+(ad<.5?'aa':'33'));gl.addColorStop(1,'#0000');g.fillStyle=gl;g.beginPath();g.ellipse(cx,base+4,rw,rw*.22,0,0,7);g.fill();
+    if(ch){const f=this.fake(id,t/2),s=CAR.sc*k*(FIG[id]||1);f.skin=arcade.skinOf(id);f.x=cx;f.y=base;g.save();g.translate(cx,base);g.scale(s,s);g.translate(-cx,-base);drawFighter(g,f,t/60,1,base);g.restore()}
+    else{const kk=lerp(1.8,1,ad);g.strokeStyle=col;g.lineWidth=3*kk;g.lineCap='round';g.beginPath();g.moveTo(cx-16*kk,base-50*kk);g.lineTo(cx+16*kk,base-50*kk);g.moveTo(cx,base-66*kk);g.lineTo(cx,base-34*kk);g.stroke()}}
+   if(part!=='body'){
+    const nm=ch?ch.name:'EIGENE FIGUR',nsz=28*k;
+    hud.fam(F_DISP,()=>hud.fancy(g,nm,cx,base+34*k,nsz,sel?['#ffffff',col]:['#cfc6ee','#a79bd6'],'center',sel?col:null,t,false,false,400,1));
+    if(ch&&sel)this.skinDots(g,ch,arcade.skinOf(id),cx,base+52,true);
+    if(ch&&ch.custom&&sel){const e=editRect();hud.kBtn(g,e.x,e.y,e.w-6,e.h,'EDIT',{col,on:true,t,size:10})}}
+   g.restore()};
+  for(const o of items)if(behind(o))one(o,'body');   // 1) hintere Figuren (Dock + Figur)
+  this.fogLayer(g,slots[cur],t,dt);                    // 2) Nebelebene (z=fog): hinter der gewählten Figur, vor den übrigen
+  for(const o of items)if(!behind(o))one(o,'all');    // 3) die gewählte Figur (und alles, was schon vor dem Nebel steht)
+  for(const o of items)if(behind(o))one(o,'label');   // 4) Namen der hinteren Figuren bleiben über dem Nebel lesbar
   // Pfeile links/rechts neben dem Namen der Mitte
   if(!this.ln){const pu=.5+.5*Math.sin(t*.14);g.save();g.fillStyle='#9fe8ff';g.shadowColor='#7fe8ff';g.shadowBlur=10;g.globalAlpha=.6+.4*pu;
    for(const sgn of[-1,1]){const x=CAR.cx+sgn*(92+pu*4),y=CAR.base+26;g.beginPath();g.moveTo(x+sgn*9,y);g.lineTo(x-sgn*6,y-11);g.lineTo(x-sgn*6,y+11);g.closePath();g.fill()}g.restore();
    // Positionspunkte unter dem Rondell
    g.save();for(let k=0;k<N;k++){const on=k===cur;g.globalAlpha=on?1:.4;g.fillStyle=on?'#ffffff':'#8f95d8';g.beginPath();g.arc(CAR.cx+(k-(N-1)/2)*16,CAR.base+82+0,on?4:3,0,7);g.fill()}g.restore()}}
+ // Rahmen einer Konsole: Fläche, Außenkante, innere Haarlinie, Akzentstriche oben + unten. flip=true ergibt das exakte Spiegelbild (Schrägen, Akzente, Farben vertauscht).
+ // Die Combatant Bay (BAY, flip=false) und die Subject-Data-Konsole (PNL, flip=true) benutzen dieselbe Funktion -> immer symmetrisch.
+ consoleFrame(g,r,flip,fill){const hud=this.hud,{x,y,w,h}=r,ax=(off,len)=>flip?x+w-off-len:x+off;   // ax: Akzentstrich von der äußeren Ecke aus gemessen
+  g.save();hud.kChamfer(g,x,y,w,h,18,flip);g.fillStyle=fill;g.fill();g.strokeStyle='rgba(111,222,235,.42)';g.lineWidth=1;g.stroke();
+  hud.kChamfer(g,x+5,y+5,w-10,h-10,14,flip);g.strokeStyle='rgba(255,255,255,.08)';g.stroke();
+  g.fillStyle='rgba(83,222,239,.65)';g.fillRect(ax(18,82),y+2,82,2);g.fillStyle='rgba(132,112,255,.55)';g.fillRect(ax(w-100,82),y+2,82,2);   // oben: cyan außen/violett innen (Bay) bzw. gespiegelt (Konsole)
+  g.fillStyle='rgba(107,226,240,.45)';g.fillRect(ax(18,58),y+h-16,58,2);g.fillStyle='rgba(107,226,240,.14)';g.fillRect(ax(82,w-100),y+h-16,w-100,1);   // unten: Akzent + Haarlinie
+  g.restore()}
+ // Neon-Nebel (render/fog.js) in der Bay-Fläche: Farbe = Neonfarbe der gewählten Figur
+ fogLayer(g,id,t,dt){const ch=CHARACTERS[id];if(!this.fog)this.fog=new NeonFog();
+  g.save();this.hud.kChamfer(g,BAY.x,BAY.y,BAY.w,BAY.h,18);g.clip();this.fog.draw(g,t,{x:BAY.x,y:BAY.y,w:BAY.w,h:BAY.h,hole:CAR.cx},(ch&&ch.glow)||'#3fe0ff',dt);g.restore()}
+
+ // Nebel im 2P-/Melee-Menü: jeder Spieler hat seine Bay-Hälfte (P1 oben, P2 unten), Farbe = Neonfarbe der gewählten Figur (wie fogLayer im Arcade-Menü)
+ vsFog(g,pl,ch,pc,t,dt){const fm=this.vsFogs||(this.vsFogs={}),fg=fm[pl]||(fm[pl]=new NeonFog()),y=pl===1?BAY.y:302,h=pl===1?302-BAY.y:BAY.y+BAY.h-302;
+  g.save();this.hud.kChamfer(g,BAY.x,BAY.y,BAY.w,BAY.h,18);g.clip();g.beginPath();g.rect(BAY.x,y,BAY.w,h);g.clip();fg.draw(g,t,{x:BAY.x,y,w:BAY.w,h,hole:VCAR.cx},(ch&&ch.glow)||pc,dt);g.restore()}
 
  // Profil rechts: Porträt, Name, Kurzbeschreibung, Werte, Stärken/Schwächen, Arcade-Gegner
  profile(g,id,arcade,t,W){const hud=this.hud,ch=CHARACTERS[id],col=ch?ch.glow||'#fff':'#3fe0ff';
   g.save();
-  // Charakterdaten liegen in einer eigenen, eingelassenen Holo-Konsole.
-  const panelX=PX-20,panelY=104,panelW=PW+34,panelH=396;
-  g.save();hud.kChamfer(g,panelX,panelY,panelW,panelH,18);const panelGrad=g.createLinearGradient(0,panelY,0,panelY+panelH);
-  panelGrad.addColorStop(0,'rgba(10,24,34,.92)');panelGrad.addColorStop(.45,'rgba(4,12,20,.94)');panelGrad.addColorStop(1,'rgba(2,6,12,.97)');g.fillStyle=panelGrad;g.fill();
-  g.strokeStyle='rgba(111,222,235,.42)';g.lineWidth=1;g.stroke();hud.kChamfer(g,panelX+5,panelY+5,panelW-10,panelH-10,14);g.strokeStyle='rgba(255,255,255,.08)';g.stroke();
-  g.fillStyle='rgba(83,222,239,.65)';g.fillRect(panelX+18,panelY+2,82,2);g.fillStyle='rgba(132,112,255,.55)';g.fillRect(panelX+panelW-100,panelY+2,82,2);
-  hud.lab(g,'SUBJECT DATA  /  LIVE ANALYSIS',panelX+18,panelY+22,9,'#83dce9','left',2,null,'700');
-  hud.kVRule(g,PX,138,492,col,.72);g.restore();
+  // Charakterdaten liegen in einer eigenen, eingelassenen Holo-Konsole = Spiegelbild der Combatant Bay (gleiche Größe, Schrägen/Akzente gespiegelt, Titel rechtsbündig).
+  const panelGrad=g.createLinearGradient(0,PNL.y,0,PNL.y+PNL.h);
+  panelGrad.addColorStop(0,'rgba(10,24,34,.92)');panelGrad.addColorStop(.45,'rgba(4,12,20,.94)');panelGrad.addColorStop(1,'rgba(2,6,12,.97)');
+  this.consoleFrame(g,PNL,true,panelGrad);g.save();
+  hud.lab(g,'SUBJECT DATA  /  LIVE ANALYSIS',PNL.x+PNL.w-18,122,9,'#83dce9','right',2,null,'700');hud.kRule(g,PNL.x+PNL.w-18-260,PNL.x+PNL.w-18,129,'#4faebe','l',.55);
+  hud.kVRule(g,PNL.x+8,138,492,col,.72);g.restore();
   if(!ch){   // leerer Slot
    hud.fam(F_DISP,()=>hud.fancy(g,'EIGENE FIGUR',PX+16,162,40,['#ffffff',col],'left',col,t,false,false,400,2));
    this.wrap(g,'Lade deine Sprite-Sheets hoch, stelle Name, Moves und Werte ein und kämpfe mit deinem eigenen Charakter.',14,PW-30).forEach((l,k)=>hud.txt(g,l,PX+16,198+k*20,14,TXT,'left'));
@@ -243,7 +273,7 @@ export class SelectScreen{
   if(arcade.mode==='story'){const c=CHAPTERS[arcade.chapter-1],nx=CHAPTERS[arcade.chapter],lock=nx&&!arcade.chapterOpen(arcade.chapter+1);   // Kapitelwahl (K / Klick): Kapitel 2+ erst nach Abschluss des Vorgängers
    hud.lab(g,'K = KAPITEL '+arcade.chapter+':  '+c.name,W-24,500,12,'#7dff9a','right',2,'#7dff9a','800');
    if(lock)hud.lab(g,'KAPITEL '+(arcade.chapter+1)+' GESPERRT – schließe Kapitel '+arcade.chapter+' ab',W-24,480,10,'#7d6fb0','right',2,null,'600')}}
- modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','story','versus','melee'].indexOf(A.mode),cols=['#65dce9','#9b8cff','#6eaaff','#c08cff'],sw=m.w/4;
+ modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','story','versus','melee'].indexOf(A.mode),sw=m.w/4;
   ['ARCADE','STORY','2 SPIELER','MELEE'].forEach((n,i)=>{const on=i===k,x=m.x+i*sw+(i?3:0),w=sw-6;hud.kBtn(g,x,m.y,w,m.h,n,{col:i%2?'#b98bff':'#7fe8ff',on,dim:!on,t,size:12})});
   hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#7d86c8','left')}
  title(g,t,W,sub,col='#9fe8ff'){const hud=this.hud;
@@ -253,18 +283,20 @@ export class SelectScreen{
   hud.kSub(g,sub,W/2,88,13,col,4,t)}
  // ---- 2-Spieler-Modus: Kämpferwahl (zwei Cursor) ----
  drawVs(g,A,t,W,H){const hud=this.hud,v=A.vs,M=A.mode==='melee';
-  g.save();hud.kChamfer(g,18,104,466,394,18);g.fillStyle='rgba(5,16,24,.46)';g.fill();g.strokeStyle='rgba(95,207,224,.32)';g.stroke();
-  hud.kChamfer(g,PX-20,104,PW+34,396,18);g.fillStyle='rgba(5,16,24,.74)';g.fill();g.strokeStyle='rgba(95,207,224,.34)';g.stroke();
-  hud.lab(g,'DUAL COMBAT LINK  /  PLAYER SYNC',PX,124,9,'#78d8e7','left',2,null,'700');g.restore();this.modePill(g,A,t);
+  // Beide Konsolen wie im Arcade-Menü: Bay links, Profil-Konsole rechts als exaktes Spiegelbild (consoleFrame)
+  this.consoleFrame(g,BAY,false,'rgba(5,16,24,.46)');this.consoleFrame(g,PNL,true,'rgba(5,16,24,.74)');g.save();
+  // Titel beide in der Bay (die Profil-Konsole rechts hat in der obersten Zeile „wählt …“ und keinen Platz für einen Titel)
+  hud.lab(g,'DUAL COMBAT LINK',BAY.x+18,122,9,'#78d8e7','left',2,null,'700');
+  hud.lab(g,'PLAYER SYNC',BAY.x+BAY.w-18,122,9,'#83dce9','right',2,null,'700');g.restore();this.modePill(g,A,t);
   if(v.step===1)return this.drawStagePick(g,A,t,W,H);
   this.title(g,t,W,M?'MELEE – WÄHLT EURE KÄMPFER':'2 SPIELER – WÄHLT EURE KÄMPFER',M?'#bfe9ff':undefined);
   if(M)this.meleeOpts(g,A,t,W);
   const slots=Arcade.slotIds();
   this.vsRondell(g,A,t,1,slots);this.vsRondell(g,A,t,2,slots);
-  g.save();g.globalAlpha=.5;hud.kRule(g,30,488,302,'#4a4c9a','r',.9);g.restore();
-  // Profil rechts wie im Arcade-Menü, je Spieler ein Block
-  g.save();hud.kChamfer(g,PX-20,104,PW+34,396,18);g.fillStyle='rgba(4,12,19,.82)';g.fill();g.strokeStyle='rgba(95,207,224,.34)';g.stroke();
-  hud.kVRule(g,PX,138,292,P1C,.85);hud.kVRule(g,PX,312,492,P2C,.85);
+  g.save();g.globalAlpha=.5;hud.kRule(g,BAY.x+14,BAY.x+BAY.w-14,302,'#4a4c9a','r',.9);g.restore();
+  // Profil rechts wie im Arcade-Menü, je Spieler ein Block; die senkrechten Spielerlinien sitzen links an der Konsole und – gespiegelt – rechts an der Bay
+  g.save();this.consoleFrame(g,PNL,true,'rgba(4,12,19,.82)');
+  hud.kVRule(g,PNL.x+8,138,292,P1C,.85);hud.kVRule(g,PNL.x+8,312,492,P2C,.85);hud.kVRule(g,BAY.x+BAY.w-8,138,292,P1C,.85);hud.kVRule(g,BAY.x+BAY.w-8,312,492,P2C,.85);
   hud.kRule(g,PX+8,PX+PW-8,302,'#4e8290','r',.8);g.restore();
   this.vsProfile(g,A,t,1,slots[v.c1],104,P1C,M);this.vsProfile(g,A,t,2,slots[v.c2],304,P2C,M);
   // Fuß: Wartehinweis + Steuerung
@@ -280,9 +312,10 @@ export class SelectScreen{
   this.vrp[pl]+=Math.abs(df)<.002?df:df*(1-Math.exp(-dt*.24));this.vrp[pl]=((this.vrp[pl]%N)+N)%N;
   const items=[];for(let i=0;i<N;i++){let d=((i-this.vrp[pl])%N+N)%N;if(d>N/2)d-=N;if(Math.abs(d)<=1.7)items.push({i,d})}
   items.sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
-  const lerp=(a,b,k)=>a+(b-a)*k;
+  const lerp=(a,b,k)=>a+(b-a)*k;let fogDone=false;
   for(const{i,d}of items){const id=slots[i],ch=CHARACTERS[id],ad=Math.min(1,Math.abs(d)),sel=Math.abs(d)<.5,cx=VCAR.cx+d*VCAR.spacing,base=lerp(base0,sideB,ad),
     fade=Math.abs(d)>1?Math.max(0,1-(Math.abs(d)-1)/.7):1,col=sel?pc:(ch.glow||'#fff');
+   if(!fogDone&&Math.abs(d)<=.5){fogDone=true;this.vsFog(g,pl,ch,pc,t,dt)}   // Nebelebene: hinter der gewählten Figur, vor den übrigen
    g.save();g.globalAlpha=lerp(1,.5,ad)*fade;
    // Player-specific docking capsule, machined black chrome with a live edge light.
    const dw=lerp(108,78,ad),dh=lerp(126,102,ad),dx=cx-dw/2,dy=base-dh+16;
@@ -323,11 +356,11 @@ export class SelectScreen{
   if(ch.cons){hud.lab(g,'–',px,sy+15,13,'#c9b8ff','left',0,null,'800');hud.txt(g,fit(ch.cons),px+16,sy+15,11,'#c9b8ff','left')}}
  // Melee-Optionen (rechts oben, klickbar): Spieler 2 = Mensch/CPU (B), CPU-Stärke (▲▼ bzw. Klick), Stocks (T)
  meleeOpts(g,A,t,W){const hud=this.hud,c='#bfe9ff',on='#9fe8ff';
-  const row=(i,txt,col,hot)=>{const r=MELEE_OPTS[i],w=r.w-8;hud.kBtn(g,r.x,r.y,w,r.h,txt,{col,on:hot,t})};
-  row(0,A.cpu?'GEGEN CPU  (klicken / B)':'2 SPIELER LOKAL  (klicken / B)',A.cpu?on:c,A.cpu);
-  row(1,A.cpu?`CPU-STÄRKE: ${DIFF[A.difficulty]}  (klicken / ▲▼)`:'CPU-STÄRKE: –  (erst CPU wählen)',A.cpu?DCOL[A.difficulty]:'#6a5d96',A.cpu);
-  row(2,`STOCKS: ${A.stocks}  (klicken / T)`,c,false);
-  void t}
+  const row=(i,txt,col,hot)=>{const r=MELEE_OPTS[i];hud.kBtn(g,r.x,r.y,r.w,r.h,txt,{col,on:hot,dim:i===0&&!hot,t,size:i?10:12,flip:true})};   // flip: rechte Leiste = Spiegelbild der linken
+  row(0,'GEGEN CPU',A.cpu?on:c,A.cpu);
+  if(A.cpu){row(1,`CPU: ${DIFF[A.difficulty]}`,DCOL[A.difficulty],true);row(2,`STOCKS: ${A.stocks}`,c,false)}   // nur bei aktivem CPU sichtbar
+  const lr=MELEE_OPTS[A.cpu?1:0];
+  hud.txt(g,A.cpu?'klicken oder  B · ▲▼ · T':'klicken oder  B · T',W-14,lr.y+lr.h+14,10,'#8f95d8','right')}
  // ---- 2-Spieler-Modus: Stage-Wahl ----
  drawStagePick(g,A,t,W,H){const hud=this.hud,v=A.vs,N=THEMES.length+1,slots=Arcade.slotIds();
   g.save();hud.kChamfer(g,24,108,912,302,20);g.fillStyle='rgba(5,16,24,.50)';g.fill();g.strokeStyle='rgba(96,210,226,.3)';g.stroke();hud.lab(g,'TACTICAL ENVIRONMENT SELECT  /  STAGE DATA',44,128,9,'#78d8e7','left',2,null,'700');g.restore();

@@ -38,7 +38,7 @@ const star4=(g,x,y,sz,rot,w=.13)=>{const c=Math.cos(rot),n=Math.sin(rot),q=sz*w,
  for(let i=0;i<16;i+=2){const px=P[i],py=P[i+1],X=x+px*c-py*n,Y=y+px*n+py*c;i?g.lineTo(X,Y):g.moveTo(X,Y)}g.closePath();g.fill()};
 const SPK_COLS=['#ffffff','#ffe27a','#7df9ff','#ff7ae6'];
 export class ParticleSystem{
- constructor(){this.p=[];this.tw=[];this.gn=[];this.rings=[];this.fl=[];this.sl=[];this.sh=[];this.gl=[];this.sd=[];this.pw=[];this.mk=[];this.bt=[];this.rk=[];this.ff=[];this.ft=0;this.fs=Array.from({length:FW.pool},()=>({alive:false,x:0,y:0,vx:0,vy:0,z:0,age:0,life:0,r:1,cls:0,ph:0,sp:0,ho:0,white:false,h:200}));this.fn=0;this.onBoom=null}
+ constructor(){this.p=[];this.tw=[];this.gn=[];this.rings=[];this.fl=[];this.sl=[];this.sh=[];this.gl=[];this.sd=[];this.pw=[];this.bt=[];this.rk=[];this.ff=[];this.ft=0;this.fs=Array.from({length:FW.pool},()=>({alive:false,x:0,y:0,vx:0,vy:0,z:0,age:0,life:0,r:1,cls:0,ph:0,sp:0,ho:0,white:false,h:200}));this.fn=0;this.onBoom=null}
  burst(x,y,o={}){const n=qn(o.count||12);
   for(let i=0;i<n;i++){const a=(o.angle!==undefined?o.angle:Math.random()*6.283)+(Math.random()-.5)*(o.spread!==undefined?o.spread:6.283);
    const s=(o.speed||6)*(.4+Math.random()*.9);const l=(o.life||24)*(.7+Math.random()*.5);
@@ -69,9 +69,8 @@ export class ParticleSystem{
  shard(x,y,o={}){if(this.sd.length>500)return;const n=o.count||8,cols=o.colors||['#ffffff','#ffe27a','#7df9ff','#ff7ae6'];
   for(let i=0;i<n;i++){const a=(o.angle!==undefined?o.angle:Math.random()*6.283)+(Math.random()-.5)*(o.spread!==undefined?o.spread:6.283),s=(o.speed||6)*(.3+Math.random()),l=(o.life||50)*(.7+Math.random()*.6);
    this.sd.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:l,max:l,w:(o.w||5)*(.6+Math.random()),h:(o.h||10)*(.6+Math.random()),col:cols[(Math.random()*cols.length)|0],rot:Math.random()*6.283,vr:(Math.random()-.5)*.4,g:o.gravity!==undefined?o.gravity:.3,drag:o.drag||.985,ph:Math.random()*6.28,age:0})}}
- // Comic-Zackenstern (Treffer-Explosion) + Fadenkreuz-Hitmarker + Blitzbogen
+ // Comic-Zackenstern (Treffer-Explosion) + Blitzbogen
  starpop(x,y,color,size=70,life=9){if(GFX.fx<.5&&size<150)return;this.pw.push({x,y,color,size,life,l0:life,rot:Math.random()*6.283,n:9+((Math.random()*5)|0),seed:Math.random()*100})}
- marker(x,y,color,size=40,life=11){this.mk.push({x,y,color,size,life,l0:life,rot:Math.PI/4+(Math.random()-.5)*.25})}
  bolt(x,y,color,ang,len=120,life=7){if(GFX.fx<.5||(GFX.fx<1&&Math.random()>.5))return;const pts=[[x,y]];let px=x,py=y,a=ang;const n=6;for(let i=0;i<n;i++){a+=(Math.random()-.5)*1.1;px+=Math.cos(a)*len/n;py+=Math.sin(a)*len/n;pts.push([px,py])}this.bt.push({pts,color,life,l0:life})}
  // Feuerwerk (aus Ghostwriter übernommen): Rakete steigt mit Schweif auf und platzt zu einer Kugel aus blinkenden Sternen.
  // x,y = Start, ty = Höhe der Explosion, color = Grundfarbe der Kugel (Hex)
@@ -114,8 +113,8 @@ export class ParticleSystem{
   for(const q of this.sd){q.x+=q.vx;q.y+=q.vy;q.vy+=q.g;q.vx*=q.drag;q.vy*=q.drag;q.rot+=q.vr;q.life--;q.age++}this.sd=this.sd.filter(q=>q.life>0);
   for(const q of this.tw){if(q.age<0){q.age++;continue}q.vx*=q.dr;q.vy=q.vy*q.dr+q.g;q.x+=q.vx;q.y+=q.vy;q.age++}this.tw=this.tw.filter(q=>q.age<q.life);
   for(const e of this.gn){if(e.d>0)e.d--;else e.life--}this.gn=this.gn.filter(e=>e.life>0);
-  for(const l of[this.pw,this.mk,this.bt])for(const e of l)e.life--;this.pw=this.pw.filter(e=>e.life>0);this.mk=this.mk.filter(e=>e.life>0);this.bt=this.bt.filter(e=>e.life>0);
-  this.ft++;const dt=1/60,now=this.ft/60;
+  for(const l of[this.pw,this.bt])for(const e of l)e.life--;this.pw=this.pw.filter(e=>e.life>0);this.bt=this.bt.filter(e=>e.life>0);
+  this.ft++;const dt=1/60;
   for(let i=this.rk.length-1;i>=0;i--){const r=this.rk[i];r.age++;const q=fwPos(r,r.age);r.x=q.x;r.y=q.y;
    if(q.k>=1){this.rk.splice(i,1);this.boom(r);continue}
    const p=this._fwStar();p.cls=0;p.r=.7+Math.random()*.4;p.x=q.x+(Math.random()-.5)*4;p.y=q.y+4;p.vx=(Math.random()-.5)*40;p.vy=30+Math.random()*60;p.life=.5+Math.random()*.4;p.h=r.h}
@@ -161,7 +160,6 @@ export class ParticleSystem{
    g.globalAlpha=Math.min(1,att*1.5);g.fillStyle=c;star4(g,e.x,e.y,S,e.rot);g.globalAlpha=Math.min(1,att*1.2)*.8;g.fillStyle='#ffffff';star4(g,e.x,e.y,S*.55,e.rot+.7854,.16);g.beginPath();g.arc(e.x,e.y,Math.max(1,S*.09),0,6.283);g.fill()}
   for(const e of this.bt){const u=e.life/e.l0;for(const[c,w,a]of[[e.color,5,.55],['#ffffff',1.8,1]]){g.globalAlpha=a*u;g.strokeStyle=c;g.lineWidth=w;g.beginPath();e.pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke()}}
   for(const e of this.pw){const u=e.life/e.l0,sc=.5+.5*Math.sqrt(1-u),n=e.n;for(const[k,c,a]of[[1,e.color,.9],[.55,'#ffffff',1]]){g.globalAlpha=Math.min(1,u*1.5)*a;g.fillStyle=c;g.beginPath();for(let i=0;i<n*2;i++){const r=e.size*sc*k*(i%2?.42:.78+.45*(Math.sin(e.seed+i*12.9)*.5+.5)),an=i*Math.PI/n+e.rot;i?g.lineTo(e.x+Math.cos(an)*r,e.y+Math.sin(an)*r):g.moveTo(e.x+Math.cos(an)*r,e.y+Math.sin(an)*r)}g.closePath();g.fill()}}
-  for(const e of this.mk){const u=e.life/e.l0,L=e.size*(1+(1-u)*.5);g.save();g.translate(e.x,e.y);g.rotate(e.rot);g.lineCap='square';for(const[c,w,a]of[[e.color,3+u*7,.45],['#ffffff',1.5+u*3,1]]){g.globalAlpha=a*u;g.strokeStyle=c;g.lineWidth=w;g.beginPath();for(let k=0;k<4;k++){g.rotate(Math.PI/2);g.moveTo(L*.28,0);g.lineTo(L,0)}g.stroke()}g.restore()}
   if(!noFw)this._drawFw(g);
   g.restore()}
 }

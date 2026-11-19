@@ -7,11 +7,8 @@ import{meleeBlast,meleeRespawn,meleeWinnerOnTime}from'./melee.js';
 
 import{ParticleSystem}from'./particles.js';
 import{Projectile}from'./projectile.js';
-import{Story}from'./story.js';
 
-import{Sound}from'../render/audio.js';
 
-import{R}from'../render/sprites.js';
 export const SUPER_FRAMES=42;   // Länge des Super-Freeze (muss zu hud.flash passen)
 // Spielzustand + fester 60-Hz-Schritt. Keine DOM-Abhängigkeit -> headless testbar.
 // Phasen: intro -> fight -> ko -> result -> (intro | match)
@@ -42,7 +39,8 @@ export class Game{
   if(big){this.impact={t:7,t0:7,x,y,col,p:1,seed:Math.random()*99};this.flash=Math.max(this.flash,3);this.flashColor='#ffffff'}
 }
  startSuper(f){this.aberr=1;this.camera.kick(.05);this.superName=(f.move&&f.move.label)||'';this.sfx('heavy_hit_impact');this.superFlash=SUPER_FRAMES;this.superOwner=f;this.shake=EFFECT.superShake;this.flash=EFFECT.screenFlash;this.flashColor=f.char.glow||'#fff';this.fx.ps.ring(f.x,f.y-80,'#ffffff',160)}
- knockout(victim,attacker){if(this.story&&victim!==this.p1){this.story.mobDown(victim,attacker);return}
+ knockout(victim,attacker){if(this.god&&victim===this.p1){victim.hp=victim.maxHp;return}   // Dev-Konsole "god": Spieler 1 ist unverwundbar
+  if(this.story&&victim!==this.p1){this.story.mobDown(victim,attacker);return}
   this.sfx('fw_finale',{vol:.8});this.slow=this.slowMax=EFFECT.koSlow;this.aberr=1;this.camera.kick(.07);this.kickX+=attacker.facing*14;this.impact={t:10,t0:10,x:victim.x,y:victim.y-80,col:victim.char.glow||'#fff',p:1.2,seed:Math.random()*99};victim.state='ko';victim.sf=0;victim.vy=-9;victim.vx=attacker.facing*6;victim.noGrav=false;victim.move=null;
   this.phase='ko';this.pf=0;this.winner=attacker;this.hitstop=26;this.shake=EFFECT.koShake;this.flash=EFFECT.screenFlash;this.flashColor=victim.char.glow||'#fff';this.fx.ko(victim.x,victim.y-80,victim.char.glow||'#fff')}
  // Hyper-Kamerafahrt: weich auf den Angreifer zoomen und im Zoom bleiben, solange sein Hyper-Move aktiv ist (inkl. Freeze); `lead` Frames vor Ende der aktiven Phase sanft zurück
@@ -53,7 +51,7 @@ export class Game{
   const o=f===this.p1?(this.story&&this.story.nearest(f)||this.p2):this.p1,sz=(f.char&&f.char.size)||1,w=this.cineW*this.cineW*(3-2*this.cineW);
   const fit=W/(Math.abs(o.x-f.x)+K.margin*2);   // nie so dicht, dass der Gegner aus dem Bild fällt
   this.camera.focus(f.x+(o.x-f.x)*K.bias,f.y-K.lift*sz,Math.max(1,Math.min(K.zoom/Math.sqrt(sz),fit)),w)}
- step(){
+ step(){if(this.god&&this.p1.hp>0)this.p1.hp=this.p1.maxHp;
   this.frame++;
   const talk=!!(this.story&&this.story.dealer&&this.story.dealer.active);   // Gespräch mit dem Händler: Spieler steht still, Tasten/Pad-Eingaben gehen nicht in den Puffer (kein Schlag nach dem Gespräch)
   for(const f of this.fighters){if(talk&&f===this.p1){if(f.input.sample)f.input.sample();f.input.feed(0,0,[],false);continue}f.input.tick(f,this.foe(f),this)}

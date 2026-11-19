@@ -8,12 +8,12 @@ const fxPal=c=>[c,c,'#ffffff',FX_GOLD,'#7df9ff','#ff7ae6'];   // Palette: Figure
 export class Effects{
  constructor(ps){this.ps=ps}
  hit(x,y,power,color,dir){const ps=this.ps,P=power,fwd=dir>0?0:Math.PI,cols=fxPal(color);
-  // Dezenter Treffer-Funke (bewusst klein): kleiner Lichtkern + kleiner Glanzstern, wenige kleine Funkelsterne
+  // Dezenter Treffer-Funke: kleiner Lichtkern + kleiner Glanzstern, dazu ein Schwarm kleiner Funkelsterne
   ps.flare(x,y,color,26+P*9,6+P,Math.random());
   if(P>=2)ps.glint(x,y,'#ffffff',14+P*5,9+P*2);
   ps.spark(x,y,color,3+P*2,6+P*1.5);
-  ps.sparkle(x,y,{count:5+P*3,speed:4+P*1.6,life:26+P*6,size:4.5+P*.7,colors:cols,gravity:.07,dr:.93,angle:fwd,spread:3.4});
-  if(P>=2)ps.sparkle(x,y,{count:2+P,speed:1.6,life:40+P*4,size:4.5,colors:cols,gravity:-.012,dr:.97,delay:10});
+  ps.sparkle(x,y,{count:12+P*6,speed:4+P*1.6,life:26+P*6,size:4.5+P*.7,colors:cols,gravity:.07,dr:.93,angle:fwd,spread:3.4});
+  ps.sparkle(x,y,{count:5+P*2,speed:1.6,life:40+P*4,size:4.5,colors:cols,gravity:-.012,dr:.97,delay:10});
   if(P>=3)ps.sparkleRing(x,y,color,22+P*9,{count:6+P*2});
   if(P>=3){ps.shock(x,y+60,color,110,16);if(P>=4)ps.sparkleBall(x,y,color,40+P*9,{count:10+P*3,life:44,size:5.5});
    for(let i=0;i<Math.min(P,3);i++)ps.bolt(x,y,i%2?color:'#7df9ff',Math.random()*6.283,50+P*16,5+((Math.random()*3)|0))}

@@ -24,19 +24,28 @@ T = importlib.util.module_from_spec(spec); spec.loader.exec_module(T)
 DIR = os.path.join(ROOT, 'assets', 'rabe'); SH = os.path.join(DIR, 'sheets')
 STAND_H = T.STAND_H; AIR_CENTER = T.AIR_CENTER; A_BODY = T.A_BODY
 
-# Bogen -> Datei, Präfix, Spalten x Zeilen, Hintergrund ('alpha' = echte Transparenz, 'soft' = halbtransparentes Rauschen entfernen)
+# Bogen -> Datei, Präfix, Spalten x Zeilen, Hintergrund ('alpha' = echte Transparenz, 'soft' = halbtransparentes Rauschen entfernen, 'chroma' = grüner Chroma-Key)
 SHEETS = [dict(file='idle.png', pre='i', cols=2, rows=2, bg='alpha'),
           dict(file='sprechen.png', pre='t', cols=4, rows=2, bg='alpha', thr=250),
           dict(file='kampf.png', pre='c', cols=4, rows=3, bg='soft'),
           dict(file='fall.png', custom='fall'),      # -> f_0..f_6 (Fallen), u_0..u_7 (Aufstehen)
-          dict(file='sprung.png', custom='jump')]    # -> j_0..j_16 (Sprung: Absprung, Flügel öffnen, Gleiten, Flügel falten, Landung)
+          dict(file='sprung.png', custom='jump'),    # -> j_0..j_16 (Sprung: Absprung, Flügel öffnen, Gleiten, Flügel falten, Landung)
+          dict(file='neu_sprite.png', pre='ns', cols=2, rows=2, bg='chroma'),
+          dict(file='neu_angriff.png', pre='na', cols=2, rows=2, bg='chroma'),
+          dict(file='neu_flug.png', pre='nf', cols=2, rows=2, bg='chroma'),
+          dict(file='neu_kick.png', pre='nk', cols=2, rows=2, bg='chroma'),
+          dict(file='neu_schlag.png', pre='nc', cols=2, rows=2, bg='chroma')]
 # Maßstab: Referenz-Pose je Bogen -> Standhöhe STAND_H (idle/sprechen: erste Zelle = aufrecht stehend).
 # Der Kampfbogen hat keine aufrechte Pose (Zelle 0 = tiefe Kampfhaltung, Kopf ca. 1,76x kleiner gezeichnet als im Idle-Bogen) -> fester Faktor relativ zum Idle-Maßstab.
 REF = {'i': (0, None), 't': (0, None), 'c': (0, 1.76)}
 FRAME_SC = {}        # Einzelne Posen kleiner/größer: ('c', Zelle) -> Faktor
-AIR = {('c', 3), ('c', 4), ('c', 5), ('c', 6), ('c', 10)} | {('j', i) for i in range(3, 16)} | {('f', 0), ('f', 1), ('f', 2)}   # fliegende Posen (Luft-Tritt, Sprung-Klauen, Luft-Sichel, Dash, Luft-Treffer): zusätzlich eine Körpermitten-Variante ('a')
+AIR = {('c', 3), ('c', 4), ('c', 5), ('c', 6), ('c', 10)} | {('j', i) for i in range(3, 16)} | {('f', 0), ('f', 1), ('f', 2)} | {('nf', 0), ('nf', 1), ('nf', 2), ('nf', 3), ('nk', 1), ('nk', 2), ('nk', 3), ('nc', 1), ('nc', 2), ('nc', 3), ('na', 1), ('na', 2), ('ns', 1)}   # fliegende Posen: zusätzlich eine Körpermitten-Variante ('a')
 
 def load(cfg):
+    if cfg.get('bg') == 'chroma':
+        im = Image.open(os.path.join(SH, cfg['file']))
+        im_k, _ = T.key_out(im)
+        return np.array(im_k)
     im = Image.open(os.path.join(SH, cfg['file'])).convert('RGBA'); a = np.array(im)
     if cfg['bg'] == 'soft':
         al = a[..., 3].astype(np.float32); al = np.clip((al - 190) / 60.0, 0, 1) * 255; a[..., 3] = al.astype(np.uint8)
@@ -127,7 +136,17 @@ def main():
         a = load(cfg); imgs = slice_poses(a, cfg['cols'], cfg['rows'], cfg.get('thr', 16))
         if imgs is None: log(f"! {cfg['file']}: {cfg['cols'] * cfg['rows']} Posen nicht erkannt"); return 1
         log(f"- {cfg['file']}: {len(imgs)} Posen erkannt")
-        for i, c in enumerate(imgs): cells[(cfg['pre'], i)] = c; mets[(cfg['pre'], i)] = measure(c)
+        for i, c in enumerate(imgs):
+            cells[(cfg['pre'], i)] = c
+            m = measure(c)
+            if m and cfg.get('bg') == 'chroma':
+                arr = np.array(c); a = arr[..., 3]
+                r, g, b = [arr[..., k].astype(np.int16) for k in range(3)]; lum = (r + g + b) / 3
+                sat = arr[..., :3].max(axis=2).astype(np.int16) - arr[..., :3].min(axis=2)
+                body = (a > A_BODY) & ~((sat > 70) & (lum > 95))
+                by, bx = np.where(body)
+                if len(bx) > 0: m['ax'] = int(np.median(bx))
+            mets[(cfg['pre'], i)] = m
     # Maßstab: idle/sprechen = erste Zelle -> Standhöhe; Kampf = Idle-Maßstab x Faktor
     scale = {}
     for pre in ('i', 't'):
@@ -138,6 +157,12 @@ def main():
         m = mets[ref]; sc = STAND_H / (m['foot'] - m['top'])
         for pre in pres: scale[pre] = sc
         log(f"Maßstab {'/'.join(pres)}: Höhe {m['foot'] - m['top']} px -> {STAND_H} (x{sc:.3f}, relativ zu Idle {sc / scale['i']:.2f})")
+    # Neue Bögen (Gemini 1536x1024, Chroma): Referenz ns_0
+    m_ns = mets.get(('ns', 0))
+    if m_ns:
+        sc_new = STAND_H / (m_ns['foot'] - m_ns['top'])
+        for pre in ('ns', 'na', 'nf', 'nk', 'nc'): scale[pre] = sc_new
+        log(f"Maßstab neu: Höhe {m_ns['foot'] - m_ns['top']} px -> {STAND_H} (x{sc_new:.3f})")
     frames = {}
     for (pre, i), c in sorted(cells.items()):
         m = mets[(pre, i)]

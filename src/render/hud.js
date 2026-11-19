@@ -1,27 +1,18 @@
-import{Arcade}from'../core/arcade.js';
 import{CHARACTERS}from'../core/characters.js';
-import{EFFECT,H,MELEE,METER,ROUND,SPAM,W}from'../core/config.js';
+import{EFFECT,METER,ROUND,SPAM}from'../core/config.js';
 
 
-import{GAP}from'./audio.js';
 import{F_DISP,F_TECH,F_UI}from'./fonts.js';
 
-import{A}from'./rig.js';
-import{tint}from'./skins.js';
 import{drawPortrait}from'./sprites.js';
-import{Stage,THEMES}from'./stage.js';
+import{THEMES}from'./stage.js';
 // Kristall-HUD (Canvas 2D, 960x540 logisch): Eis-Blau, Violett und Lavendel, weiche Glanzkanten, Facetten statt Gold/Rot.
 //  - Keine Textumrandungen und keine Rahmen/Ringe um die Ausrufe (ROUND, FIGHT, K.O. ...), dafür dezenter Glow
 //  - Lebensbalken und Hyper-Meter mit Kristall-Facetten und wanderndem Glanzlicht
 //  - Timer als feiner Ring, Combo-Zähler klein und klar
 export const SERIF = F_DISP,
   PI2 = Math.PI * 2;
-export const NEON_CYAN = "#7fe8ff",
-  NEON_MAG = "#b98bff",
-  NEON_GRN = "#9fe8ff",
-  NEON_ORG = "#c9b8ff",
-  NEON_RED = "#b98bff",
-  NEON_PUR = "#a06bff";
+export const NEON_PUR = "#a06bff";
 // Kristall-Farben: ICE = Kante/Haarlinie, ICE_HI = Lichtpunkt, ICE_DIM = abgedunkelte Linien, CRYS = Edelstein-Violett
 export const ICE = "#b9c4ff",
   ICE_HI = "#eaf6ff",
@@ -372,14 +363,24 @@ export class Hud {
     g.restore();
   }
   // Abgeschrägtes Rechteck (Pfad)
-  kChamfer(g, x, y, w, h, c = 10) {
+  // flip = an der senkrechten Mittelachse des Rechtecks gespiegelt (Ecken oben rechts + unten links abgeschrägt)
+  kChamfer(g, x, y, w, h, c = 10, flip = false) {
     g.beginPath();
-    g.moveTo(x + c, y);
-    g.lineTo(x + w, y);
-    g.lineTo(x + w, y + h - c);
-    g.lineTo(x + w - c, y + h);
-    g.lineTo(x, y + h);
-    g.lineTo(x, y + c);
+    if (flip) {
+      g.moveTo(x, y);
+      g.lineTo(x + w - c, y);
+      g.lineTo(x + w, y + c);
+      g.lineTo(x + w, y + h);
+      g.lineTo(x + c, y + h);
+      g.lineTo(x, y + h - c);
+    } else {
+      g.moveTo(x + c, y);
+      g.lineTo(x + w, y);
+      g.lineTo(x + w, y + h - c);
+      g.lineTo(x + w - c, y + h);
+      g.lineTo(x, y + h);
+      g.lineTo(x, y + c);
+    }
     g.closePath();
   }
   // Eckklammern mit Raute (Rahmen um Porträts / Karten)
@@ -408,13 +409,15 @@ export class Hud {
   // durchscheinendes Glas im Parallelogramm, helle Kante, Laserlinie oben, Leuchten in Eis-Blau (cyan) oder Violett.
   // o.col: Farbton wählt nur die Laserfarbe (violette Töne -> violett, sonst cyan); o.on = aktiv/hover (heller, weiße Kante); o.al = Deckkraft.
   kPlate(g, x, y, w, h, o = {}) {
-    const { col = ICE, on = false, al = 1, t = 0 } = o;
+    const { col = ICE, on = false, al = 1, t = 0, flip = false } = o;
     const L = laserOf(o.laser || col), sk = Math.max(3, Math.round(h * 0.21)), rgb = L.join(',');
     const path = (ix = 0, iy = 0) => {
       g.beginPath(); g.moveTo(x + ix + sk, y + iy); g.lineTo(x + w - ix, y + iy);
       g.lineTo(x + w - ix - sk, y + h - iy); g.lineTo(x + ix, y + h - iy); g.closePath();
     };
     g.save(); g.globalAlpha = al;
+    // flip: der ganze Knopf (Schräge, Lichtkante, Laserlinie) wird an seiner eigenen Mittelachse gespiegelt (rechte Hälfte der oberen Leiste)
+    if (flip) { g.translate(x + w / 2, 0); g.scale(-1, 1); g.translate(-(x + w / 2), 0); }
     path();
     // dunkler Grund (die Seite hat Hintergrundunschärfe, Canvas nicht) + Glasverlauf
     g.fillStyle = 'rgba(3,8,18,.46)'; g.fill();
@@ -464,7 +467,7 @@ export class Hud {
     this.fam(F_TECH, () => {
       g.font = `700 ${size}px ${F_TECH}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
       if ('letterSpacing' in g) g.letterSpacing = sp + 'px';
-      const cx = x + sk / 2 + w / 2 + sp / 2, cy = y + h / 2 + size * 0.36;
+      const cx = x + (o.flip ? -sk / 2 : sk / 2) + w / 2 + sp / 2, cy = y + h / 2 + size * 0.36;
       g.shadowColor = `rgb(${rgb})`;
       g.shadowBlur = on ? 14 : 9; g.fillStyle = dim ? '#c9d4e0' : '#f8fdff'; g.fillText(label, cx, cy);
       g.shadowBlur = 4; g.shadowColor = '#fff'; g.fillText(label, cx, cy);
@@ -664,116 +667,6 @@ export class Hud {
       eyes(false);
     }
     g.restore();
-  }
-  // Ensō: offener Pinselkreis, u = Fortschritt 0..1
-  enso(g, cx, cy, rx, ry, u, col, wMax, al = 1, a0 = -2.2) {
-    const N = 46,
-      n = Math.floor(N * hclamp(u, 0, 1));
-    g.save();
-    g.lineCap = "round";
-    g.strokeStyle = col;
-    for (let s = 0; s < n; s++) {
-      const a = a0 + (s / N) * PI2 * 0.93,
-        b = a0 + ((s + 1.6) / N) * PI2 * 0.93,
-        k = s / N,
-        w = wMax * (0.25 + 0.75 * Math.pow(1 - k, 0.8)) * (0.85 + 0.3 * hn(s));
-      g.globalAlpha = al * (0.55 + 0.45 * (1 - k));
-      g.lineWidth = w;
-      g.beginPath();
-      g.ellipse(
-        cx,
-        cy,
-        rx + (hn(s + 9) - 0.5) * 2,
-        ry + (hn(s + 4) - 0.5) * 2,
-        0,
-        a,
-        b,
-      );
-      g.stroke();
-    }
-    g.restore();
-  }
-  // Pinselstrich (ausgefranst, mit Trockenpinsel-Auslauf), von (0,0) nach rechts
-  brush(g, w, h, col, al) {
-    g.save();
-    g.globalAlpha = al;
-    g.fillStyle = col;
-    g.beginPath();
-    const N = 26;
-    for (let k = 0; k <= N; k++) {
-      const u = k / N,
-        yy =
-          -h / 2 +
-          (hn(k) - 0.5) * h * 0.16 +
-          (u > 0.86 ? (u - 0.86) * h * 1.4 : 0);
-      k ? g.lineTo(u * w, yy) : g.moveTo(0, yy);
-    }
-    for (let k = N; k >= 0; k--) {
-      const u = k / N,
-        yy =
-          h / 2 +
-          (hn(k + 40) - 0.5) * h * 0.18 -
-          (u > 0.86 ? (u - 0.86) * h * 1.4 : 0);
-      g.lineTo(u * w, yy);
-    }
-    g.closePath();
-    g.fill();
-    g.globalAlpha = al * 0.6;
-    for (let s = 0; s < 5; s++) {
-      const yy = -h * 0.32 + s * h * 0.16;
-      g.fillRect(w * 0.78, yy, w * (0.12 + 0.12 * hn(s + 70)), 1.1);
-    }
-    g.restore();
-  }
-  // Tusche-Platte: verläuft nach innen ins Nichts, mit Wellenmuster und Gold-Haarlinien oben/unten
-  plate(g, x0, y0, x1, y1, sk, t, seed, alarm = 0) {
-    g.save();
-    hpath(g, [
-      [x0, y0],
-      [x1, y0],
-      [x1 - sk, y1],
-      [x0, y1],
-    ]);
-    const gr = g.createLinearGradient(x0, 0, x1, 0);
-    gr.addColorStop(0, "rgba(120,135,230,.30)");
-    gr.addColorStop(0.6, "rgba(40,48,130,.24)");
-    gr.addColorStop(1, "rgba(30,36,110,0)");
-    g.fillStyle = gr;
-    g.fill();
-    g.clip();
-    const gloss = g.createLinearGradient(0, y0, 0, y1); // Glasglanz: obere Hälfte heller, Unterkante mit Reflex
-    gloss.addColorStop(0, "rgba(255,255,255,.26)");
-    gloss.addColorStop(0.5, "rgba(255,255,255,.04)");
-    gloss.addColorStop(0.52, "rgba(0,0,10,.12)");
-    gloss.addColorStop(1, "rgba(255,255,255,.1)");
-    g.fillStyle = gloss;
-    g.fillRect(x0, y0, x1 - x0, y1 - y0);
-    const wp = this.pattern(g);
-    if (wp) {
-      g.fillStyle = wp;
-      g.fillRect(x0, y0, x1 - x0, y1 - y0);
-    }
-    const u = (t * 0.004 + seed * 0.5) % 1.8;
-    if (u < 1) {
-      const gx = x0 + u * (x1 - x0),
-        gl = g.createLinearGradient(gx - 40, 0, gx + 40, 0);
-      gl.addColorStop(0, "#fff0");
-      gl.addColorStop(0.5, "#c9d4ff1c");
-      gl.addColorStop(1, "#fff0");
-      g.fillStyle = gl;
-      g.fillRect(gx - 40, y0, 80, y1 - y0);
-    }
-    this.dust(g, x0, y0, x1 - x0, y1 - y0, t, 7, seed * 3 + 11);
-    g.restore();
-    const hl = g.createLinearGradient(x0, 0, x1, 0);
-    hl.addColorStop(
-      0,
-      alarm > 0 ? `rgba(190,170,255,${0.5 + 0.5 * alarm})` : ICE,
-    );
-    hl.addColorStop(1, "#b9c4ff00");
-    g.fillStyle = hl;
-    g.fillRect(x0, y0, x1 - x0, 1);
-    g.fillRect(x0, y1, x1 - x0 - sk, 1);
   }
   // ---------- Lebensbalken (lokale Koordinaten, P2 wird gespiegelt) ----------
   hpBar(g, i, p, lag, t, alarm) {
