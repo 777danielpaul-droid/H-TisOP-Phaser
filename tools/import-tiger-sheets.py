@@ -30,14 +30,19 @@ GRID = {'idle_1': (3, 2), 'idle_2': (3, 2), 'walk_1': (3, 2), 'walk_2': (3, 2), 
         'punch': (3, 2), 'heavy': (3, 2), 'kick': (3, 2), 'crouch_atk': (3, 2), 'air_atk': (4, 2), 'claw': (4, 2), 'special': (4, 2),
         'hit': (3, 2), 'down': (4, 2), 'getup': (3, 2), 'block': (3, 2), 'win': (3, 2)}
 # Neue Posen-Bögen (2x2 Posen, Figuren dürfen über Zellgrenzen ragen -> Erkennung per zusammenhängender Figur statt Raster)
-POSE_SHEETS = {'neu_bewegung': (2, 2), 'neu_tritt': (2, 2), 'neu_schlag': (2, 2), 'neu_posen': (2, 2), 'neu_treffer': (2, 2), 'neu_sieg': (2, 2), 'neu_aufstehen': (2, 2), 'neu_blitz': (2, 2)}
+POSE_SHEETS = {'neu_bewegung': (2, 2), 'neu_tritt': (2, 2), 'neu_schlag': (2, 2), 'neu_posen': (2, 2), 'neu_treffer': (2, 2), 'neu_sieg': (2, 2), 'neu_aufstehen': (2, 2), 'neu_blitz': (2, 2),
+               'neu_atmen': (2, 2), 'neu_kick': (2, 2), 'neu_stil': (2, 2),
+               'neu_schlag2': (2, 2), 'neu_schlag3': (2, 2), 'neu_sprung': (2, 2), 'neu_tritt2': (2, 2), 'neu_deckung': (2, 2),
+               'neu_energie': (2, 2), 'neu_flug': (2, 2), 'neu_treffer2': (2, 2), 'neu_tritt3': (2, 2),
+               'fallen': (2, 2)}   # Nov 2026: Atem-/Idle-Bogen, Kick-Sequenz, Kampfposen (grüner Hintergrund)
 # Bögen, deren Zelle 1 keine neutrale Haltung ist (Kopf zurück / Brüllen): Maßstab aus fester Standhöhe im Sheet (Quellpixel) statt aus Zelle 1
-REF_H = {'neu_treffer': 505, 'neu_sieg': 505, 'neu_aufstehen': 505, 'neu_blitz': 416}   # neu_blitz: Bogen nur 1264x843 (statt 1536x1024) -> 505 * 0.823
+REF_H = {'neu_treffer': 505, 'neu_sieg': 505, 'neu_aufstehen': 505, 'neu_blitz': 416,
+         'neu_sprung': 505, 'neu_tritt2': 416, 'neu_deckung': 416, 'neu_energie': 416, 'neu_flug': 416, 'neu_treffer2': 416, 'neu_tritt3': 416, 'fallen': 447}   # fallen: Bogen ist ~9 % größer gezeichnet als die übrigen -> höhere Referenz   # neu_blitz: Bogen nur 1264x843 (statt 1536x1024) -> 505 * 0.823
 GRID.update(POSE_SHEETS)
 # Fliegende Treffer-Frames: Körpermitte statt Fußlinie verankern
 # Einzelne Posen kleiner/größer darstellen: (Sheet, Zelle) -> Faktor (Besiegt-Pose war zu groß)
 FRAME_SCALE = {('neu_sieg', 2): 0.75}
-CENTER = {('down', 1), ('down', 2), ('down', 3), ('neu_treffer', 3)}
+CENTER = {('down', 1), ('down', 2), ('down', 3), ('neu_treffer', 3), ('neu_treffer2', 1), ('fallen', 0), ('fallen', 1)}
 # Zell-Index + 100 = dieselbe Pose, aber an der Fußlinie statt an der Körpermitte verankert (z. B. liegend am Boden)
 # Spiel-Animation -> Frames (Sheet, [Zell-Indizes ab 0]) + Optionen (loop/fps/lean/bob/squash, wie in sprites.js)
 ANIMS = {
@@ -71,37 +76,43 @@ ANIMS = {
 #   neu_schlag:   0 Deckung · 1 Jab · 2 Gerade (weit) · 3 Deckung/Ausholen
 #   neu_posen:    0 Stand · 1 Hakenschlag mit Wisch · 2 Schlag mit Wisch · 3 Ausholen (Rücken)
 # Idle: 4 neutrale Haltungen als Ping-Pong-Schleife. IDLE_FPS = Tempo (vorher 10 fps, jetzt langsamer).
-IDLE_FPS = 3   # nur 2 Frames (schlag_00, posen_00) im Wechsel
+IDLE_FPS = 3   # Idle: 4 Atem-Posen (neu_atmen) als Schleife; langsam und ruhig
+#   neu_atmen: 0 Kampfstellung, Blick zur Seite · 1 Kopf hoch, Brust raus (Einatmen) · 2 Kopf gesenkt, Schulter zuckt · 3 Kopf hoch (Ausatmen)
+#   neu_kick:  0 Stand/Deckung · 1 Knie hoch · 2 Tritt mit Aufprall-Funken · 3 Rückzug in Deckung
+#   Neu (Nov 2026, Gemini): neu_schlag2/3 Jab+Gerade · neu_sprung 0 Hocke 1 Sprung 2 Luft+Fäuste 3 Landung · neu_tritt2/3 hoher Tritt · neu_deckung 2 = Block · neu_energie Aufladen/Abschuss · neu_flug Flugtritt · neu_treffer2 0 Treffer 1 fliegend 2 kniend 3 liegend
+#   neu_stil:  0 Kampfstellung · 1 locker, Hände unten · 2 Arme verschränkt · 3 Kampfstellung, Faust vorn
 ANIMS_NEU = {
-    'idle':    dict(parts=[('neu_schlag', [0]), ('neu_posen', [0])], loop=1, fps=IDLE_FPS),
-    'walk':    dict(parts=[('neu_schlag', [0]), ('neu_bewegung', [0]), ('neu_tritt', [0]), ('neu_posen', [0]), ('neu_tritt', [0]), ('neu_bewegung', [0])], loop=1, fps=9, bob=2, lean=.04),
-    'dash':    dict(parts=[('neu_posen', [3])], lean=.1),
-    'airdash': dict(parts=[('neu_tritt', [3])], lean=.2),
-    'air':     dict(parts=[('neu_tritt', [3])], lean=.04),
-    'crouch':  dict(parts=[('neu_bewegung', [3])]),
-    'cblock':  dict(parts=[('neu_bewegung', [3])], squash=.95),
-    'block':   dict(parts=[('neu_schlag', [3])]),
-    'punch':   dict(parts=[('neu_schlag', [0, 1, 1, 0, 0])]),
-    'heavy':   dict(parts=[('neu_schlag', [3, 2, 2, 2, 0])]),
-    'kick':    dict(parts=[('neu_tritt', [1, 2, 2, 1, 0])]),
-    'cpunch':  dict(parts=[('neu_schlag', [0, 1, 1, 0])], squash=.82),
-    'ckick':   dict(parts=[('neu_bewegung', [3, 2, 2, 3])]),
-    'jpunch':  dict(parts=[('neu_schlag', [1, 1, 1])]),
-    'jkick':   dict(parts=[('neu_tritt', [3, 2, 2])]),
-    'jheavy':  dict(parts=[('neu_posen', [1, 2, 2])]),
-    'upper':   dict(parts=[('neu_posen', [3, 1, 2, 2])]),
-    'special': dict(parts=[('neu_posen', [3, 1, 2, 2, 3])]),
+    'idle': dict(parts=[('neu_atmen', [1, 3])], loop=1, fps=IDLE_FPS, bob=1.5),
+    'walk': dict(parts=[('neu_atmen', [0]), ('neu_deckung', [1]), ('neu_tritt2', [1]), ('neu_deckung', [3]), ('neu_tritt2', [3]), ('neu_deckung', [1])], loop=1, fps=9, bob=2, lean=.04),
+    'dash': dict(parts=[('neu_sprung', [0])], lean=.12),
+    'airdash': dict(parts=[('neu_sprung', [2])], lean=.2),
+    'air': dict(parts=[('neu_sprung', [1])], lean=.04),
+    'crouch': dict(parts=[('neu_sprung', [3])]),
+    'cblock': dict(parts=[('neu_sprung', [3])], squash=.95),
+    'block': dict(parts=[('neu_deckung', [2])]),
+    'punch': dict(parts=[('neu_schlag2', [0, 2, 2, 0, 0])]),
+    'heavy': dict(parts=[('neu_schlag3', [1, 2, 2, 2, 0])]),
+    'kick':    dict(parts=[('neu_kick', [1, 2, 2, 1, 3])]),
+    'cpunch': dict(parts=[('neu_schlag2', [0, 2, 2, 0])], squash=.82),
+    'ckick': dict(parts=[('neu_kick', [1, 2, 2, 1])], squash=.85),
+    'jpunch': dict(parts=[('neu_sprung', [2, 2, 2])]),
+    'jkick': dict(parts=[('neu_flug', [1, 2, 2])]),
+    'jheavy': dict(parts=[('neu_flug', [2, 2, 2])]),
+    'upper': dict(parts=[('neu_tritt3', [0, 1, 2, 2])]),
+    'special': dict(parts=[('neu_energie', [0, 1, 2, 2, 3])]),
     # neu_treffer: 0 Kopf zurück (Treffer oben) · 1 Treffer Brust, vorgebeugt · 2 Treffer Bauch, tief gebeugt · 3 rücklings fliegend/liegend
-    'hit':     dict(parts=[('neu_treffer', [0, 1, 2])]),
-    'airhit':  dict(parts=[('neu_treffer', [3])]),
-    'kd':      dict(parts=[('neu_treffer', [103])]),
+    'hit': dict(parts=[('neu_treffer2', [0])]),
+    # fallen (Nov 2026): 0 + 1 fliegend/rücklings · 2 Aufprall auf den Knien mit Staub · 3 kniend aufrecht
+    #   Sturz: Flug 0 -> 1 | Aufprall 2 (Staub) -> zusammensacken (treffer2 2) -> liegend (treffer2 103) | Aufstehen: liegend -> Knie (fallen 3) -> Hocke -> Kampfstellung
+    'airhit': dict(parts=[('fallen', [0, 1])]),
+    'kd': dict(parts=[('fallen', [2]), ('neu_treffer2', [2, 103])]),
     # neu_sieg: 0 Brüllen · 1 Muskelpose · 2 kniend (= besiegt) · 3 Arme verschränkt. Sieg: 0 -> 1 -> 3 einmal durchlaufen, letzte Pose bleibt.
-    'win':     dict(parts=[('neu_sieg', [0, 1, 3])]),
-    'defeat':  dict(parts=[('neu_sieg', [2])]),
+    'win': dict(parts=[('neu_stil', [0, 2])]),
+    'defeat': dict(parts=[('fallen', [2, 3])]),   # K.o. am Boden: Aufprall mit Staub, danach kniend besiegt
     # neu_aufstehen: 0 liegend · 1 Hocke aufrecht (Fäuste vor der Brust) · 2 Hocke vorgebeugt (Hand am Boden) · 3 Kampfstellung. Aufstehen: 0 -> 2 -> 1 -> 3
-    'wakeup':  dict(parts=[('neu_aufstehen', [0, 2, 1, 3])]),
+    'wakeup': dict(parts=[('neu_treffer2', [103, 2]), ('fallen', [3]), ('neu_sprung', [0]), ('neu_deckung', [0])]),
     # neu_blitz (Hyper Blitz-Kamehameha): 0 Hände an der Hüfte (Aufladen) · 1 Hände an der Hüfte, Blick zur Seite · 2 kniender Ausfall, Hände nach vorn (Abschuss) · 3 Arme gespreizt, brüllend (Blitzeinschlag)
-    'hyper':   dict(parts=[('neu_blitz', [3, 3, 0, 1, 1, 2, 2, 2, 2, 2, 2, 0])]),
+    'hyper': dict(parts=[('neu_energie', [0, 0, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3])]),
 }
 # Alte Einzelframes (assets/tiger/source) bleiben als Rückfall im Atlas
 LEG_SKIP = ('hit_light_',)
@@ -309,7 +320,7 @@ def main():
         print('Keine Sheets in assets/tiger/sheets/ gefunden – nichts zu tun (Tiger bleibt unverändert).'); return 0
     note('Gefundene Sheets: ' + ', '.join(sheets)); need = needed_cells(); frames = legacy_frames(); scales = {}
     for key, path in sheets.items():
-        fr, s = build_sheet(key, path, need[key])
+        fr, s = build_sheet(key, path, need.get(key, set()))
         if fr: frames.update(fr); scales[key] = s
     if len(scales) > 1:
         med = float(np.median(list(scales.values())))

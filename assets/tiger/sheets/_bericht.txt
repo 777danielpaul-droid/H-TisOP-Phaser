@@ -1,13 +1,21 @@
-Gefundene Sheets: neu_aufstehen, neu_bewegung, neu_blitz, neu_posen, neu_schlag, neu_sieg, neu_treffer, neu_tritt
-- neu_aufstehen: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
-- neu_bewegung: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
-- neu_blitz: 1264x843 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+Gefundene Sheets: fallen, neu_atmen, neu_deckung, neu_energie, neu_flug, neu_kick, neu_schlag2, neu_schlag3, neu_sprung, neu_stil, neu_treffer2, neu_tritt2, neu_tritt3
+- fallen: 1248x848 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+- neu_atmen: 1536x1024 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+- neu_deckung: 1264x843 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+- neu_energie: 1264x843 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+  ! Zelle 3: Figur berührt den Zellrand (evtl. abgeschnitten)
+- neu_flug: 1264x843 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+- neu_kick: 1536x1024 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+- neu_schlag2: 1536x1024 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+- neu_schlag3: 1535x1024 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+- neu_sprung: 1536x1024 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+- neu_stil: 1536x1024 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+  ! Zelle 3: Figur berührt den Zellrand (evtl. abgeschnitten)
+- neu_treffer2: 1264x843 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+  ! Zelle 3: Figur berührt den Zellrand (evtl. abgeschnitten)
+- neu_tritt2: 1264x843 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
   ! Zelle 4: Figur berührt den Zellrand (evtl. abgeschnitten)
-- neu_posen: 1536x1024 px, Hintergrund: Hintergrundfarbe der Ecken, 4 Posen als einzelne Figuren erkannt
-- neu_schlag: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
-- neu_sieg: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
-- neu_treffer: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
-  ! Zelle 1: Figur berührt den Zellrand (evtl. abgeschnitten)
-- neu_tritt: 1536x1024 px, Hintergrund: Transparenz, 4 Posen als einzelne Figuren erkannt
+- neu_tritt3: 1264x843 px, Hintergrund: Chroma-Grün, 4 Posen als einzelne Figuren erkannt
+  ! Zelle 3: Figur berührt den Zellrand (evtl. abgeschnitten)
 Neue Animationen aktiv: idle, walk, dash, airdash, air, crouch, cblock, block, punch, heavy, kick, cpunch, ckick, jpunch, jkick, jheavy, upper, special, hit, airhit, kd, win, defeat, wakeup, hyper
-Atlas 4096x1103, 1432 KB, 32 Frames
+Atlas 4096x1169, 1191 KB, 39 Frames

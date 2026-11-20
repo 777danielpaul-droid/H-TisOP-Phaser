@@ -52,12 +52,12 @@ export const vsY0=pl=>pl===1?104:304;
 export const vcarRect=(pl,off)=>{const y0=vsY0(pl);return off===0?{x:VCAR.cx-64,y:y0+34,w:128,h:150}:{x:VCAR.cx+off*VCAR.spacing-46,y:y0+60,w:92,h:110}};
 export function hitVsCar(lx,ly){for(const pl of[1,2])for(const off of[0,-1,1]){const r=vcarRect(pl,off);if(lx>=r.x&&lx<=r.x+r.w&&ly>=r.y&&ly<=r.y+r.h)return{pl,off}}return null}
 export const DIFF=['LEICHT','NORMAL','HART','ALPTRAUM'],DCOL=['#7fe8ff','#9b9bff','#d38bff','#ff4d5e'];
-export const FIG={tiger:.9,st3g0:.88,kitsune:.86,rabe:.88,leon:.9};   // Größenausgleich je Figur in der Liste
+export const FIG={tiger:.9,st3g0:.88,kitsune:.86,rabe:.88,leon:.9,bear:.88};   // Größenausgleich je Figur in der Liste
 // Combatant Bay (links) und Subject-Data-Konsole (rechts) sind exakte Spiegelbilder an der Mittelachse x=W/2: gleiche Größe, gleicher Randabstand, Schrägen gespiegelt.
 export const BAY={x:16,y:104,w:460,h:394};
 export const PNL={x:W-BAY.x-BAY.w,y:BAY.y,w:BAY.w,h:BAY.h};
 export const PX=PNL.x+20,PW=PNL.w-34;   // Profilbereich rechts (x, Breite) – liegt innerhalb von PNL (PX-20 .. PX+PW+14)
-export const VTEXT={tiger:['LET\'S GO','上吧！'],st3g0:['UNLIKELY','不太可能'],kitsune:['TRY!','试试吧！'],anubis:['JUDGMENT','审判'],rabe:['NEVERMORE','永不复返',1],leon:['ROAR!','咆哮！']};   // Schriftzug im Übergangsvideo + chinesische Übersetzung
+export const VTEXT={tiger:['LET\'S GO','上吧！'],st3g0:['UNLIKELY','不太可能'],kitsune:['TRY!','试试吧！'],anubis:['JUDGMENT','审判'],rabe:['NEVERMORE','永不复返',1],leon:['ROAR!','咆哮！'],bear:['CRUSH!','粉碎！']};   // Schriftzug im Übergangsvideo + chinesische Übersetzung
 export const DIM='#8f95d8',TXT='#d6dcff';
 export class SelectScreen{
  constructor(hud){this.hud=hud;this.fakes={};this.ln=null;this.fw=null;this._lt=null;this.sfx=null;this.vids={};try{const ids=new Set(ROSTER);if(typeof window!=='undefined'&&window.__VIDEOS__)for(const k in window.__VIDEOS__)ids.add(k);for(const id of ids)this.vid(id)}catch(e){}}   // auch noch nicht freigeschaltete Figuren (Anubis) vorladen, damit das Video beim ersten Start sofort bereit ist

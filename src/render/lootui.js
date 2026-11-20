@@ -2,7 +2,7 @@ import{H,W}from'../core/config.js';
 import{CHARACTERS}from'../core/characters.js';
 import{isItem}from'../core/items.js';
 import{CARDS,CHAR_REQ,CHAR_SHOP,LOOT,RARITY,SHOP,SKIN_POOL,STAGE_NAMES,STAGE_POOL,canBuy,canBuyChar,cardsOwned,charReqMet,ownsChar,ownsSkin,ownsStage,sellPreview,sellable,shopCount}from'../core/loot.js';
-import{drawFullFrame}from'./sprites.js';
+import{drawFrameScaled,drawFullFrame,groupScale}from'./sprites.js';
 
 
 
@@ -43,7 +43,7 @@ export function prizeFace(r){if(r.type==='coins')return{col:'#ffd23f',t1:'COINS'
  return{col:r.col,t1:r.char.toUpperCase()+' SKIN',t2:r.name,t3:'NEU · Taste C im Menü',id:null}}
 // ---- Shop: Klickflächen (logische 960×540) ----
 export const inR=(r,x,y)=>x>=r.x&&x<=r.x+r.w&&y>=r.y&&y<=r.y+r.h;
-export const shopCardRect=i=>{const n=shopCount(),w=n>7?112:n>6?120:n>4?145:n>3?190:220,h=250,gap=n>7?6:n>6?10:n>4?12:n>3?20:30,x0=W/2-(w*n+gap*(n-1))/2;return{x:x0+i*(w+gap),y:128,w,h}};   // Booster-Angebote + Kämpfer-Karten nebeneinander
+export const shopCardRect=i=>{const n=shopCount(),w=n>8?100:n>7?112:n>6?120:n>4?145:n>3?190:220,h=250,gap=n>8?5:n>7?6:n>6?10:n>4?12:n>3?20:30,x0=W/2-(w*n+gap*(n-1))/2;return{x:x0+i*(w+gap),y:128,w,h}};   // Booster-Angebote + Kämpfer-Karten nebeneinander
 export const shopBackRect=()=>({x:W/2-80,y:H-84,w:160,h:28});
 // Leiste oben rechts (STARTSEITE · SHOP · BOOSTER · COINS): exakt an der Mittelachse gespiegelte Modus-Leiste links (MODE_PILL in select.js: gleiche Knopfgröße, gleiche Abstände, gleiche Höhe, gleicher Abstand zum Titel)
 const topBtn=i=>{const m={x:14,y:12,w:318,h:26},sw=m.w/4,k=3-i,w=sw-6,x=m.x+k*sw+(k?3:0);return{x:W-(x+w),y:m.y,w,h:m.h}};
@@ -104,10 +104,11 @@ export function drawShop(g,hud,u){const sel=u.sel|0;
   hud.txt(g,o.price+' CREDITS',cx,r.y+222,r.w<130?16:20,ok?'#a9faff':'#78909a','center',ok&&on?'#65e5ed':null);
   if(!ok)hud.txt(g,'noch '+(o.price-LOOT.coins)+' fehlen',cx,r.y+r.h-8,r.w<130?9:10,'#ff9aa6','center');
   g.restore()});
+ const figW=shopCardRect(SHOP.length).w-(shopCardRect(SHOP.length).w<130?2:24),figS=groupScale(CHAR_SHOP.map(o=>CHARACTERS[o.id]),figW,128);   // gemeinsamer Maßstab nach den Spiel-Größenverhältnissen (sprites.js, SPRITE_CHARS.rs)
  CHAR_SHOP.forEach((o,j)=>{const i=SHOP.length+j,r=shopCardRect(i),on=i===sel,own=ownsChar(o.id),ok=canBuyChar(o.id),ch=CHARACTERS[o.id],col=own?'#7dff9a':ok?'#65e5ed':'#536d78',cx=r.x+r.w/2;
   g.save();g.translate(cx,r.y+r.h/2);const sc=on?1.05+.012*Math.sin(u.t*.12):.97;g.scale(sc,sc);g.translate(-cx,-(r.y+r.h/2));g.globalAlpha=on?1:.88;
   g.shadowColor=on?'#58ddeb':'#000';g.shadowBlur=on?22:10;g.fillStyle='#02070c';hud.kChamfer(g,r.x,r.y,r.w,r.h,15);g.fill();g.shadowBlur=0;const shell=g.createLinearGradient(r.x,r.y,r.x+r.w,r.y+r.h);shell.addColorStop(0,'#647b83');shell.addColorStop(.16,'#172a33');shell.addColorStop(.7,'#050d13');shell.addColorStop(1,'#344b54');g.fillStyle=shell;hud.kChamfer(g,r.x+2,r.y+2,r.w-4,r.h-4,13);g.fill();g.strokeStyle=on?'#9dfaff':'rgba(145,197,205,.42)';g.lineWidth=on?1.8:1;hud.kChamfer(g,r.x+4,r.y+4,r.w-8,r.h-8,11);g.stroke();g.fillStyle='rgba(255,255,255,.18)';g.fillRect(r.x+15,r.y+7,r.w*.3,1.5);g.strokeStyle='rgba(132,217,225,.18)';hud.kChamfer(g,r.x+9,r.y+9,r.w-18,r.h-18,8);g.stroke();
-  g.save();g.shadowColor=ch.glow;g.shadowBlur=on?18:8;drawFullFrame(g,ch,r.x+(r.w<130?14:30),r.y+12,r.w-(r.w<130?28:60),128);g.restore();
+  g.save();g.shadowColor=ch.glow;g.shadowBlur=on?18:8;if(!(figS&&drawFrameScaled(g,ch,cx,r.y+12+128,figS)))drawFullFrame(g,ch,r.x+(r.w<130?14:30),r.y+12,r.w-(r.w<130?28:60),128);g.restore();
   hud.txt(g,ch.name,cx,r.y+170,r.w<115?14:r.w<130?16:19,'#ffffff','center',on?col:null);
   hud.txt(g,'KÄMPFER FREISCHALTEN',cx,r.y+188,r.w<115?7:r.w<130?8:10,'#9bbcc2','center');
   if(own)hud.txt(g,'BESITZT ✓',cx,r.y+222,r.w<115?14:r.w<130?16:20,'#7dff9a','center',on?'#7dff9a':null);

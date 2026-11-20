@@ -63,7 +63,7 @@ export const addPack=(n=1)=>{LOOT.packs+=n;saveLoot()};
 export const SHOP=[{n:1,price:100},{n:3,price:270},{n:5,price:425}];
 // Kämpfer im Shop (Karte hinter den Boostern): EIN dauerhafter Kauf je Figur, danach in der Charakterwahl spielbar (Freischaltung in unlocks.js, Münzen in LOOT.coins).
 // >>> PREIS HIER ÄNDERN <<< (Testpreis 10 Coins; später einfach die Zahl erhöhen – Shop-Karte, Händler-Dialog und Kauflogik lesen ausschließlich diesen Wert).
-export const CHAR_PRICE={rabe:10,cyberdemon:150,st3g0:150,leon:150,anubis:200};   // ST3-G0 gibt es alternativ gratis nach 3 Durchläufen, ANUBIS nach 4 Durchläufen (CLEAR_UNLOCKS in characters.js), LEON nach 1x Story durchspielen (Kapitel 4)
+export const CHAR_PRICE={rabe:10,cyberdemon:150,st3g0:150,leon:150,anubis:200,bear:250};   // ST3-G0 gibt es alternativ gratis nach 3 Durchläufen, ANUBIS nach 4, URSUS (Bär) nach 5 Durchläufen (CLEAR_UNLOCKS in characters.js), LEON nach 1x Story durchspielen (Kapitel 5)
 // Voraussetzung, damit ein Kämpfer im Shop gekauft werden darf (Flag in 'hitisop.unlocks'). A1LIEN (cyberdemon): erst nach dem Ende von Kapitel 3 (Flag 'storydone3', gesetzt in arcade.js). Zum Testen: Seite mit ?unlock=storydone3 öffnen.
 export const CHAR_REQ={cyberdemon:{flag:'storydone3',txt:'Schließe Kapitel 3 ab'}};
 export const charReqMet=id=>!CHAR_REQ[id]||loadUnlocks().includes(CHAR_REQ[id].flag);

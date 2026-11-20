@@ -196,15 +196,38 @@ export const LEON_ANIMS={
  block:{frames:['p_1_3']},
  kd:{frames:['p_6_2','p_6_3']},wakeup:{frames:['p_6_3','p_6_2','p_5_3','p_1_0']},
  win:{frames:['p_1_0','p_2_3'],loop:1,fps:2},defeat:{frames:['p_6_3']}};
+// URSUS (Bärenkrieger): Frames p_<Bogen>_<Zelle> aus assets/bear (8 Posen-Bögen, tools/import-bear-sheets.py). 'a' = an der Körpermitte verankert (Luft).
+//  1: Grundstellung, Klauen-Streck, Ausfall, Faust vor | 2: Ausholen, Klauenhieb in 3 Stufen | 3: Grundstellung, Knie heben, Low-Kick, Hocke
+//  4: Grundstellung, Deckung hoch, Deckung, Volldeckung | 5: Grundstellung, Absprung, Sprung-Klauenhieb, Sturz-Klaue (Zelle 3 hat im Original einen blauen Fleck an der Schulter -> ungenutzt)
+//  6: Treffer, Rückwurf, Fallen, Liegen | 7: Ausholen, Flugsprung, Body-Slam (Einschlag), Liegen im Staub | 8: Sieges-Gebrüll
+export const BEAR_ANIMS={
+ idle:{frames:['p_1_0','p_1_3'],loop:1,fps:4},
+ walk:{frames:['p_1_0','p_3_0','p_1_3','p_3_0'],loop:1,fps:7,bob:3,lean:.03},
+ crouch:{frames:['p_3_3'],squash:.88},cblock:{frames:['p_4_3'],squash:.9},
+ air:{frames:['p_5_1a','p_5_2a']},
+ dash:{frames:['p_1_2'],lean:.1},airdash:{frames:['p_7_1a'],lean:.12},
+ punch:{frames:['p_1_0','p_1_1','p_1_2','p_1_2','p_1_3']},cpunch:{frames:['p_3_3','p_1_1'],squash:.9},jpunch:{frames:['p_5_2a']},
+ kick:{frames:['p_3_0','p_3_1','p_3_2','p_3_2','p_3_3']},ckick:{frames:['p_3_3','p_3_2'],squash:.88},jkick:{frames:['p_5_2a']},
+ heavy:{frames:['p_2_0','p_2_1','p_2_2','p_2_2','p_2_3']},jheavy:{frames:['p_5_2a']},
+ upper:{frames:['p_7_0','p_2_1','p_2_2','p_2_2','p_2_3']},
+ slam:{frames:['p_7_1a','p_7_1a','p_7_2','p_7_2']},   // Body-Slam (Luft-Special): Flugsprung, dann Einschlag
+ special:{frames:['p_2_0','p_2_1','p_2_2','p_2_2','p_2_3']},
+ hyper:{frames:['p_2_0','p_2_1','p_7_0','p_2_2','p_2_2','p_2_2','p_2_3','p_1_0']},
+ hit:{frames:['p_6_0'],lean:-.14,shiftX:-10},airhit:{frames:['p_6_1a','p_6_2a']},
+ block:{frames:['p_4_2']},
+ kd:{frames:['p_6_2','p_6_3']},wakeup:{frames:['p_6_3','p_6_2','p_3_3','p_1_0']},
+ win:{frames:['p_8_1','p_8_2','p_8_3','p_8_2'],loop:1,fps:3},defeat:{frames:['p_6_3']}};
+// rs = Größenkorrektur für die Figuren-Verhältnisse (Menü UND Kampf): H!T (Tiger) 112 % (zusätzlich zu fightScale) · Anubis 100 % · ST3-G0 96 % · Corvus 92 % · A1LIEN 83 % · Leon 74 % (Anzeigehöhe der Idle-Pose relativ zu Anubis)
 export const SPRITE_CHARS={
- cyberdemon:{anims:CYBERDEMON_ANIMS,fist:[200,-125],height:215,fightScale:1,lie:['i_3']},
+ cyberdemon:{anims:CYBERDEMON_ANIMS,fist:[200,-125],height:215,fightScale:1,rs:.821,lie:['i_3']},
  mantis:{anims:MANTIS_ANIMS,fist:[120,-130],height:190,fightScale:.88,lie:['p_4_1']},
- tiger:{anims:TIGER_ANIMS,fist:[108,-122],height:190,fightScale:.85,fullAnims:['win','defeat'],profileAnim:'win',lie:['t_neu_treffer_103','t_neu_aufstehen_00']},
- st3g0:{anims:ST3G0_ANIMS,fist:[135,-150],height:190,fightScale:.92,lie:['p_3_1','p_3_2','p_3_3'],pose:POSE_ST3G0},
- anubis:{anims:ANUBIS_ANIMS,fist:[113,-137],height:215,fightScale:1,lie:['p_4_2','p_4_3']},
- rabe:{anims:RABE_ANIMS,fist:[112,-132],height:205,fightScale:.96,lie:['f_3'],frameSc:RABE_FRAME_SC},
+ tiger:{anims:TIGER_ANIMS,fist:[108,-122],height:190,fightScale:.85,rs:1.12,fullAnims:['win','defeat'],profileAnim:'win',lie:['t_neu_treffer_103','t_neu_aufstehen_00']},
+ st3g0:{anims:ST3G0_ANIMS,fist:[135,-150],height:190,fightScale:1,rs:.999,lie:['p_3_1','p_3_2','p_3_3'],pose:POSE_ST3G0},
+ anubis:{anims:ANUBIS_ANIMS,fist:[113,-137],height:215,fightScale:1,rs:1,lie:['p_4_2','p_4_3']},
+ rabe:{anims:RABE_ANIMS,fist:[112,-132],height:205,fightScale:1,rs:.963,lie:['f_3'],frameSc:RABE_FRAME_SC},
  kitsune:{anims:KITSUNE_ANIMS,fist:[100,-121],height:190,fightScale:.83,lie:['p_9_3','p_11_0'],pose:POSE_KITSUNE,frameSc:KITSUNE_FRAME_SC},
- leon:{anims:LEON_ANIMS,fist:[120,-135],height:195,fightScale:.9,lie:['p_6_3']}};   // fightScale: Kampfposen kleiner als die Sieg-/Niederlagen-Pose (fullAnims bleiben in voller Größe)
+ leon:{anims:LEON_ANIMS,fist:[120,-135],height:195,fightScale:1,rs:.809,lie:['p_6_3']},
+ bear:{anims:BEAR_ANIMS,fist:[125,-125],height:205,fightScale:.9,lie:['p_6_3','p_7_3']}};   // fightScale: Kampfposen kleiner als die Sieg-/Niederlagen-Pose (fullAnims bleiben in voller Größe)
 // Eigene Figur (Upload im Startmenü): Sprite-Definition zur Laufzeit eintragen; Atlas liefert window.__SPRITES__[id]={meta,img}
 export function registerSpriteChar(id,def){SPRITE_CHARS[id]=def}
 // Umgefärbtes Atlas-Bild (Skin >0) als Canvas; ohne Canvas/DOM oder bei gesperrtem Canvas (file://) -> Original
@@ -220,7 +243,7 @@ export function sheet(id){const S=typeof window!=='undefined'&&window.__SPRITES_
   const C=SPRITE_CHARS[id];if(C&&S.meta&&S.meta.anims)Object.assign(C.anims,S.meta.anims)}   // Animationen aus dem Atlas (z. B. Tiger-Sheets via tools/import-tiger-sheets.py) überschreiben die Behelfe
  return S}
 export const ready=S=>S.img.complete&&(S.img.naturalWidth===undefined||S.img.naturalWidth>0);
-export const fightK=(C,f)=>C.fightScale&&!f.menu&&!(C.fullAnims&&C.fullAnims.includes(f.anim))?C.fightScale:1;   // Menü-Figuren (f.menu) werden nie verkleinert
+export const fightK=(C,f)=>(C.fightScale&&!f.menu&&!(C.fullAnims&&C.fullAnims.includes(f.anim))?C.fightScale:1)*(C.rs||1);   // Menü-Figuren (f.menu) werden nie verkleinert
 // ---------- Bodenschatten ----------
 // Ellipse auf der Fußlinie (Mitte = Fußsohle, die Füße stehen also IM Schatten), Breite = Fußabstand der aktuellen Pose.
 // In der Luft wandert der Schatten zur Körpermitte, schrumpft und wird blasser; liegende Posen (SPRITE_CHARS.lie, a.lying) haben keinen Schatten.
@@ -287,8 +310,20 @@ export function drawPortrait(g,char,cx,cy,size,flip,skin=0){
  g.drawImage(skinImg(S,char.sprites,skin),sx,fr.y,cw,ch,-size/2,-size/2,size,size*ch/cw);g.restore();return true}
 
 // Kompletter erster Idle-Frame, in die Box (x,y,w,h) eingepasst (nichts abgeschnitten), unten mittig ausgerichtet
+export const PORTRAIT_GROUP=['tiger','kitsune','anubis','rabe','cyberdemon','st3g0','leon'];   // Figuren, die in Menüs im selben Maßstab (echte Größenverhältnisse) gezeigt werden
 export function drawFullFrame(g,char,x,y,w,h,skin=0){
+ if(char&&PORTRAIT_GROUP.includes(char.sprites)){const s=groupScale(PORTRAIT_GROUP.map(id=>({sprites:id})),w,h);if(s&&drawFrameScaled(g,char,x+w/2,y+h,s,skin))return true}
  const C=char.sprites&&SPRITE_CHARS[char.sprites],S=C&&sheet(char.sprites);if(!S||!ready(S))return false;
  const pa=C.profileAnim&&C.anims[C.profileAnim],fr=S.meta.frames[pa?pa.frames[pa.frames.length-1]:C.anims.idle.frames[0]];if(!fr)return false;   // Profil: Siegerpose, falls profileAnim gesetzt
  const k=Math.min(w/fr.w,h/fr.h),dw=fr.w*k,dh=fr.h*k;
  g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(skinImg(S,char.sprites,skin),fr.x,fr.y,fr.w,fr.h,x+(w-dw)/2,y+h-dh,dw,dh);g.restore();return true}
+
+
+// Gemeinsamer Maßstab für mehrere Figuren nebeneinander (Shop): die echten Spielgrößen (SPRITE_CHARS.height) bleiben im Verhältnis, die ganze Gruppe passt in je maxW×maxH.
+// Ohne das füllen schmale Figuren (Anubis, Corvus) die Box in der Höhe, breite Posen (Leon, ST3-G0, A1LIEN) werden von der Breite gebremst und wirken viel kleiner.
+function profFrame(char){const C=char&&char.sprites&&SPRITE_CHARS[char.sprites],S=C&&sheet(char.sprites);if(!S||!S.meta)return null;
+ const pa=C.profileAnim&&C.anims[C.profileAnim],fr=S.meta.frames[pa?pa.frames[pa.frames.length-1]:C.anims.idle.frames[0]];return fr?{S,fr,k:C.height/S.meta.standH*(C.rs||1)}:null}
+export function groupScale(chars,maxW,maxH){let s=Infinity;for(const ch of chars){const p=profFrame(ch);if(p)s=Math.min(s,maxW/(p.fr.w*p.k),maxH/(p.fr.h*p.k))}return isFinite(s)?s:null}
+// Wie drawFullFrame, aber mit festem Maßstab s (aus groupScale), unten mittig bei (cx,by) verankert
+export function drawFrameScaled(g,char,cx,by,s,skin=0){const p=profFrame(char);if(!p||!ready(p.S))return false;
+ const k=p.k*s,dw=p.fr.w*k,dh=p.fr.h*k;g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(skinImg(p.S,char.sprites,skin),p.fr.x,p.fr.y,p.fr.w,p.fr.h,cx-dw/2,by-dh,dw,dh);g.restore();return true}
