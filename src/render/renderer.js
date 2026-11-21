@@ -1,4 +1,4 @@
-import{BARRIER,EFFECT,GFX,GROUND,H,HOUSE,W,WALL_L,WALL_R,WORLD}from'../core/config.js';
+import{BARRIER,EFFECT,GFX,GROUND,H,HOUSE,STAMINA,W,WALL_L,WALL_R,WORLD}from'../core/config.js';
 import{sparkDraw,sparkIdx}from'../core/particles.js';
 import{LOOT}from'../core/loot.js';
 
@@ -47,7 +47,7 @@ export class Renderer{
    h.kBtn(u,cb.x,cb.y,cb.w,cb.h,'COINS '+LOOT.coins,{col:'#7fe8ff',t,size:12,flip:true});
    {const r=startSelRect();h.kBtn(u,r.x,r.y,r.w,r.h,'STARTSEITE',{col:'#b98bff',t,size:12,flip:true})}   // 4. Knopf rechts: zurück zur Startseite (Demokampf)
    if(!A.pvp){const sb=shopSelRect();h.kBtn(u,sb.x,sb.y,sb.w,sb.h,'SHOP',{col:'#7fe8ff',t,size:12,flip:true});   // Shop-Knopf neben dem Booster-Zähler
-    h.txt(u,'B – BOOSTER ÖFFNEN  ·  P – SHOP',cb.x+cb.w,cb.y+cb.h+16,10,'#7d86c8','right')}}
+    this.sel.tagPlate(u,'B – BOOSTER ÖFFNEN  ·  P – SHOP',cb.x+cb.w,cb.y+cb.h+16,10,'right','#6fdeeb',6,0);h.txt(u,'B – BOOSTER ÖFFNEN  ·  P – SHOP',cb.x+cb.w,cb.y+cb.h+16,10,'#a9b4f0','right')}}
   drawLoot(u,this.hud,this.lootUi);this.hov.draw(u)}
  draw(game){if(this.useGL&&!this.glp.ok)this.applyGfx();if(game.arcade&&game.arcade.state==='select')return this.drawSelect(game);
   const g=this.gs,ui=this.g,s=this.scale,t=game.frame/60,cam=game.camera;this.stage=this.stages[(game.stageIndex||0)%this.stages.length];this.stage.camX=cam.x;for(const st of this.stages)if(st!==this.stage&&st!==this.stages[0]){st.cache=null;st.cacheT=null;st.cacheS=null} // Speicher sparen: nur aktuelles Level + Menü-Hintergrund halten
@@ -56,12 +56,13 @@ export class Renderer{
   g.translate((game.kickX||0)+(game.shake>0?(Math.random()-.5)*game.shake*1.6:0),(game.kickY||0)+(game.shake>0?(Math.random()-.5)*game.shake*1.6:0));
   const cbg=this.bd.has('fight');if(cbg)this.bd.draw(g,W,H,'fight',{cam});   // eigener Hintergrund: im Bildschirmraum, mit leichter Parallaxe zur Kamera
   g.save();cam.apply(g);                                 // --- Welt: alles unter derselben Kamera-Matrix ---
+  if(game.story&&game.story.cfg.parkour&&!cbg)this.stage.skyAbove(g,t,cam.y-H/2/cam.z-80);   // Parkour: Himmel nach oben verlängern
   if(cbg){if(!game.melee&&!game.story)this.stage.draw(g,t,true)}else this.stage.draw(g,t,false,!!game.story);game.particles.drawFw(g);   // Feuerwerk: vor dem Himmel, hinter den Häusern
   const ML=!!game.melee,ST=!!game.story;if(ST)storyWorld(g,game,t);else if(ML){meleeStage(g,this.stage.theme,t,cbg);for(const f of game.fighters)meleeHalo(g,f,t)}else if(!cbg||this.bd.opts.houses)this.house(g,game,t);   // Melee: offene Plattform über dem Abgrund statt Gasse mit Häusern
-  for(const f of game.fighters)if(!ML||(f.onStage&&!f.under&&!(f.dead>0)))this.post.floorGlow(g,f,GROUND,t);
+  for(const f of game.fighters)if(!ML||(f.onStage&&!f.under&&!(f.dead>0))){this.post.floorGlow(g,f,f.floor,t);this.post.hyperAura(g,f,f.floor,t)}
   this.celeb(g,game);
   for(const f of game.fighters)if(!(f.dead>0))drawTrail(g,f,t);
-  for(const f of[...game.fighters].filter(f=>!(f.dead>0)).sort((a,b)=>drawPri(a)-drawPri(b)||a.y-b.y))drawFighter(g,f,t,ML&&f.inv>0&&game.frame%6<3?.5:1,ML&&!(f.onStage&&!f.under)?99999:GROUND);   // Melee: nach dem Respawn blinkt die Figur; Schatten nur auf der Plattform;   // Zeichenreihenfolge: Angreifer immer VOR dem Getroffenen (siehe drawPri)
+  for(const f of[...game.fighters].filter(f=>!(f.dead>0)).sort((a,b)=>drawPri(a)-drawPri(b)||a.y-b.y))drawFighter(g,f,t,ML&&f.inv>0&&game.frame%6<3?.5:1,ML&&!(f.onStage&&!f.under)?99999:f.floor);   // Melee: nach dem Respawn blinkt die Figur; Schatten nur auf der Plattform;   // Zeichenreihenfolge: Angreifer immer VOR dem Getroffenen (siehe drawPri)
   if(ST)storyMobBars(g,game);
   this.celeb(g,game,true);                                // Aura-Vordergrund: Figur steht IN der Aura
   for(const p of game.projectiles)this.projectile(g,p,p.owner);
@@ -75,8 +76,17 @@ export class Renderer{
   this.stage.overlay(ui);if(ST)drawStoryHud(ui,this.hud,game,t,this.cv);else this.hud.draw(ui,game);if(ML)drawMeleeHud(ui,this.hud,game,t);this.hud.flash(ui,game);this.areaBanner(ui,game,t);   // HUD/UI: unskaliert und scharf
   drawEndBtns(ui,this.hud,this.endBtns,this.endHot,game.frame);drawLoot(ui,this.hud,this.lootUi);this.hov.draw(ui);
   if(game.debug)this.debugText(ui,game)}
+// Ausdauer-Anzeige unter den Kämpfern im Demokampf (die Startseite hat kein HUD): kleine Leiste, gleiche Farben und Zustände wie im HUD (gold / orange knapp / rot erschöpft / mint verschnaufen)
+demoStam(g,f,t){if(!f.stamOn)return;const S=STAMINA,w=72,h=4,x=f.x-w/2,y=GROUND+20,p=Math.max(0,Math.min(1,f.st/f.stMax)),exh=f.exh,rest=f.state==='rest',low=f.st<S.low,pu=.5+.5*Math.sin(t*(exh?.55:.3)),
+  c1=exh?'#ff3b57':rest?'#35e8b0':low?'#ff9a3d':'#ffc94d',c2=exh?'#ff9aa8':rest?'#d6fff0':low?'#ffd8a8':'#fff3c2';
+  g.save();g.fillStyle='rgba(10, 10, 18, 0.72)';g.fillRect(x-2,y-2,w+4,h+4);
+  if(p>0){const gr=g.createLinearGradient(x,0,x+w*p,0);gr.addColorStop(0,c1);gr.addColorStop(1,c2);g.globalAlpha=exh?.55+.45*pu:1;g.fillStyle=gr;g.fillRect(x,y,w*p,h);g.globalAlpha=1}
+  g.strokeStyle=exh?'#ff6b82':rest?'#7dffd0':'rgba(150,200,255,.55)';g.lineWidth=.9;g.strokeRect(x-2,y-2,w+4,h+4);
+  if(exh){g.fillStyle='#ffffffcc';g.fillRect(x+w*S.exhaust.until/f.stMax-.5,y,1,h)}   // weiße Marke: ab hier wieder handlungsfähig
+  const txt=exh?'ERSCHÖPFT':rest?'ATMEN':'';if(txt){const c=exh?'#ff7b91':'#7dffd0';this.hud.lab(g,txt,f.x,y+17,8,c,'center',2,c,'700')}
+  g.restore()}
 // Demokampf im Hintergrund der Startseite: nur die beiden Fighter + Projektile + Partikel, kein Hintergrund/HUD/Häuser
-drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);if(!this.bd.draw(g,W,H,'title',{dimAdd:0})){g.fillStyle='#020312';g.fillRect(0,0,W,H)}const cam=game.camera;g.save();cam.apply(g);game.particles.drawFw(g);this.celeb(g,game);for(const f of[...game.fighters].filter(f=>!(f.dead>0)).sort((a,b)=>drawPri(a)-drawPri(b)||a.y-b.y))drawFighter(g,f,game.frame/60,1,GROUND);this.celeb(g,game,true);for(const p of game.projectiles)this.projectile(g,p,p.owner);game.particles.draw(g,true);g.restore();if(this.useGL){this.glFinish({bloom:.3*GFX.bloom,ab:0,vc:[0,0,.02],va:.1,grain:GFX.grain?.03:0,t:game.frame})}else this.post.dust(g,this.cv,game.frame/60,'#55eaff',12,.18)}
+drawDemo(game){const g=this.gs,s=this.scale;if(this.useGL)this.uiClear();g.setTransform(s,0,0,s,0,0);g.clearRect(0,0,W,H);if(!this.bd.draw(g,W,H,'title',{dimAdd:0})){g.fillStyle='#020312';g.fillRect(0,0,W,H)}const cam=game.camera;g.save();cam.apply(g);game.particles.drawFw(g);this.celeb(g,game);for(const f of[...game.fighters].filter(f=>!(f.dead>0)).sort((a,b)=>drawPri(a)-drawPri(b)||a.y-b.y))drawFighter(g,f,game.frame/60,1,GROUND);for(const f of game.fighters)if(!(f.dead>0))this.demoStam(g,f,game.frame);this.celeb(g,game,true);for(const p of game.projectiles)this.projectile(g,p,p.owner);game.particles.draw(g,true);g.restore();if(this.useGL){this.glFinish({bloom:.3*GFX.bloom,ab:0,vc:[0,0,.02],va:.1,grain:GFX.grain?.03:0,t:game.frame})}else this.post.dust(g,this.cv,game.frame/60,'#55eaff',12,.18)}
  // Eigener Hintergrund im Kampf: weicher dunkler Verlauf ab der Fußlinie (Weltraum), damit die Figuren nicht im Bild schweben
  floorShade(g){const w=WORLD,gr=g.createLinearGradient(0,GROUND-60,0,GROUND+90);gr.addColorStop(0,'rgba(4,2,10,0)');gr.addColorStop(.45,'rgba(4,2,10,.34)');gr.addColorStop(1,'rgba(4,2,10,.62)');g.fillStyle=gr;g.fillRect(w.x0,GROUND-60,w.x1-w.x0,w.y1-GROUND+60)}
  // Spritesheet-Aura laden (window.__AURA__[id]={meta,atlas}); null solange das Bild noch lädt oder keine Aura-Sprites da sind

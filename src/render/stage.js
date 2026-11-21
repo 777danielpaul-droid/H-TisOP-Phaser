@@ -140,6 +140,10 @@ export class Stage{
    g.globalAlpha=1;g.strokeStyle=gr;g.lineWidth=2.2;g.lineCap='round';g.beginPath();g.moveTo(hx,hy);g.lineTo(hx-dx*tl,hy-dy*tl);g.stroke();
    g.fillStyle='#fff';g.globalAlpha=fd;g.beginPath();g.arc(hx,hy,2,0,7);g.fill();g.globalAlpha=fd*.3;g.beginPath();g.arc(hx,hy,6,0,7);g.fill()}
   g.restore()}
+ // Story-Parkour: der Himmel reicht über die Welt (y0) hinaus nach oben – oberste Himmelsfarbe + funkelnde Sterne (Kamera folgt der Figur bis ~30 m hoch)
+ skyAbove(g,t,topY){const w=this.world,T=this.theme;if(topY>=w.y0||!T.sky)return;const W0=w.x1-w.x0;g.fillStyle=T.sky[0];g.fillRect(w.x0,topY,W0,w.y0-topY+2);
+  const cell=90,r=(i,j)=>{const x=Math.sin(i*127.1+j*311.7)*43758.5453;return x-Math.floor(x)};g.fillStyle='#fff';
+  for(let j=Math.floor(topY/cell);j<Math.ceil(w.y0/cell);j++)for(let i=Math.floor(w.x0/cell);i<Math.ceil((w.x0+W0)/cell);i++){const a=r(i,j);if(a>.36)continue;const px=i*cell+r(j,i)*cell,py=j*cell+r(i+9,j)*cell,sz=a>.2?2.2:1.5;g.globalAlpha=(.3+.7*Math.abs(Math.sin(t*(.6+a*2)+a*30)))*.85;g.fillRect(px,py,sz,sz)}g.globalAlpha=1}
  draw(g,t,noSky,noCrowd){if(noSky){if(!this.cacheT)this.build(true)}else if(noCrowd){if(!this.cacheS)this.build(false,true)}else if(!this.cache)this.build();const w=this.world,T=this.theme,ST=T.style,D=this.dyn,hh=k=>{const q=Math.sin(k*12.9898)*43758.5453;return q-Math.floor(q)},W0=w.x1-w.x0;if(!noSky&&this.sky){g.drawImage(this.sky,w.x0,w.y0,W0,this.sky.height);const ox=((this.camX==null?this.W/2:this.camX)-this.W/2)*.88;g.save();g.translate(ox,0);   // Parallaxe: Mond & Sterne laufen (fast) mit der Kamera, auch im langen Story-Level
   g.drawImage(this.moonImg,this.moonPos[0]-this.moonHR,this.moonPos[1]-this.moonHR,this.moonHR*2,this.moonHR*2);this.skyFx(g,t);g.restore()}
   g.drawImage(noSky?this.cacheT:noCrowd?this.cacheS:this.cache,w.x0,w.y0,W0,w.y1-w.y0);

@@ -10,7 +10,7 @@ const{Dealer,DEALER,MOODS,ITEM_SHOP,LINES,wrapText,resetDealerMemory}=await impo
 const{RABE_ANIMS,SPRITE_CHARS}=await import('../src/render/sprites.js');
 const{GROUND}=await import('../src/core/config.js');
 // ---- Daten: Preis zentral, Figur vorhanden aber nicht im Roster ----
-assert.equal(CHAR_PRICE.rabe,10,'Testpreis 10 Coins');assert.equal(charPrice('rabe'),10);assert.equal(CHAR_SHOP.length,5);assert.equal(shopCount(),SHOP.length+5);   // KORVUS, A1LIEN, ST3-G0, LEON, ANUBIS
+assert.equal(CHAR_PRICE.rabe,10,'Testpreis 10 Coins');assert.equal(charPrice('rabe'),10);assert.equal(CHAR_SHOP.length,Object.keys(CHAR_PRICE).length);assert.equal(shopCount(),SHOP.length+CHAR_SHOP.length);   // KORVUS, A1LIEN, ST3-G0, LEON, ANUBIS
 assert(CHARACTERS.rabe&&CHARACTERS.rabe.sprites==='rabe'&&CHARACTERS.rabe.mods&&CHARACTERS.rabe.mods.fireball&&CHARACTERS.rabe.mods.super,'Rabe als Kämpfer mit Moveset');
 assert(!ROSTER.includes('rabe')&&!ownsChar('rabe'),'zu Beginn nicht spielbar');
 console.log('  ✓ Daten: Preis zentral (CHAR_PRICE), Rabe zu Beginn gesperrt');

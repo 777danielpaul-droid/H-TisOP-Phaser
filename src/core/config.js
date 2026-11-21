@@ -80,3 +80,25 @@ export const GFX_PRESETS=[
  {name:'Hoch',   fx:1,  maxW:3200,dpr:2,bloom:1,aberr:true,grain:true,glow:true,rays:1,dust:1,shadow:true,fireworks:1}];
 export const GFX={level:2,...GFX_PRESETS[2]};
 export const setGfx=l=>{l=Math.max(0,Math.min(2,l|0));Object.assign(GFX,{level:l},GFX_PRESETS[l]);return GFX};
+
+// ===== Ausdauer-System ("Stamina") =====
+// Alle Werte sind hier einstellbar. Zeiten in Frames (60 = 1 s), Ausdauer in Punkten (max = volle Leiste). Gilt für Spieler UND Gegner gleichermaßen
+// (derselbe Kämpfer-Code, auch online). Aus in Melee und Story. Dokumentation: docs/AUSDAUER.md
+//   on          Standardwert des Menü-Schalters (Optionen -> Ausdauer). Online bestimmt der Gastgeber für beide.
+//   max         volle Leiste (Figuren können das per char.stam skalieren, Standard 1).
+//   regen       Punkte pro Frame, wenn nichts verbraucht wird (0.36 = ~22/s -> leer bis voll in ~4,6 s).
+//   delay       Pause nach JEDEM Verbrauch, bevor die Regeneration beginnt.
+//   emptyDelay  Pause, nachdem die Leiste auf 0 gefallen ist: deutlich länger -> wer sich auspowert, wird bestraft (immer eine Reserve behalten).
+//   cost        Kosten je Aktion: L/M/H = leichte/mittlere/schwere Normals (auch in der Luft), special = je Move ("def" = alle anderen),
+//               dash/airdash = Dash/Air-Dash/Ausweichen, jump/airjump = Sprung/Doppelsprung. Hypers kosten keine Ausdauer (nur Hyper-Leiste).
+//   block       Blocken kostet Ausdauer pro geblocktem Treffer: base + Move-Schaden * perDmg. Beim aktiven Blocken (Block-Zustand oder gehaltene Rück-Taste) gibt es KEINE Regeneration.
+//   low         Unter diesem Wert ist die Leiste "knapp" (nur Anzeige).
+//   exhaust     Erschöpft (Leiste war auf 0): bis `until` aufgeladen. Schwere Normals, Specials, Dash und mittlere Normals gesperrt (leichte, Laufen, Springen, Blocken, Verschnaufen gehen immer),
+//               speed = Lauftempo, dmg = Schadensfaktor, chip = Faktor auf den Block-Schaden (HP), regen = Faktor auf die Regeneration.
+//   rest        Verschnaufen (Taste P / Shift / L2): regen = Punkte pro Frame, min = Mindestdauer bevor man abbrechen darf, max = längste Dauer,
+//               vuln = Schadensfaktor gegen den Verschnaufenden (er kann nicht blocken, wird bei jedem Treffer unterbrochen).
+export const STAMINA={on:true,max:75,regen:.36,delay:40,emptyDelay:94,
+ cost:{L:3.5,M:7,H:13,special:{fireball:14,rush:12,rising:18,back:10,airsp:12,def:16},dash:8,airdash:10,jump:2.5,airjump:2.5},
+ block:{base:2,perDmg:.05},low:25,
+ exhaust:{until:25,regen:.85,speed:.82,dmg:.85,chip:1.5},
+ rest:{regen:1.2,min:18,max:70,vuln:1.25}};

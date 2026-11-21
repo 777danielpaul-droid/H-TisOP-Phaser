@@ -1,4 +1,4 @@
-import{drawSpriteFighter}from'./sprites.js';
+import{drawSpriteFighter,groundShadow}from'./sprites.js';
 import{EFFECT}from'../core/config.js';
 // Vektor-Skelett-Figuren (Tiger/Wolf). Pose = Winkel-Vektor, Animationen = Keyframes. Kein Asset-Laden nötig.
 const PI=Math.PI;
@@ -166,7 +166,7 @@ export function drawFighter(g,f,clock,alpha=1,floorY=470){
  const C=PAL[f.char.pal],po=poseOf(f),[tl,hd,ba1,ba2,fa1,fa2,bt,bs,ft,fs,hx,mouth,hy]=po;
  g.save();g.globalAlpha=alpha;
  if(f.comboFlash>0){const fa=f.comboFlash/EFFECT.comboFlash;g.save();g.globalCompositeOperation='lighter';g.fillStyle='#ffffff';g.globalAlpha=.55*fa;g.fillRect(-70,-165,140,170);g.restore()}
- if(alpha===1){g.fillStyle='#0008';g.beginPath();g.ellipse(f.x,floorY,Math.max(18,52-(floorY-f.y)*.15),10,0,0,7);g.fill()}
+ if(alpha>=.4)groundShadow(g,f.x,floorY,Math.max(0,floorY-f.y),56);   // weicher Kontaktschatten (wie bei den Sprite-Figuren)
  g.translate(f.x,f.y);g.scale(f.facing,1);
  const drop=Math.max(Math.cos(bt)*46+Math.cos(bs)*44,Math.cos(ft)*46+Math.cos(fs)*44)+10;g.translate(hx,hy?hy:-drop);
  if(f.state==='tumble')g.rotate(-f.sf*.3);

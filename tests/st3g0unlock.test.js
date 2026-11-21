@@ -26,6 +26,7 @@ assert.equal(getClears(),0);
 for(let i=1;i<=2;i++){const{a}=mk();a.countClear();assert.equal(getClears(),i);assert(!ROSTER.includes('st3g0')&&a.newUnlock===null,'nach '+i+' Durchlauf noch gesperrt')}
 {const{a}=mk();a.countClear();assert.equal(getClears(),3);assert(ROSTER.includes('st3g0'),'3. Durchlauf schaltet frei');assert.equal(a.newUnlock,'st3g0');assert(JSON.parse(store['hitisop.unlocks']).includes('st3g0'),'gespeichert')}
 {const{a}=mk();a.countClear();assert.equal(a.newUnlock,'anubis','der 4. Durchlauf meldet Anubis (nicht erneut ST3-G0)')}
+{const{a}=mk();a.countClear();assert.equal(a.newUnlock,'bear','der 5. Durchlauf meldet URSUS')}
 {const{a}=mk();a.countClear();assert.equal(a.newUnlock,null,'danach keine erneute Meldung')}
 console.log('  ✓ 3 Durchläufe schalten ST3-G0 frei (gespeichert, einmalige Meldung)');
 console.log('ST3-G0-Freischalt-Test OK');

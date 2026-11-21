@@ -464,3 +464,17 @@
 - **Kapitelabschluss:** `Arcade.update()` speichert bei jedem geschafften Story-Kapitel das Flag `storydone<N>` (`unlocks.js`, localStorage `hitisop.unlocks`). Zum Testen ohne Durchspielen: Seite mit `?unlock=storydone3` öffnen. Auf dem Siegesbildschirm nach Kapitel 3 erscheint „NEU IM SHOP: A1LIEN“ (`storyhud.js`).
 - **Spielbar nach Kauf:** `UNLOCKABLE` enthält `cyberdemon` (`characters.js`) → Eintrag in `ROSTER`, in Arcade/Story/2 Spieler/Melee wählbar (nicht als Arcade-Gegner). Hinweis: Es ist weiter die Boss-Figur mit Behelfs-Animationen (Laufen, Tritte, Ducken, Treffer, Knockdown, Sieg) – siehe Abschnitt „Story Kapitel 2 – Cyberdämon“.
 - **Tests:** neu `tests/a1lien.test.js` (in `npm test`); `tests/blackmarket.test.js` erwartet jetzt 2 Shop-Kämpfer. Im echten Chrome geprüft: Shop gesperrt/freigeschaltet, Kauf, Charakterwahl (7 Plätze), Melee-Menü.
+
+## Update: Story-Kanten statt Hindernisse (Terrain)
+- Die Kisten/Hindernisse zum Überspringen (`hurdles`) sind raus. Stattdessen haben die Story-Kapitel `ledges:[{x0,x1,h}]` (Plateaus, h Pixel über dem Boden; Überlappung = Treppe). Daten: `CHAPTERS[i].ledges` in `src/core/story.js`.
+- `src/core/terrain.js` (`Terrain`: `floorAt(x)`, `block(px,x,y)`): von unten ist die Kante eine Wand, man springt hinauf, läuft oben weiter und fällt am Ende hinunter. Gilt für ALLE Figuren: `game.terrain` (= `story.terrain`) wird jeden Frame an `fighter.terrain` gehängt; `Fighter.floor` ersetzt `GROUND` in Physik, Landen, Sprung-/Treffer-Effekten (combat.js, projectile.js), Items (story.js) und Schatten/Bodenglühen (renderer.js).
+- KI: läuft sie gegen eine Kante (`fighter.wallHit`), springt sie hinauf und in der Luft nach vorn (`AIController.climb`, ai.js).
+- Zeichnung: `drawLedges` in `src/render/storyhud.js` (Props im Bereich einer Kante entfallen).
+- Tests: `tests/terrain.test.js` (Geometrie, Physik, KI klettert, alle Kapitel), `story3/story4.test.js` (Kanten + komplettes Kapitel mit Bot).
+
+## Update: Parkour mit Schatz (pro Kapitel)
+- Jedes Story-Kapitel hat `parkour:{deco,platforms,relic}` (story.js): 4 Plattformen (Zone x −140…570, endet vor dem Auslöser der 3. Welle), die letzte Lücke (ca. 340–360 px) ist nur mit Doppelsprung zu schaffen; oben liegt der Schatz (`Story.relic`, `relicCheck()`): Leben voll, +100 Hyper-Meter, +2 Booster, einmal pro Kapitelstart. Figuren ohne Luftsprung (airJumps 0: A1LIEN, Mantis …) kommen nicht ganz hinauf.
+- Plattformen = `Terrain.platforms` (core/terrain.js): von unten durchlässig, nur von oben landbar (`land`), Stehen über `floorFor`; `Fighter.physics` merkt sich dafür die Vor-Höhe `py`.
+- Kulissen (render/storyhud.js `PK_DECO`): Kap. 1 Neon City = Hochhaus mit Feuerleiter (NEON-CHIP), Kap. 2 Docks = Kran mit Containern (FRACHT-SCHATZ), Kap. 3 Kern = Reaktorzylinder (KERNSPLITTER), Kap. 4 Totenreich = Pyramide/Obelisk (SKARABÄUS), Kap. 5 Tempel = Pagode mit Glocke (DRACHENPERLE).
+- Kanten (`ledges`) liegen jetzt ab x≈640, damit sie die Parkour-Zone nicht berühren.
+- Tests: `tests/parkour.test.js` (Plattform-Physik, Machbarkeit mit der echten Physik: Stufen einzeln springbar, letzte Lücke nur doppelt; Daten; Schatz; Zeichnen).

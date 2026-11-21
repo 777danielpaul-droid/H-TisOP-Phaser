@@ -15,7 +15,7 @@ export const ALPHA_MODS={...MANTIS_MODS,'5H':{dmg:110,box:[5,-132,140,50]},'5M':
 // pros/cons = Stärken/Schwächen (Charakterwahl), ai = Werkzeuge der KI [{min,max,b,dx,dy,p}] (Abstand min..max, Taste, Richtung rel. zum Gegner, Chance). `mods` überschreibt Felder einzelner Moves (siehe moves.js).
 // desc = Kurzbeschreibung für die Charakterwahl. size = Körpergröße (Hurt-/Hitboxen, Kamera).
 export const CHARACTERS={
- tiger:{id:'tiger',name:'H!T',desc:'Wilder Brawler · schnell',hp:950,walk:1.22,dmg:1,def:1.05,jump:1,dash:1.3,airJumps:1,meter:1,pal:'tiger',glow:'#3fe0ff',sprites:'tiger',defeat:true,mods:MODS.tiger,
+ tiger:{id:'tiger',name:'H!T',desc:'Wilder Brawler · schnell',hp:950,stam:1.15,walk:1.22,dmg:1,def:1.05,jump:1,dash:1.3,airJumps:1,meter:1,pal:'tiger',glow:'#3fe0ff',sprites:'tiger',defeat:true,mods:MODS.tiger,
   pros:'Blitzschnelle Normals, Tempo & Dash, Teleport-Cross-up, Mehrfachtreffer',cons:'Wenig HP, kurze Reichweite, kaum Fernkampf',
   ai:[{min:100,max:330,b:'S',dx:-1,p:.14},{min:90,max:260,b:'M',dx:1,p:.16},{min:90,max:260,b:'H',dx:1,p:.1},{min:140,max:320,b:'S',dx:0,dy:1,p:.1}]},
  st3g0:{id:'st3g0',name:'ST3-G0',desc:'Panzer-Echse · zäh mit Schwanz-Konter',hp:1020,walk:.95,dmg:1.02,def:.95,jump:.95,dash:1.05,airJumps:1,meter:1,pal:'tiger',glow:'#7dff4a',sprites:'st3g0',defeat:true,mods:MODS.st3g0,

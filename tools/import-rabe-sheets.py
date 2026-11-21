@@ -2,6 +2,7 @@
 # Importiert den RABEN (Schwarzmarkthändler KORVUS, NPC + spielbare Figur) -> assets/rabe/atlas.webp + meta.json + meta.js
 # Quellen (assets/rabe/sheets/):  idle.png (4 Posen, 2x2) · kampf.png (12 Kampfposen, 4x3) · sprechen.png (8 Sprechposen, 4x2)
 #   fall.png (Fallen 7 + Aufstehen 8 Posen, Beschriftungsbalken werden entfernt) · sprung.png (Sprung mit magischen Flügeln, 6+5+6 = 17 Posen)
+#   1Gemini_*.jpeg (3 Bögen mit je 6 Posen: Idle ai_*, Schlag ap_*, Tritt ak_*)
 # Nutzt Atlas-Packer und Konstanten des Tiger-Importers (tools/import-tiger-sheets.py). Aufruf: python3 tools/import-rabe-sheets.py
 # Frame-Namen:  f_<0-6> Fallen | u_<0-7> Aufstehen | j_<0-16> Sprung mit Flügeln | i_<0-3> Idle | t_<0-7> Sprechen/Gesten (NPC-Dialog) | c_<0-11> Kampfposen. Zusatz 'a' = dieselbe Pose an der Körpermitte statt an der Fußlinie verankert (Luft).
 # Welche Frames in welcher Animation laufen: src/render/sprites.js (RABE_ANIMS).
@@ -34,7 +35,11 @@ SHEETS = [dict(file='idle.png', pre='i', cols=2, rows=2, bg='alpha'),
           dict(file='neu_angriff.png', pre='na', cols=2, rows=2, bg='chroma'),
           dict(file='neu_flug.png', pre='nf', cols=2, rows=2, bg='chroma'),
           dict(file='neu_kick.png', pre='nk', cols=2, rows=2, bg='chroma'),
-          dict(file='neu_schlag.png', pre='nc', cols=2, rows=2, bg='chroma')]
+          dict(file='neu_schlag.png', pre='nc', cols=2, rows=2, bg='chroma'),
+          # 1am-Bögen (Gemini 1264x848, grüner Chroma-Key, je 6 Posen in 3x2, Zelle 0 = aufrecht stehend): Idle / Schlag / Tritt
+          dict(file='1Gemini_Generated_Image_b30qd5b30qd5b30q.jpeg', pre='ai', cols=3, rows=2, bg='chroma'),   # ai_0-5: Idle (Gewichtsverlagerung)
+          dict(file='1Gemini_Generated_Image_vaijo6vaijo6vaij.jpeg', pre='ap', cols=3, rows=2, bg='chroma'),   # ap_0-5: Stand, Deckung, Schlag, Schlag lang, Deckung, Stand
+          dict(file='1Gemini_Generated_Image_7ef8it7ef8it7ef8.jpeg', pre='ak', cols=3, rows=2, bg='chroma')]   # ak_0-5: Stand, Knie, Tritt, High-Kick, Knie, Stand
 # Maßstab: Referenz-Pose je Bogen -> Standhöhe STAND_H (idle/sprechen: erste Zelle = aufrecht stehend).
 # Der Kampfbogen hat keine aufrechte Pose (Zelle 0 = tiefe Kampfhaltung, Kopf ca. 1,76x kleiner gezeichnet als im Idle-Bogen) -> fester Faktor relativ zum Idle-Maßstab.
 REF = {'i': (0, None), 't': (0, None), 'c': (0, 1.76)}
@@ -163,6 +168,11 @@ def main():
         sc_new = STAND_H / (m_ns['foot'] - m_ns['top'])
         for pre in ('ns', 'na', 'nf', 'nk', 'nc'): scale[pre] = sc_new
         log(f"Maßstab neu: Höhe {m_ns['foot'] - m_ns['top']} px -> {STAND_H} (x{sc_new:.3f})")
+    # 1am-Bögen: jeder Bogen wird über seine aufrechte Zelle 0 auf die Standhöhe normiert
+    for pre in ('ai', 'ap', 'ak'):
+        m = mets.get((pre, 0))
+        if m:
+            scale[pre] = STAND_H / (m['foot'] - m['top']); log(f"Maßstab {pre}: Höhe {m['foot'] - m['top']} px -> {STAND_H} (x{scale[pre]:.3f})")
     frames = {}
     for (pre, i), c in sorted(cells.items()):
         m = mets[(pre, i)]

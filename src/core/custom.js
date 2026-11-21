@@ -40,7 +40,7 @@ export const CUS_ANIMS={
  hit:{parts:[['hit',[1,2,3,4]]]},airhit:{parts:[['down',[1,2,3]]]},kd:{parts:[['down',[4,5,6,7]]]},wakeup:{parts:[['getup',[1,2,3,4,5]]]},
  block:{parts:[['block',[2]]]},win:{parts:[['win',[1,2,3,4,5]]],loop:1,fps:5}};
 // Namen für die Vorschau-Auswahl
-export const CUS_ANIM_LABELS={idle:'Idle',walk:'Gehen',air:'Sprung',crouch:'Ducken',dash:'Dash',airdash:'Luft-Dash',punch:'Schlag',heavy:'Schwerer Schlag',kick:'Tritt',cpunch:'Duck-Schlag',ckick:'Fußfeger',jpunch:'Luft-Schlag',jkick:'Luft-Tritt',jheavy:'Luft-Überkopf',upper:'Aufwärts-Special',special:'Energie-Special',hit:'Treffer',airhit:'Luft-Treffer',kd:'Knockdown',wakeup:'Aufstehen',block:'Block',cblock:'Duck-Block',win:'Sieg'};
+export const CUS_ANIM_LABELS={idle:'Idle',walk:'Gehen',air:'Sprung',crouch:'Ducken',dash:'Dash',airdash:'Luft-Dash',punch:'Schlag',heavy:'Schwerer Schlag',kick:'Tritt',cpunch:'Duck-Schlag',ckick:'Fußfeger',jpunch:'Luft-Schlag',jkick:'Luft-Tritt',jheavy:'Luft-Überkopf',upper:'Aufwärts-Special',special:'Energie-Special',hyper:'Hyper-Special',hit:'Treffer',airhit:'Luft-Treffer',kd:'Knockdown',wakeup:'Aufstehen',block:'Block',cblock:'Duck-Block',win:'Sieg'};
 export function cusNeededCells(){const need={};for(const a of Object.values(CUS_ANIMS))for(const[sh,idx]of a.parts){(need[sh]||(need[sh]=new Set()));idx.forEach(i=>need[sh].add(i))}return need}
 
 // ---------- Hintergrund entfernen (RGBA in-place) ----------
@@ -116,11 +116,68 @@ export function cusCompleteAnims(A){if(!A.idle)return null;const O={...A},i0=[A.
  put('walk',{frames:A.idle.frames,loop:1,fps:22,bob:4,lean:.07});
  put('crouch',{frames:i0,squash:.74});put('cblock',{frames:A.block?A.block.frames:i0,squash:.76});
  put('air',{frames:i0,lean:.05});put('dash',{frames:i0,lean:.1});put('airdash',{frames:i0,lean:.2});
- put('punch',P);put('heavy',A.punch||P);put('kick',A.heavy||P);put('upper',A.heavy||P);put('special',A.upper||A.heavy||P);
+ put('punch',P);put('heavy',A.punch||P);put('kick',A.heavy||P);put('upper',A.heavy||P);put('special',A.upper||A.heavy||P);put('hyper',O.special||P);
  put('cpunch',{...P,squash:.8});put('ckick',{...(A.kick||P),squash:.8});put('jpunch',P);put('jkick',A.kick||P);put('jheavy',A.heavy||P);
  put('hit',{frames:i0,lean:-.16,shiftX:-12});put('airhit',{frames:A.hit?A.hit.frames.slice(-1):i0,lean:-.5});
  put('block',{frames:i0,lean:.05});put('kd',{frames:i0,lying:1});put('wakeup',{frames:i0,lying:1,rise:1});put('win',{frames:A.idle.frames,loop:1,fps:6,bob:3});
  return O}
+
+// ---------- Moves: eigene Assets je Animation (Move-Editor) ----------
+// Jede Animation (Schlag, Tritt, Block, Knockdown …) kann unabhängig vom Sheet-Slot eigene Frames bekommen: moves[key]={frames:[Frame],props:{fps,loop,…}}.
+// Frame={id,img,w,h,ox,oy,air,adj:{s,dx,dy}}: id = eindeutig, Atlas-Name ist 'mv_'+id; img = Bild-Schlüssel (das PNG liegt separat, mehrere Frames dürfen dasselbe Bild nutzen);
+// w/h = Größe im Spiel bei adj.s=1; ox/oy = Versatz (Fußlinie + Körpermitte wie bei den Sheets); air = in der Luft (Körpermitte verankert); adj = Feinabstimmung (Größe, X, Y in Spiel-Pixeln).
+// Priorität im Spiel: Move-Frames > Frames aus den Sheets > Behelf (cusCompleteAnims). Ein Move ohne Frames zählt als „nicht belegt“ (zurück auf Sheet/Behelf).
+export const CUS_MOVE_GROUPS=[['Bewegung',['idle','walk','air','crouch','dash','airdash']],['Angriffe',['punch','heavy','kick','cpunch','ckick','jpunch','jkick','jheavy','upper','special','hyper']],['Reaktionen',['hit','airhit','block','cblock','kd','wakeup','win']]];
+export const CUS_MOVE_KEYS=CUS_MOVE_GROUPS.flatMap(g=>g[1]);
+export const CUS_MAX_MOVE_FRAMES=48;
+export const CUS_ADJ_LIMITS={s:[.3,2.5],dx:[-200,200],dy:[-200,200]};
+export const CUS_ADJ_DEFAULT={s:1,dx:0,dy:0};
+const cusNum=(v,[a,b],d)=>{v=+v;return Number.isFinite(v)?Math.min(b,Math.max(a,v)):d};
+export const cusNewId=()=>Math.random().toString(36).slice(2,10).padEnd(8,'0');
+export function cusCleanProps(p){p=p||{};const o={};
+ if(p.fps!=null)o.fps=Math.round(cusNum(p.fps,[1,60],12));if(p.loop!=null)o.loop=p.loop?1:0;
+ for(const[k,r]of[['lean',[-1,1]],['squash',[.3,1.2]],['bob',[0,20]],['shiftX',[-60,60]]])if(p[k]!=null&&Number.isFinite(+p[k]))o[k]=cusNum(p[k],r,0);
+ for(const k of['lying','rise'])if(p[k])o[k]=1;return o}
+// Gespeicherte/importierte Move-Daten bereinigen (unbekannte Moves, kaputte IDs, Werte außerhalb der Grenzen)
+export function cusCleanMoves(m){const out={};if(!m||typeof m!=='object')return out;const okId=x=>typeof x==='string'&&/^[a-z0-9]{3,16}$/i.test(x);
+ for(const k of CUS_MOVE_KEYS){const e=m[k];if(!e||!Array.isArray(e.frames))continue;const seen=new Set(),fr=[];
+  for(const f of e.frames){if(fr.length>=CUS_MAX_MOVE_FRAMES)break;if(!f||!okId(f.id)||!okId(f.img)||seen.has(f.id))continue;seen.add(f.id);
+   const a=f.adj||{};fr.push({id:f.id,img:f.img,w:Math.round(cusNum(f.w,[1,4000],1)),h:Math.round(cusNum(f.h,[1,4000],1)),ox:Math.round(cusNum(f.ox,[-4000,4000],0)),oy:Math.round(cusNum(f.oy,[-4000,4000],0)),air:!!f.air,
+    adj:{s:cusNum(a.s,CUS_ADJ_LIMITS.s,1),dx:Math.round(cusNum(a.dx,CUS_ADJ_LIMITS.dx,0)),dy:Math.round(cusNum(a.dy,CUS_ADJ_LIMITS.dy,0))}})}
+  if(fr.length)out[k]={frames:fr,props:cusCleanProps(e.props)}}
+ return out}
+export const cusMoveName=id=>'mv_'+id;
+// Frame im Spiel: Größe + Versatz inkl. Feinabstimmung (Größe skaliert um den Ankerpunkt)
+export function cusFrameGeom(f){const a=f.adj||CUS_ADJ_DEFAULT,s=a.s||1,dx=a.dx||0,dy=a.dy||0,dw=Math.max(1,Math.round(f.w*s)),dh=Math.max(1,Math.round(f.h*s));
+ return f.air?{dw,dh,ox:Math.floor(-dw/2)+dx,oy:-(CUS_AIR_CENTER+(dh>>1))+dy}:{dw,dh,ox:Math.round(f.ox*s)+dx,oy:Math.round(f.oy*s)+dy}}
+// Eigene Animationen (nur die Moves mit Frames) – werden über die Sheet-Animationen gelegt
+export function cusMoveAnims(moves){const out={};for(const k of CUS_MOVE_KEYS){const m=moves&&moves[k];if(!m||!m.frames||!m.frames.length)continue;out[k]={...cusCleanProps(m.props),frames:m.frames.map(f=>cusMoveName(f.id))}}return out}
+export function cusMoveImgs(moves){const s=new Set();for(const k in moves||{})for(const f of moves[k].frames||[])s.add(f.img);return s}
+// Einzelbild (Hintergrund schon entfernt): Zuschnitt + Anker. targetH = gewünschte Höhe des Zuschnitts im Spiel (z. B. des ersetzten Frames), scale = fester Maßstab
+export function cusPlanImage(d,w,h,opts){opts=opts||{};const m=cusMeasureCell(d,w,0,0,w,h);if(!m)return{error:'Das Bild enthält kein Motiv (alles transparent oder Hintergrundfarbe)',notes:[]};
+ const[x0,y0,x1,y1]=m.crop,cw=x1-x0,ch=y1-y0,notes=[];let s=opts.scale;if(!(s>0))s=(opts.targetH>0?opts.targetH:CUS_STAND_H)/ch;
+ if(m.edge)notes.push('Das Motiv berührt den Bildrand (evtl. abgeschnitten)');
+ return{sx:x0,sy:y0,sw:cw,sh:ch,dw:Math.max(1,Math.round(cw*s)),dh:Math.max(1,Math.round(ch*s)),ox:Math.round((x0-m.anchor)*s),oy:Math.round((y0-m.foot)*s),scale:s,notes}}
+// Sheet für einen beliebigen Move (Raster frei wählbar). opts.calib (Standard an): Zelle 1 = neutrale Haltung bestimmt den Maßstab und wird nicht mitgenommen;
+// aus = alle Zellen, Maßstab fest (opts.scale) oder so, dass die höchste Pose Standhöhe bekommt
+export function cusPlanMoveSheet(d,w,h,cols,rows,opts){opts=opts||{};cols=Math.max(1,Math.min(8,cols|0||1));rows=Math.max(1,Math.min(8,rows|0||1));const notes=[];
+ const{cells,ok}=cusSliceCells(d,w,h,cols,rows),ms=cells.map(c=>cusMeasureCell(d,w,c[0],c[1],c[2],c[3]));
+ if(!ok&&cols*rows>1)notes.push('Raster gleichmäßig geteilt – Frames liegen evtl. nicht sauber in den Zellen (mehr Abstand zwischen den Zellen lassen)');
+ const calib=opts.calib!==false&&cols*rows>1;let s=opts.scale;
+ if(calib){if(!ms[0])return{error:'Zelle 1 ist leer – dort muss die neutrale Kampfhaltung stehen (oder „Zelle 1 = Kalibrierung“ ausschalten)',notes,frames:[]};
+  const href=ms[0].foot-ms[0].top;s=opts.scale>0?opts.scale:CUS_STAND_H/href;if(href<200)notes.push(`Niedrige Auflösung (Standhöhe nur ${href} px, besser ab 300 px) – wirkt weich`)}
+ else if(!(s>0)){const hs=ms.filter(Boolean).map(m=>m.foot-m.top);if(!hs.length)return{error:'Das Bild enthält kein Motiv',notes,frames:[]};s=CUS_STAND_H/Math.max(...hs)}
+ const frames=[];
+ for(let i=calib?1:0;i<ms.length;i++){const m=ms[i];if(!m){notes.push(`Zelle ${i+1} ist leer – übersprungen`);continue}
+  if(m.edge)notes.push(`Zelle ${i+1}: Figur berührt den Zellrand (evtl. abgeschnitten)`);
+  const[x0,y0,x1,y1]=m.crop;frames.push({cell:i,sx:x0,sy:y0,sw:x1-x0,sh:y1-y0,dw:Math.max(1,Math.round((x1-x0)*s)),dh:Math.max(1,Math.round((y1-y0)*s)),ox:Math.round((x0-m.anchor)*s),oy:Math.round((y0-m.foot)*s)})}
+ if(!frames.length)return{error:'Keine Frames erkannt – ist das Raster (Spalten × Zeilen) richtig eingestellt?',notes,frames};
+ return{frames,scale:s,ok,calib,notes}}
+// Frame-Listen bearbeiten (rein, geben neue Arrays zurück): verschieben, löschen, einfügen, ersetzen
+export const cusMvMove=(a,i,j)=>{if(i<0||i>=a.length||j<0||j>=a.length||i===j)return a;const b=a.slice(),[x]=b.splice(i,1);b.splice(j,0,x);return b};
+export const cusMvRemove=(a,i)=>i<0||i>=a.length?a:a.filter((_,k)=>k!==i);
+export const cusMvInsert=(a,i,...items)=>{const b=a.slice();b.splice(Math.max(0,Math.min(a.length,i)),0,...items);return b};
+export const cusMvReplace=(a,i,x)=>i<0||i>=a.length?a:a.map((y,k)=>k===i?x:y);
 
 // ---------- Figur ----------
 export const CUS_TEMPLATES=[['tiger','H!T','schnell: Teleport, Mehrfachtreffer, Dash'],['st3g0','ST3-G0','zäh: Rüstungs-Sprint, Schwanzfeger, Feuer-Atem'],['kitsune','KITSUNE','ausgewogen: Geisterfeuer, Spiral-Tritt, Schwanzpeitsche']];

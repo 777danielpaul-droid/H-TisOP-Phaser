@@ -11,6 +11,7 @@ import{openPack,buyPack,LOOT,SHOP,CHAR_SHOP,CHAR_REQ,charReqMet,CARDS,shopCount,
 import{NetClient,netServerUrl,connectPatient}from'./core/netclient.js';
 import{NetMatch}from'./core/netmatch.js';
 import{NetInput,NET,encInput}from'./core/netplay.js';
+import{STAMINA}from'./core/config.js';
 import{NetUi,netMessage}from'./render/netui.js';
 import{skinCount,skinName}from'./render/skins.js';
 import{THEMES}from'./render/stage.js';
@@ -53,6 +54,7 @@ musicStore.init().then(()=>{for(const k of['menu','fight'])applyPl(k);musicUi.re
 // ---- Entwicklerkonsole (Strg+Alt+D): Eingabezeile + Ausgabebereich, Befehle per devUi.add(). Nicht im Intro, Online-Kampf, Pausenmenü oder bei offenem Panel. Offen = Kampf pausiert. ----
 const devUi=new DevConsole({blocked:()=>intro.active||shopClip.active||menuOpen||!!netMatch||studioIsOpen()||bgUi.isOpen||musicUi.isOpen||netUi.isOpen,onOpen:()=>clearInputs(),onClose:()=>{clearInputs();canvas.focus()}});registerDevCommands(devUi,{game,arcade});devUi.mount();
 // ---- Sound: Lautstärke/Stumm gemerkt; Audio startet erst nach der ersten Tasten-/Klick-Geste (Browser-Regel) ----
+game.stamPref=load('tf_stam',STAMINA.on?'1':'0')==='1';   // Ausdauer-System: Menü-Schalter (Optionen), gemerkt in localStorage tf_stam
 const sound=new Sound();game.audio=sound;sound.setVolume(+load('tf_volume',.7));sound.setMuted(load('tf_mute','0')==='1');
 for(const ev of['keydown','pointerdown'])addEventListener(ev,()=>sound.unlock());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)sound.suspend();else sound.resume()});   // Tab im Hintergrund: Ton aus
@@ -71,13 +73,16 @@ const fillMoves=()=>{if(!ml)return;const c=p1.char;ml.innerHTML=`<tr><td colspan
 function showTab(i){tab=(i+names.length)%names.length;names.forEach((n,k)=>{const s=$('tab-'+n);if(s)s.classList.toggle('hidden',k!==tab);if(tabs[k])tabs[k].classList.toggle('on',k===tab)})}
 tabs.forEach((b,i)=>b.onclick=()=>showTab(i));showTab(0);
 let padFocus=null;   // vom Controller markiertes Element im Pausenmenü
-function setMenu(open){if(padFocus){padFocus.classList.remove('padfocus');padFocus=null}if(open)fillMoves();menuOpen=open;menu.classList.toggle('hidden',!open);clearInputs();if(!open)canvas.focus()}
+function setMenu(open){if(padFocus){padFocus.classList.remove('padfocus');padFocus=null}if(open){fillMoves();stamShow()}menuOpen=open;menu.classList.toggle('hidden',!open);clearInputs();if(!open)canvas.focus()}
 const fs=()=>{if(document.fullscreenElement)document.exitFullscreen();else if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen()};
 canvas.addEventListener('dblclick',fs);
 const on=(id,fn)=>{const e=$(id);if(e)e.onclick=()=>fn(e)};
 on('btn-resume',()=>setMenu(false));
 on('btn-debug',e=>{game.debug=!game.debug;e.textContent=game.debug?'An':'Aus';e.classList.toggle('on',game.debug)});
 on('btn-meter',()=>{p1.meter=300});
+// Ausdauer-Schalter (Optionen). Online (netMatch) bestimmt der Gastgeber für beide -> Schalter gesperrt und zeigt nur den aktuellen Wert.
+function stamShow(){const b=$('btn-stam');if(!b)return;const net=!!netMatch,v=net?game.stamOn:game.stamPref;b.textContent=(v?'An':'Aus')+(net?' (Gastgeber)':'');b.classList.toggle('on',!!v);b.disabled=net}
+on('btn-stam',()=>{if(netMatch)return;game.stamPref=!game.stamPref;save('tf_stam',game.stamPref?'1':'0');stamShow()});
 on('btn-restart',()=>{if(arcade.pvp&&arcade.state!=='select')arcade.rematchVs();else game.rematch();setMenu(false)});
 on('btn-select',()=>{arcade.toSelect();setMenu(false)});
 on('btn-studio',()=>{arcade.toSelect();setMenu(false);arcade.cursor=CI();openStudio()});
@@ -121,6 +126,7 @@ class DemoFight{
   const p1=new Fighter({char:CHARACTERS[a],x:340,facing:1,input:ai1});
   const p2=new Fighter({char:CHARACTERS[b],x:620,facing:-1,input:ai2});
   const dg=new Game(p1,p2);dg.stageIndex=0;dg.audio=sound;   // Kampf-Sounds auch in der Startseiten-Demo hörbar
+  dg.stamPref=game.stamPref;   // Ausdauer-Regeln gelten auch im Demokampf (folgt dem Menü-Schalter Optionen -> Ausdauer; die KI spielt damit vor)
   return dg;
  }
  step(){
@@ -278,7 +284,7 @@ async function netAct(a,v){switch(a){
  case'ready':if(netMatch)netMatch.setReady(!netMatch.me.ready);break;
  case'start':if(netMatch&&netMatch.canStart()){let st=v|0;if(st<0){const own=ownedStages(arcade.stageCount);st=own[Math.floor(Math.random()*own.length)]}else if(!arcade.stageOpen(st))st=0;netMatch.hostStart(st)}break}}
 function netPaired(c){if(netMatch)return;
- netMatch=new NetMatch({client:c,game,inputs:netInputs,valid:NET_OK,sample:()=>{const s=kb.sample();return encInput(s.dx,s.dy,s.pressed)},
+ netMatch=new NetMatch({client:c,game,inputs:netInputs,valid:NET_OK,stam:()=>game.stamPref,sample:()=>{const s=kb.sample();return encInput(s.dx,s.dy,s.pressed)},
   altSkin:(id,s)=>{const n=skinCount(CHARACTERS[id]&&CHARACTERS[id].sprites);return n>1?(s+1)%n:0},
   hooks:{onChange:()=>{netUi.render();netBarUpdate()},onLaunch:netLaunch,onStart:()=>{clearInputs();netBarUpdate()},onEnd:netEnded}});
  const first=ROSTER[Math.min(arcade.cursor,ROSTER.length-1)]||ROSTER[0];netMatch.pick(first,arcade.skinOf(first));netUi.say('');netUi.render()}

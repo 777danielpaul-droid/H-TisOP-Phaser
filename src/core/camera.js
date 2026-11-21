@@ -16,7 +16,8 @@ export class Camera{
   return{x:cl((minX+maxX)/2,wd.x0+hw,wd.x1-hw),y:cl((minTop-C.headroom+maxBot+30)/2,wd.y0+hh,wd.y1-hh),zoom}}
  compute(fighters){if(this.melee)return this.computeMelee(fighters);
   if(this.story){const s=this.story,p=fighters[0],zoom=.88,hw=W/2/zoom,hh=H/2/zoom,lo=Math.max(s.l,WORLD.x0)+hw,hi=Math.min(s.r,WORLD.x1)-hw;   // Story: Seitenscroller, folgt dem Spieler innerhalb der Level-/Kampfgrenzen
-   return{x:lo>hi?(lo+hi)/2:clamp(p.x+p.facing*70,lo,hi),y:H-hh,zoom}}const C=CAMERA;let minX=1e9,maxX=-1e9,minTop=1e9;
+   // Parkour: klettert die Figur hoch, folgt die Kamera nach oben (Füße bei ~62 % der Bildhöhe, so sieht man die nächsten Plattformen); am Boden bleibt der Boden unten im Bild
+   return{x:lo>hi?(lo+hi)/2:clamp(p.x+p.facing*70,lo,hi),y:Math.min(H-hh,p.y-.24*hh),zoom}}const C=CAMERA;let minX=1e9,maxX=-1e9,minTop=1e9;
   for(const f of fighters){minX=Math.min(minX,f.x-70);maxX=Math.max(maxX,f.x+70);
    const lying=f.state==='knockdown'||(f.state==='ko'&&f.grounded);minTop=Math.min(minTop,f.y-(lying?40:165*((f.char&&f.char.size)||1)))}
   const needW=(maxX-minX)+C.marginX*2;           // benötigte Weltbreite

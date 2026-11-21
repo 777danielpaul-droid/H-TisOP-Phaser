@@ -113,6 +113,10 @@ export const KITSUNE_FRAME_SC={
  p_15_2:1.18,p_15_3:1.1};
 export const POSE_KITSUNE={
  win:{sc:1},defeat:{sc:.9}};                              // Meditation + Neunschwänze / Kniende Pose waren zu groß
+// TIGER (H!T): Sieger-/Verliererpose. sc = Größenfaktor (1 = unverändert), optional dy = tiefer, rot = kippen, shadow = [x,Radius,y] (siehe POSE_ST3G0)
+export const POSE_TIGER={
+  win:{sc:.9},        // Siegerpose 10 % kleiner
+  defeat:{sc:.75}};   // Verliererpose ca. 25 % kleiner
 // MANTIS (Story-Gegner): Frames p_<Bogen>_<Zelle> aus assets/mantis (tools/import-mantis-sheets.py). 'a' = an der Körpermitte verankert (Luft).
 //  1: Ausfall, Knie hoch, Flugtritt, Landung | 2: Neutral, Absprung, Sprung, Landung | 3: Deckung, Cross, Wirbel (Arme weit), Neutral | 4: Treffer, liegend, geduckt, Neutral
 export const MANTIS_ANIMS={
@@ -135,7 +139,7 @@ export const MANTIS_ANIMS={
 //  a_4/a_5: Aushol-Haltungen der Gegenhand (Geister-Frames, Alpha repariert) | a_6/a_7: Gegenhand-Schlag mit Spur / voll gestreckt
 // NOCH BEHELFE (Bögen fehlen noch): Laufen (Idle-Frames + Wippen), Tritte (Klauenhiebe), Ducken (a_0), Treffer/Knockdown/Aufstehen (gedrehte Pose), Block (a_4), Sprung (Idle in der Luft), Sieg (Idle-Atem).
 export const CYBERDEMON_ANIMS={
- idle:{frames:['i_0','i_1','i_2','i_3','i_4','i_5','i_4','i_3','i_2','i_1'],loop:1,fps:7},
+ idle:{frames:['s_0','s_1','s_2','s_3','s_2','s_1'],loop:1,fps:6},   // neue Sprite-Sammlung (geduckt, Klauen vorn)
  walk:{frames:['i_0','i_2','i_3','i_5'],loop:1,fps:6,bob:4,lean:.03},
  crouch:{frames:['a_0']},cblock:{frames:['a_4'],squash:.94},
  air:{frames:['i_2a'],lean:.05},
@@ -146,14 +150,15 @@ export const CYBERDEMON_ANIMS={
  upper:{frames:['a_0','a_1','a_2','a_2','a_3']},
  special:{frames:['a_1','a_2','a_3','a_3','a_1']},   // Klauenwelle: Ausholen -> Schlag (Welle fliegt los) -> zurück
  hyper:{frames:['a_4','a_5','a_6','a_7','a_6','a_7','a_6','a_7','a_6','a_7','a_6','a_7','a_5','i_0']},   // Blutrausch: Gegenhand-/Haupthand-Hiebe im Wechsel
- hit:{frames:['a_0'],lean:-.16,shiftX:-12},airhit:{frames:['a_0a','a_1a']},
+ hit:{frames:['f_0']},airhit:{frames:['f_1a','f_2a']},   // neue Fall-Posen (fall.png): Taumeln -> rücklings fliegen
  block:{frames:['a_4']},
- kd:{frames:['i_3'],lying:1},wakeup:{frames:['i_3'],lying:1,rise:1},
- win:{frames:['i_0','i_1','i_2','i_3','i_4','i_5'],loop:1,fps:5},defeat:{frames:['i_3'],lying:1}};
+ kd:{frames:['f_2','f_3']},wakeup:{frames:['u_0','u_1','u_2','u_3']},   // Aufprall -> liegend | Aufstehen: liegend -> aufstützen -> tiefe Hocke -> geduckt (aufstehen.png)
+ win:{frames:['w_0','w_1','w_2','w_3'],loop:1,fps:3},defeat:{frames:['f_3']}};   // Siegesposen (sieg.png) / besiegt: liegend
 // RABE (KORVUS, Schwarzmarkthändler + spielbare Figur): Frames aus assets/rabe (tools/import-rabe-sheets.py), alle nach rechts schauend. 'a' = an der Körpermitte verankert (Luft).
 //  i_0-i_3: aufrecht (Idle-Bogen) | t_0-t_7: Sprech-Gesten des NPC (t_0 Hand an der Hüfte, t_1 Hand offen, t_2 beide Hände hoch, t_3 Kinn, t_4 hält ein Booster-Pack, t_5 Geste, t_6 Zeigefinger, t_7 Arme verschränkt)
 //  c_0 Deckung | c_1 tiefe Deckung | c_2 Jab | c_3 hoher Tritt | c_4 geduckte Krallen | c_5 Sprung-Krallen | c_6 Sichelschwung (violette Spur) | c_7 Deckung + Sichel-Abschuss
 //  c_8 Aura aufladen | c_9 Boden-Dornen (Hocke) | c_10 Dash-Ausfall | c_11 Brüllen/Power-Pose
+//  ai_0-5 Idle | ap_0-5 Schlag (ap_1 Deckung, ap_2/ap_3 Schlag) | ak_0-5 Tritt (ak_1 Knie, ak_2 Tritt, ak_3 High-Kick; ak_5 berührt den Bildrand) – aus den 1Gemini_*.jpeg-Bögen
 //  f_0-f_6 Fallen (f_0-f_2 noch in der Luft, f_3-f_6 schlägt auf / liegt) | u_0-u_7 Aufstehen (hockend -> aufrecht)
 //  j_0-j_16 Sprung mit magischen Flügeln: j_0-j_2 Ausgangshaltung/Hocke (ungenutzt, kein Sprungabdruck-Zustand), j_3-j_5 Absprung, j_5-j_10 Flügel öffnen + gespreizt (Luft-Anim: nur j_8 als gespreizte Pose, lange gehalten – KEIN Flattern), j_11-j_15 Flügel falten, j_16 Landehocke (ungenutzt)
 // NOCH BEHELFE (Bögen fehlen): Treffer (tiefe Deckung geneigt), Duck-Angriffe (geduckte Krallen), Luft-Angriffe (Sprung-Klauen ohne Flügel).
@@ -161,13 +166,13 @@ export const CYBERDEMON_ANIMS={
 // Wert > 1 vergrößert den Frame (Idle/Sprechen/Liegepose bleiben 1). 'a'-Varianten erben vom Basis-Frame. Feinjustierung hier.
 export const RABE_FRAME_SC={c_0:1.18,c_1:1.26,c_2:1.12,c_3:1.2,c_4:1.24,c_5:1.16,c_6:1.14,c_7:1.14,c_8:1.1,c_9:1.2,c_10:1.18,c_11:1.1};
 export const RABE_ANIMS={
- idle:{frames:['i_0','i_1','i_2','i_1'],loop:1,fps:3},
+ idle:{frames:['ai_0','ai_1','ai_2','ai_3','ai_4','ai_5'],loop:1,fps:4},   // neue 1am-Idle-Bögen (6 Posen, Gewichtsverlagerung); vorher i_0,i_1,i_2,i_1
  walk:{frames:['ns_0','nk_0','ns_0','nk_3'],loop:1,fps:8,bob:3,lean:.03},
  crouch:{frames:['nf_0'],squash:.92},cblock:{frames:['nf_0'],squash:.88},
  air:{frames:['nf_0a','nf_1a','nf_1a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_2a','nf_3a','nf_3a','nf_3a','nf_3a'],lean:.03},   // Hochauflösender Flügelsprung aus neu_flug: Absprung -> violette Schwingen öffnen -> Gleitflug am Scheitel -> Flügel anlegen
  dash:{frames:['ns_2'],lean:.08},airdash:{frames:['nf_2a'],lean:.16},
- punch:{frames:['nc_0','nc_1','nc_2','nc_2','nc_3']},cpunch:{frames:['nf_0','nc_1','nc_2','nf_0'],squash:.92},jpunch:{frames:['nc_2a','nc_3a','nc_3a']},
- kick:{frames:['nk_0','nk_1','nk_2','nk_2','nk_3']},ckick:{frames:['nf_0','nk_2','nk_2','nf_0'],squash:.92},jkick:{frames:['ns_1a','nk_2a','nk_2a']},
+ punch:{frames:['ap_1','ap_2','ap_3','ap_3','ap_4']},cpunch:{frames:['nf_0','nc_1','nc_2','nf_0'],squash:.92},jpunch:{frames:['nc_2a','nc_3a','nc_3a']},
+ kick:{frames:['ak_1','ak_2','ak_3','ak_3','ak_4']},ckick:{frames:['nf_0','nk_2','nk_2','nf_0'],squash:.92},jkick:{frames:['ns_1a','nk_2a','nk_2a']},
  heavy:{frames:['na_0','na_1','na_2','na_2','na_3']},jheavy:{frames:['na_2a','na_2a','na_2a']},
  upper:{frames:['na_0','nk_1','ns_1','na_2','na_3']},
  special:{frames:['na_0','na_1','c_7','na_2','ns_0']},   // Schattensichel: Ausholen mit neuer Pose -> Abschuss -> Sichelschwung
@@ -217,14 +222,14 @@ export const BEAR_ANIMS={
  block:{frames:['p_4_2']},
  kd:{frames:['p_6_2','p_6_3']},wakeup:{frames:['p_6_3','p_6_2','p_3_3','p_1_0']},
  win:{frames:['p_8_1','p_8_2','p_8_3','p_8_2'],loop:1,fps:3},defeat:{frames:['p_6_3']}};
-// rs = Größenkorrektur für die Figuren-Verhältnisse (Menü UND Kampf): H!T (Tiger) 112 % (zusätzlich zu fightScale) · Anubis 100 % · ST3-G0 96 % · Corvus 92 % · A1LIEN 83 % · Leon 74 % (Anzeigehöhe der Idle-Pose relativ zu Anubis)
+// rs = Größenkorrektur für die Figuren-Verhältnisse (Menü UND Kampf): H!T (Tiger) 112 % (zusätzlich zu fightScale) · Anubis 100 % · ST3-G0 96 % · Corvus 102,6 % (+ fightScale .85, = H!T) · A1LIEN 83 % · Leon 74 % (Anzeigehöhe der Idle-Pose relativ zu Anubis)
 export const SPRITE_CHARS={
- cyberdemon:{anims:CYBERDEMON_ANIMS,fist:[200,-125],height:215,fightScale:1,rs:.821,lie:['i_3']},
+ cyberdemon:{anims:CYBERDEMON_ANIMS,fist:[200,-125],height:215,fightScale:1,rs:.821,lie:['f_3','u_0']},
  mantis:{anims:MANTIS_ANIMS,fist:[120,-130],height:190,fightScale:.88,lie:['p_4_1']},
- tiger:{anims:TIGER_ANIMS,fist:[108,-122],height:190,fightScale:.85,rs:1.12,fullAnims:['win','defeat'],profileAnim:'win',lie:['t_neu_treffer_103','t_neu_aufstehen_00']},
+ tiger:{anims:TIGER_ANIMS,fist:[108,-122],height:190,fightScale:.85,rs:1.12,fullAnims:['win','defeat'],profileAnim:'win',lie:['t_neu_treffer2_103'],pose:POSE_TIGER},
  st3g0:{anims:ST3G0_ANIMS,fist:[135,-150],height:190,fightScale:1,rs:.999,lie:['p_3_1','p_3_2','p_3_3'],pose:POSE_ST3G0},
  anubis:{anims:ANUBIS_ANIMS,fist:[113,-137],height:215,fightScale:1,rs:1,lie:['p_4_2','p_4_3']},
- rabe:{anims:RABE_ANIMS,fist:[112,-132],height:205,fightScale:1,rs:.963,lie:['f_3'],frameSc:RABE_FRAME_SC},
+ rabe:{anims:RABE_ANIMS,fist:[112,-132],height:205,fightScale:.85,rs:1.026,fullAnims:['win','defeat'],lie:['f_3'],frameSc:RABE_FRAME_SC},   // Corvus = gleiche Größe wie H!T: Idle ~213 px im Menü, ~181 px im Kampf (fightScale/rs/fullAnims wie beim Tiger)
  kitsune:{anims:KITSUNE_ANIMS,fist:[100,-121],height:190,fightScale:.83,lie:['p_9_3','p_11_0'],pose:POSE_KITSUNE,frameSc:KITSUNE_FRAME_SC},
  leon:{anims:LEON_ANIMS,fist:[120,-135],height:195,fightScale:1,rs:.809,lie:['p_6_3']},
  bear:{anims:BEAR_ANIMS,fist:[125,-125],height:205,fightScale:.9,lie:['p_6_3','p_7_3']}};   // fightScale: Kampfposen kleiner als die Sieg-/Niederlagen-Pose (fullAnims bleiben in voller Größe)
@@ -259,11 +264,14 @@ export function footSpan(S,fr){   // [x0,x1] in Atlas-Pixeln relativ zum Anker (
    for(let y=0;y<rows;y++)for(let x=0;x<fr.w;x++)if(d[(y*fr.w+x)*4+3]>100){if(x<x0)x0=x;if(x>x1)x1=x}
    if(x1>=x0)r=[fr.ox+x0,fr.ox+x1+1]}}catch(e){r=null}   // z. B. Canvas "tainted" (file://) -> Standardbreite
  return fr._fs=r}
+// Kontaktschatten: weicher elliptischer Hof + dunkler Kern direkt unter den Füßen. h = Höhe über dem Boden: je höher, desto kleiner und blasser (der Kern verschwindet schneller als der Hof).
 export function groundShadow(g,cx,floorY,h,rx){
- const sc=1/(1+Math.max(0,h)/260),w=Math.max(10,rx*sc),ht=Math.max(6,Math.min(17,w*.16));
+ const sc=1/(1+Math.max(0,h)/200),w=Math.max(10,rx*sc),ht=Math.max(5,Math.min(17,w*.16)),a0=g.globalAlpha;
  g.save();g.translate(cx,floorY);g.scale(1,ht/w);
- const gr=g.createRadialGradient(0,0,w*.12,0,0,w);gr.addColorStop(0,'rgba(0,0,0,.78)');gr.addColorStop(.6,'rgba(0,0,0,.62)');gr.addColorStop(1,'rgba(0,0,0,0)');
- g.globalAlpha*=.5+.5*sc;g.fillStyle=gr;g.beginPath();g.arc(0,0,w,0,7);g.fill();g.restore()}
+ let gr=g.createRadialGradient(0,0,w*.1,0,0,w);gr.addColorStop(0,'rgba(0,0,0,.62)');gr.addColorStop(.55,'rgba(0,0,0,.42)');gr.addColorStop(1,'rgba(0,0,0,0)');
+ g.globalAlpha=a0*(.28+.72*sc*sc);g.fillStyle=gr;g.beginPath();g.arc(0,0,w,0,7);g.fill();
+ const cw=w*.55;gr=g.createRadialGradient(0,0,0,0,0,cw);gr.addColorStop(0,'rgba(0,0,0,.7)');gr.addColorStop(1,'rgba(0,0,0,0)');
+ g.globalAlpha=a0*sc*sc*sc;g.fillStyle=gr;g.beginPath();g.arc(0,0,cw,0,7);g.fill();g.restore()}
 // Einzelnen Frame (z. B. Sprech-Pose des Schwarzmarkthändlers) an Fußlinie floorY zeichnen; scale = Anzeigegröße (1 = Figurenhöhe laut SPRITE_CHARS), facing = Blickrichtung (Sprites schauen nach rechts).
 // Rückgabe false, wenn Atlas/Frame (noch) nicht bereit ist. Schatten optional.
 export function drawSpriteFrame(g,id,name,x,floorY,facing=1,scale=1,alpha=1,shadow=true){
@@ -276,17 +284,17 @@ export function drawSpriteFrame(g,id,name,x,floorY,facing=1,scale=1,alpha=1,shad
 export function drawSpriteFighter(g,f,clock,alpha=1,floorY=470){
  const C=SPRITE_CHARS[f.char.sprites],S=sheet(f.char.sprites),h=Math.max(0,floorY-f.y);
  g.save();g.globalAlpha=alpha;
- if(!C||!S||!ready(S)){if(alpha===1)groundShadow(g,f.x,floorY,h,Math.max(24,56*(C?fightK(C,f):1)));g.restore();return}
+ if(!C||!S||!ready(S)){if(alpha>=.4)groundShadow(g,f.x,floorY,h,Math.max(24,56*(C?fightK(C,f):1)));g.restore();return}
  const fs=fightK(C,f);   // Kampfpose = skaliert
  const P=C.pose&&C.pose[f.anim],M=S.meta,a=C.anims[f.anim]||C.anims.idle,n=a.frames.length;   // P = Feinabstimmung dieser Animation (SPRITE_CHARS.pose)
  const idx=a.loop?Math.floor(f.sf/60*a.fps)%n:Math.min(n-1,Math.floor(Math.min(f.animU,.999)*n)),nm=a.frames[idx];
  const fr=M.frames[nm]||M.frames.idle_0||M.frames[C.anims.idle.frames[0]];if(!fr){g.restore();return}
  const k=C.height/M.standH*fs*(f.char.spriteScale||1)*(P&&P.sc||1)*(C.frameSc&&C.frameSc[nm.replace(/a$/,'')]||1);   // Frame-Maßstab (SPRITE_CHARS.frameSc): gleicht je Pose unterschiedlich große Zeichnungen an die Idle-Größe an
- if(alpha===1&&!a.lying&&!(C.lie&&C.lie.includes(nm))){
+ if(alpha>=.4&&!a.lying&&!(C.lie&&C.lie.includes(nm))){   // Schatten auch beim Blinken (Unverwundbarkeit); liegende Posen (C.lie) tragen ihren Schatten in der Zeichnung, Nachbilder (alpha < .4) bekommen keinen
   const sp=footSpan(S,fr),air=Math.min(1,h/30);let cx=f.x,rx=Math.max(24,56*fs);
   if(sp){const gx=f.x+f.facing*(a.flip?-1:1)*((sp[0]+sp[1])/2*k+(a.shiftX||0)),gw=(sp[1]-sp[0])/2*k+16;cx=gx+(f.x-gx)*air;rx=gw+(rx-gw)*air}   // am Boden: unter den Füßen, in der Luft: unter dem Körper
   groundShadow(g,cx,floorY,h,rx)}
- else if(alpha===1&&P&&P.shadow)groundShadow(g,f.x+f.facing*P.shadow[0],floorY+P.shadow[2],0,P.shadow[1]);   // gedrehte/abgesenkte Pose: eigener Schatten unter dem Körper
+ else if(alpha>=.4&&P&&P.shadow)groundShadow(g,f.x+f.facing*P.shadow[0],floorY+P.shadow[2],0,P.shadow[1]);   // gedrehte/abgesenkte Pose: eigener Schatten unter dem Körper
  g.translate(f.x,f.y);g.scale(f.facing,1);
  if(P){if(P.dy)g.translate(0,P.dy);if(P.rot)g.rotate(P.rot)}   // Pose-Feinabstimmung: tiefer (näher am Betrachter) und gekippt
  if(a.flip)g.scale(-1,1);

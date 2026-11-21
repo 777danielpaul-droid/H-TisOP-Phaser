@@ -1,13 +1,13 @@
 // Bündelt src/ (ES-Module) zu dist/game.js (klassisches Script, läuft per Doppelklick) und dist/hitisop.html (alles in einer Datei).
 import fs from'node:fs';import path from'node:path';import{fileURLToPath}from'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const ORDER=['core/config','core/sfx','core/camera','core/barrier','core/hitbox','core/gamepad','core/input','core/moves','core/movesets','core/unlocks','core/characters','core/custom','core/particles','core/effects','core/projectile','core/fighter','core/melee','core/combat','core/ai','core/items','core/loot','core/blackmarket','core/story','core/arcade','core/devcmds','core/game','core/netplay','core/netclient','core/netmatch','render/skins','render/sprites','render/audio','render/fonts','render/fx','render/gl','render/rig','render/stage','render/houses','render/hud','render/storyhud','render/lootui','render/packopen','render/fog','render/select','render/meleehud','render/customstudio','render/backdrop','render/bgpanel','render/intro','render/shopclip','render/musicpanel','render/netui','render/devconsole','render/hover','render/renderer','main'];
+const ORDER=['core/config','core/terrain','core/sfx','core/camera','core/barrier','core/hitbox','core/gamepad','core/input','core/moves','core/movesets','core/unlocks','core/characters','core/custom','core/particles','core/effects','core/projectile','core/fighter','core/melee','core/combat','core/ai','core/items','core/loot','core/blackmarket','core/story','core/arcade','core/devcmds','core/game','core/netplay','core/netclient','core/netmatch','render/skins','render/sprites','render/audio','render/fonts','render/fx','render/gl','render/rig','render/stage','render/houses','render/hud','render/storyhud','render/lootui','render/packopen','render/fog','render/select','render/meleehud','render/customstudio','render/backdrop','render/bgpanel','render/intro','render/shopclip','render/musicpanel','render/netui','render/devconsole','render/hover','render/renderer','main'];
 // Sicherheitsnetz 0: jedes Modul in src/core + src/render MUSS in ORDER stehen (sonst fehlt es im Bündel -> im Browser "... is not defined", Tests laufen trotzdem, weil sie echte ES-Module nutzen)
 {const lost=[];for(const d of['core','render'])for(const f of fs.readdirSync(path.join(root,'src',d)))if(f.endsWith('.js')&&!ORDER.includes(d+'/'+f.slice(0,-3)))lost.push(d+'/'+f);
  if(lost.length){console.error('FEHLER: Modul(e) fehlen in ORDER (tools/build.mjs): '+lost.join(', '));process.exit(1)}}
 let out='';
 for(const m of ORDER){let s=fs.readFileSync(path.join(root,'src',m+'.js'),'utf8');
- s=s.replace(/^import\b.*$/gm,'').replace(/^export\s+/gm,'');out+=`\n// ===== ${m} =====\n`+s}
+ s=s.replace(/^import\b[^;'"]*?\bfrom\s*(['"]).*?\1;?[ \t]*$/gms,'').replace(/^import\b.*$/gm,'').replace(/^export\s+/gm,'');out+=`\n// ===== ${m} =====\n`+s}
 // Sprite-Atlanten (assets/<id>/atlas.webp + meta.json) als Data-URI einbetten, damit dist/game.js und die Single-File-HTML ohne Server laufen
 const sp=[];const ad=path.join(root,'assets');
 for(const id of fs.existsSync(ad)?fs.readdirSync(ad):[]){const d=path.join(ad,id);

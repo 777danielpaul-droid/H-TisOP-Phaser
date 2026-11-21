@@ -8,7 +8,7 @@ import{SPEED}from'./config.js';
 // Epoche = laufende Nummer des Kampfes: Nachrichten einer anderen Epoche werden verworfen bzw. (zu früh) zurückgehalten.
 // Hooks (alle optional): onChange(), onLaunch(cfg,{rematch}), onStart(), onEnd(reason: 'left'|'peer-left'|'disconnected'|'desync'|'timeout')
 export class NetMatch{
- constructor(o){this.client=o.client;this.game=o.game;this.h=o.hooks||{};this.valid=o.valid||(()=>true);this.altSkin=o.altSkin||((id,k)=>k?0:1);this.now=o.now||(()=>Date.now());
+ constructor(o){this.client=o.client;this.game=o.game;this.h=o.hooks||{};this.valid=o.valid||(()=>true);this.stam=o.stam||(()=>false);   // stam(): Ausdauer-Einstellung des Gastgebers (gilt für beide)this.altSkin=o.altSkin||((id,k)=>k?0:1);this.now=o.now||(()=>Date.now());
   this.inputs=o.inputs||[new NetInput(),new NetInput()];this.role=this.client.role;this.slot=this.role==='host'?0:1;
   this.me={id:null,skin:0,ready:false};this.them={id:null,skin:0,ready:false};this.cfg=null;this.epoch=0;this.phase='pick';this.localReady=false;
   this.rdy=new Set();this.myRm=-1;this.theirRm=-1;this.early=new Map();this.ended=null;this.desync=null;
@@ -22,7 +22,7 @@ export class NetMatch{
  pick(id,skin=0){if(this.phase!=='pick')return;this.me.id=id;this.me.skin=skin|0;this.me.ready=false;this.sendPick();this.change()}
  setReady(b){if(this.phase!=='pick'||!this.me.id)return;this.me.ready=!!b;this.sendPick();this.change()}
  canStart(){return this.host&&this.phase==='pick'&&this.me.ready&&this.them.ready&&!!this.me.id&&!!this.them.id}
- hostStart(stage){if(!this.canStart())return false;const cfg={ids:[this.me.id,this.them.id],skins:[this.me.skin|0,this.them.skin|0],stage:stage|0,e:1};
+ hostStart(stage){if(!this.canStart())return false;const cfg={ids:[this.me.id,this.them.id],skins:[this.me.skin|0,this.them.skin|0],stage:stage|0,e:1,stam:!!this.stam()};
   if(cfg.ids[0]===cfg.ids[1]&&cfg.skins[0]===cfg.skins[1])cfg.skins[1]=this.altSkin(cfg.ids[1],cfg.skins[1]);   // gleiche Figur in gleicher Farbe: Gast bekommt eine andere (wie im 2-Spieler-Modus)
   this.client.sendPeer({t:'go',cfg});this.begin(cfg,false);return true}
  begin(cfg,rematch){this.cfg=cfg;this.epoch=cfg.e;this.phase='launch';this.localReady=false;this.myRm=this.theirRm=-1;this.ls.stop();this.change();
@@ -41,7 +41,7 @@ export class NetMatch{
  // ---- Nachrichten des Gegners ----
  onPeer(d){switch(d.t){
   case'pick':if(this.phase==='pick'&&typeof d.id==='string'&&this.valid(d.id)){this.them.id=d.id;this.them.skin=d.skin|0;this.them.ready=!!d.ready;this.change()}break;
-  case'go':if(!this.host&&this.phase==='pick'&&d.cfg&&Array.isArray(d.cfg.ids)&&d.cfg.ids.every(i=>this.valid(i))){const c=d.cfg;this.begin({ids:[c.ids[0],c.ids[1]],skins:[c.skins[0]|0,c.skins[1]|0],stage:c.stage|0,e:c.e|0||1},false)}break;
+  case'go':if(!this.host&&this.phase==='pick'&&d.cfg&&Array.isArray(d.cfg.ids)&&d.cfg.ids.every(i=>this.valid(i))){const c=d.cfg;this.begin({ids:[c.ids[0],c.ids[1]],skins:[c.skins[0]|0,c.skins[1]|0],stage:c.stage|0,e:c.e|0||1,stam:!!c.stam},false)}break;
   case'rdy':if(Number.isInteger(d.e)){this.rdy.add(d.e);this.tryStart()}break;
   case'rm':if(Number.isInteger(d.e)){this.theirRm=d.e;this.change();this.checkRematch()}break;
   case'i':case'h':if(this.phase==='play'&&d.e===this.epoch)this.ls.recv(d);

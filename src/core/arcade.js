@@ -36,7 +36,8 @@ export class Arcade{
  startStory(id,chapter=this.chapter){const g=this.game;this.newUnlock=null;this.player=id;this.chapter=Math.max(1,Math.min(CHAPTERS.length,chapter|0||1));this.opponents=[];this.stage=0;this.p1.setChar(CHARACTERS[id],this.skinOf(id));this.p2.setChar(CHARACTERS.mantis);
   g.story=new Story(g,{ai:Math.min(2,this.difficulty),chapter:this.chapter});g.camera.story=g.story;g.fighters=[this.p1];g.stageIndex=CHAPTERS[this.chapter-1].stage;g.meleeOn=false;g.rematch();this.state='fight';this.t=0}
  get hasNextChapter(){return this.mode==='story'&&this.chapter<CHAPTERS.length}
- leaveStory(){const g=this.game;if(!g.story)return;g.story=null;g.camera.story=null;g.fighters=[this.p1,this.p2];this.p2.x=620}
+ leaveStory(){const g=this.game;g.stamForce=null;if(!g.story)return;   // lokale Ausdauer-Einstellung gilt wieder (Online setzt sie in startOnline)
+  g.story=null;g.camera.story=null;g.fighters=[this.p1,this.p2];this.p2.x=620}
  start(playerId){if(this.mode==='story')return this.startStory(playerId);this.leaveStory();this.newUnlock=null;this.player=playerId;this.opponents=Arcade.ladderFor(playerId);this.stage=0;this.p1.setChar(CHARACTERS[playerId],this.skinOf(playerId));this.beginStage()}
  beginStage(){const g=this.game,oid=this.opponents[this.stage];this.p2.setChar(CHARACTERS[oid],this.skinOf(oid));this.applyDifficulty();
   {const own=ownedStages(this.stageCount);g.stageIndex=own[this.stage%own.length]}   // freigeschaltete Arenen der Reihe nach (bei mehr Gegnern als Arenen wiederholen sie sich)
@@ -69,7 +70,7 @@ export class Arcade{
  // Online-Kampf (core/netmatch.js): beide Geräte starten mit exakt denselben Angaben (Figuren, Farben, Stage), Zähler bei 0 -> gleicher Rechenstand. cfg = {ids:[P1,P2], skins:[s1,s2], stage}
  startOnline(cfg){this.leaveStory();this.mode='versus';this.online=true;this.player=cfg.ids[0];this.opponents=[];this.stage=0;this.vsStage=cfg.stage|0;
   this.p1.setChar(CHARACTERS[cfg.ids[0]],cfg.skins[0]|0);this.p2.setChar(CHARACTERS[cfg.ids[1]],cfg.skins[1]|0);
-  const g=this.game;g.stageIndex=cfg.stage|0;g.meleeOn=false;g.frame=0;g.rematch();this.state='fight';this.t=0}   // Stage fest (auch wenn sie hier noch gesperrt ist: nur Optik), frame=0 wegen frame%2 im KO
+  const g=this.game;g.stageIndex=cfg.stage|0;g.meleeOn=false;g.frame=0;g.stamForce=!!cfg.stam;g.rematch();this.state='fight';this.t=0}   // Stage fest (auch wenn sie hier noch gesperrt ist: nur Optik), frame=0 wegen frame%2 im KO
  next(){this.stage++;this.beginStage()}
  // Enter-Taste: je nach Zustand weiter / nochmal / zurück zur Auswahl
  confirm(){if(this.state==='vsover')this.rematchVs();else if(this.state==='clear')this.next();else if(this.state==='gameover')this.retry();else if(this.state==='victory'){if(this.hasNextChapter)this.startStory(this.player,this.chapter+1);else this.toSelect()}}

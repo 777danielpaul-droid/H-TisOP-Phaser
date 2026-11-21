@@ -6,8 +6,8 @@ import{InputBuffer}from'./input.js';
 // Dieser Teil kennt weder Netzwerk noch DOM (Senden/Abtasten kommen als Funktionen herein) -> headless testbar: tests/netplay.test.js
 export const NET={resendMs:120,hashEvery:30,redundancy:4,delayMin:4,delayMax:16,delayDefault:6,stallWarnMs:350,stallDeadMs:12000,keep:40,maxBatch:32};
 export const NEUTRAL=5;   // dx=0, dy=0, keine Taste
-const NBTN=['L','M','H','S','SUP','DASH'];
-// Eingabe eines Frames als kleine Zahl: Bits 0-1 = dx+1, 2-3 = dy+1, 4-9 = Buttons (L M H S SUP DASH). 'UP' entsteht beim Einspeisen aus dy (InputBuffer.feed).
+const NBTN=['L','M','H','S','SUP','DASH','REST'];
+// Eingabe eines Frames als kleine Zahl: Bits 0-1 = dx+1, 2-3 = dy+1, 4-10 = Buttons (L M H S SUP DASH REST). 'UP' entsteht beim Einspeisen aus dy (InputBuffer.feed).
 export const encInput=(dx,dy,pressed=[])=>{let v=((dx<0?0:dx>0?2:1))|((dy<0?0:dy>0?2:1)<<2);for(const b of pressed){const i=NBTN.indexOf(b);if(i>=0)v|=16<<i}return v};
 export const decInput=v=>({dx:(v&3)-1,dy:((v>>2)&3)-1,pressed:NBTN.filter((_,i)=>v&(16<<i))});
 // Eingabepuffer eines Online-Spielers: bekommt den Frame-Wert vom Lockstep (cur) und füttert ihn wie die Tastatur
@@ -21,7 +21,7 @@ const nhMixS=(h,s)=>{s=String(s);for(let i=0;i<s.length;i++)h=nhMix(h,s.charCode
 export function netHash(g){let h=2166136261;
  h=nhMix(h,g.round);h=nhMix(h,g.timeFrames);h=nhMix(h,g.pf);h=nhMix(h,g.hitstop);h=nhMix(h,g.superFlash);h=nhMixS(h,g.phase);h=nhMix(h,g.frame);
  for(const f of g.fighters){for(const v of[f.x,f.y,f.vx,f.vy,f.hp,f.meter])h=nhMix(h,Math.round(v*64));
-  h=nhMix(h,f.wins);h=nhMix(h,f.stun);h=nhMix(h,f.mf);h=nhMix(h,f.sf);h=nhMix(h,f.comboHits);h=nhMix(h,f.facing);h=nhMixS(h,f.state);h=nhMixS(h,f.moveName);h=nhMix(h,f.chase|0);h=nhMix(h,f.hoverF|0);h=nhMix(h,f.relaunch|0);h=nhMix(h,f.juggle|0);h=nhMix(h,f.slam?1:0);h=nhMix(h,f.slams|0);h=nhMix(h,f.fresh|0)}
+  h=nhMix(h,f.wins);h=nhMix(h,f.stun);h=nhMix(h,f.mf);h=nhMix(h,f.sf);h=nhMix(h,f.comboHits);h=nhMix(h,f.facing);h=nhMixS(h,f.state);h=nhMixS(h,f.moveName);h=nhMix(h,f.chase|0);h=nhMix(h,f.hoverF|0);h=nhMix(h,f.relaunch|0);h=nhMix(h,f.juggle|0);h=nhMix(h,f.slam?1:0);h=nhMix(h,f.slams|0);h=nhMix(h,f.fresh|0);h=nhMix(h,Math.round(f.st*16));h=nhMix(h,f.stDelay|0);h=nhMix(h,f.exh?1:0);h=nhMix(h,f.stamOn?1:0)}
  h=nhMix(h,g.projectiles.length);for(const p of g.projectiles)h=nhMix(h,Math.round(p.x*64));
  return h}
 export class Lockstep{
@@ -39,14 +39,14 @@ export class Lockstep{
  flush(){if(!this.active||!this.dirty)return;this.dirty=false;const f=this.sent-1,n=Math.min(NET.maxBatch,Math.max(NET.redundancy,f-this.flushed)),a=[];
   for(let k=0;k<n&&f-k>=0;k++){const v=this.local.get(f-k);if(v===undefined)break;a.push(v)}this.flushed=f;this.send({t:'i',e:this.epoch,f,a})}
  recv(m){if(!this.active||m.e!==this.epoch)return;
-  if(m.t==='i'&&Array.isArray(m.a)&&m.a.length<=64&&Number.isInteger(m.f)){for(let k=0;k<m.a.length;k++){const f=m.f-k;if(f>=this.fr&&!this.remote.has(f)&&Number.isInteger(m.a[k]))this.remote.set(f,m.a[k]&1023)}}
+  if(m.t==='i'&&Array.isArray(m.a)&&m.a.length<=64&&Number.isInteger(m.f)){for(let k=0;k<m.a.length;k++){const f=m.f-k;if(f>=this.fr&&!this.remote.has(f)&&Number.isInteger(m.a[k]))this.remote.set(f,m.a[k]&2047)}}
   else if(m.t==='h'&&Number.isInteger(m.f)){this.rh.set(m.f,m.h);this.check(m.f)}}
  hash(){const f=this.fr,h=netHash(this.game);this.lh.set(f,h);this.send({t:'h',e:this.epoch,f,h});this.check(f)}
  check(f){const a=this.lh.get(f),b=this.rh.get(f);if(a===undefined||b===undefined)return;this.lh.delete(f);this.rh.delete(f);if(a!==b)this.onDesync({frame:f,local:a,remote:b})}
  stalledMs(){return this.stallAt?this.now()-this.stallAt:0}
  // Versucht EINEN Frame zu rechnen. true = gerechnet (der Aufrufer ruft danach arcade.update()), false = wartet auf die Eingabe des Gegners
  step(){if(!this.active)return false;const fr=this.fr;
-  if(this.sent<=fr+this.delay){const v=this.sample()&1023;this.local.set(this.sent,v);this.sent++;this.dirty=true}   // genau eine neue Abtastung pro gerechnetem Frame
+  if(this.sent<=fr+this.delay){const v=this.sample()&2047;this.local.set(this.sent,v);this.sent++;this.dirty=true}   // genau eine neue Abtastung pro gerechnetem Frame
   const l=this.local.get(fr),r=this.remote.get(fr);
   if(l===undefined||r===undefined){const t=this.now();if(!this.stallAt){this.stallAt=t;this.resendAt=t}
    else if(t-this.resendAt>=NET.resendMs){this.resendAt=t;this.flushed=this.sent-1-NET.maxBatch;this.dirty=true}   // wartet länger: letzte Eingaben nochmal schicken (falls eine Nachricht auf unzuverlässiger Leitung verloren ging)

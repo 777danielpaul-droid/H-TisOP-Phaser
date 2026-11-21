@@ -1,4 +1,5 @@
 import{GROUND}from'./config.js';
+// Neu (Game Juice): knackige Hit-Sparks (kurze, schnelle Funkenstriche), Staubwolken am Boden bei Sprung/Landung/Dash, Energiefunken im Luft-Dash und die Hyper-Aura bei voller Leiste.
 // Fassade für Treffer-/Bewegungseffekte. Rendering-unabhängig: schreibt nur in das ParticleSystem.
 // Look wie beim Feuerwerk: statt flacher Formen (Zackenstern, Fadenkreuz, Schlagklingen, einfarbige Ringe) blinkende Funkelsterne (ps.sparkle / sparkleBall / sparkleRing)
 // und spitze Glanzsterne (ps.glint). Ringe/Druckwellen (ps.ring / ps.shock) zeichnen ihre Sterne selbst.
@@ -10,6 +11,9 @@ export class Effects{
  hit(x,y,power,color,dir){const ps=this.ps,P=power,fwd=dir>0?0:Math.PI,cols=fxPal(color);
   // Dezenter Treffer-Funke: kleiner Lichtkern + kleiner Glanzstern, dazu ein Schwarm kleiner Funkelsterne
   ps.flare(x,y,color,26+P*9,6+P,Math.random());
+  // Hit-Sparks: kurze, schnelle Funkenstriche in Schlagrichtung (weiß) + farbige Streuung, Menge wächst mit der Trefferstärke
+  ps.burst(x,y,{count:6+P*3,speed:7+P*2.2,color:'#ffffff',life:9+P,size:2.4,angle:fwd,spread:2.2,gravity:.04,streak:1.5});
+  ps.burst(x,y,{count:4+P*2,speed:5+P*1.6,color,life:12+P*1.5,size:2.8,angle:fwd,spread:2.8,gravity:.1,streak:1.2});
   if(P>=2)ps.glint(x,y,'#ffffff',14+P*5,9+P*2);
   ps.spark(x,y,color,3+P*2,6+P*1.5);
   ps.sparkle(x,y,{count:12+P*6,speed:4+P*1.6,life:26+P*6,size:4.5+P*.7,colors:cols,gravity:.07,dr:.93,angle:fwd,spread:3.4});
@@ -21,11 +25,19 @@ export class Effects{
  block(x,y,color){const ps=this.ps,cols=['#ffffff','#8fd4ff','#bfe9ff','#8fd4ff'];
   ps.glint(x,y,'#bfe9ff',24,10);ps.flare(x,y,'#8fd4ff',26,7,Math.random());
   ps.sparkle(x,y,{count:7,speed:4,life:30,size:5,colors:cols,gravity:.06,dr:.93,glint:1});ps.sparkleRing(x,y,'#8fd4ff',20)}
+ // Bodenstaub: weiche Staubwölkchen seitlich vom Fußpunkt (angle 0 = nach rechts, PI = nach links)
+ dust(x,y,o={}){const n=o.count||6,c=o.color||'#a9b0d8',life=o.life||26,size=o.size||5,sp=o.speed||2.2;
+  if(o.angle!==undefined)this.ps.burst(x,y-2,{count:n,speed:sp,color:c,life,size,angle:o.angle,spread:o.spread||.9,gravity:-.025,streak:.12});
+  else{this.ps.burst(x,y-2,{count:Math.ceil(n/2),speed:sp,color:c,life,size,angle:-.15,spread:.7,gravity:-.025,streak:.12});this.ps.burst(x,y-2,{count:Math.floor(n/2),speed:sp,color:c,life,size,angle:Math.PI+.15,spread:.7,gravity:-.025,streak:.12})}}
  land(x,y,big){if(big)this.ps.shock(x,y,'#b9a8ff',120,18);
+  this.dust(x,y,{count:big?12:6,speed:big?3.4:2.2,size:big?6.5:5,life:big?32:24});
   this.ps.burst(x,y-2,{count:big?10:5,speed:big?5:2.5,color:'#8a7fb8',life:20,size:2.6,angle:-Math.PI/2,spread:3.4,gravity:-.01,streak:.4});
   this.ps.sparkle(x,y-4,{count:big?14:5,speed:big?4.2:2.2,life:big?44:30,size:8,colors:['#ffffff','#b9a8ff','#7df9ff'],angle:-Math.PI/2,spread:2.8,gravity:.05,dr:.93,glint:big?1:0})}
- jump(x,y){this.land(x,y,false)}
- dash(x,y,dir){const a=dir>0?Math.PI:0;this.ps.burst(x,y-8,{count:4,speed:3,color:'#9a8bff',life:14,size:2.2,angle:a,spread:1.2,gravity:0});
+ jump(x,y){this.land(x,y,false);this.ps.burst(x,y-4,{count:3,speed:3.2,color:'#9fe8ff',life:14,size:2,angle:-Math.PI/2,spread:.8,gravity:-.03,streak:1.6})}   // Absprung: Staub + kleine Energiefäden nach oben
+ dash(x,y,dir){const a=dir>0?Math.PI:0;
+  if(GROUND-y<14)this.dust(x,y,{count:7,speed:3.4,angle:a,spread:.9,size:5.5,life:28});   // Boden-Dash: Staub hinter den Füßen
+  else this.ps.burst(x,y,{count:6,speed:6,color:'#7df9ff',life:12,size:2.2,angle:a,spread:.9,gravity:0,streak:2});   // Luft-Dash: Energiestreifen
+  this.ps.burst(x,y-8,{count:4,speed:3,color:'#9a8bff',life:14,size:2.2,angle:a,spread:1.2,gravity:0});
   this.ps.sparkle(x,y-8,{count:7,speed:3.4,life:34,size:7,colors:GLITTER_PAL,angle:a,spread:1.5,gravity:.015,dr:.95,glint:0})}
  // Launcher: Druckwelle am Boden + Funkelsäule nach oben (Gegner startet in den Luftkampf)
  launch(x,y,color){const ps=this.ps;ps.shock(x,y,color,210,22);ps.ring(x,y-20,'#ffffff',90);ps.ring(x,y-60,color,120);
@@ -93,4 +105,11 @@ export class Effects{
   if(t%40===8){ps.sparkleRing(f.x,GROUND-10,col,300,{count:40,life:42});ps.ring(f.x,GROUND-10,col,260);ps.shock(f.x,GROUND,col,330,30);ps.glint(f.x,by,FX_GOLD,70*sz,18);
    ps.sparkleBall(f.x,by,col,110,{count:34,life:60,size:10,colors:pal})}
  }
+ // Hyper-Leiste voll: einmaliger Impuls beim Erreichen (Druckwelle + Ringe) und danach laufend kleine, aufsteigende Energiefunken
+ hyperReady(f){const ps=this.ps,col=f.char.glow||'#fff',sz=f.char.size||1;ps.shock(f.x,f.y,col,170*sz,18);ps.ring(f.x,f.y-8,'#ffffff',90*sz);ps.ring(f.x,f.y-70*sz,col,130*sz);ps.glint(f.x,f.y-100*sz,col,70*sz,16);
+  ps.sparkle(f.x,f.y-90*sz,{count:14,speed:3.6,life:40,size:6,colors:[col,'#ffffff',FX_GOLD],gravity:-.02,dr:.95,glint:1})}
+ hyperMote(f,t){const ps=this.ps,col=f.char.glow||'#fff',sz=f.char.size||1,x=f.x+(Math.random()-.5)*80*sz;
+  ps.burst(x,f.y-8,{count:2,speed:3,color:Math.random()<.4?'#ffffff':col,life:20,size:2,angle:-Math.PI/2,spread:.6,gravity:-.05,streak:2.2});
+  if(t%12===0)ps.sparkle(x,f.y-30*sz,{count:1,speed:.7,life:46,size:5,colors:[col,'#ffffff'],gravity:-.05,dr:.97,glint:0});
+  if(t%48===0)ps.ring(f.x,f.y-6,col,70*sz)}
 }

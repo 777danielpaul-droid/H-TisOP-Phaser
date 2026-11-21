@@ -8,10 +8,17 @@
 - neu_flug.png: 4 Posen erkannt
 - neu_kick.png: 4 Posen erkannt
 - neu_schlag.png: 4 Posen erkannt
+- 1Gemini_Generated_Image_b30qd5b30qd5b30q.jpeg: 6 Posen erkannt
+- 1Gemini_Generated_Image_vaijo6vaijo6vaij.jpeg: 6 Posen erkannt
+- 1Gemini_Generated_Image_7ef8it7ef8it7ef8.jpeg: 6 Posen erkannt
 Maßstab i: Höhe 610 px -> 300 (x0.492)
 Maßstab t: Höhe 500 px -> 300 (x0.600)
 Maßstab c: x0.866 (Idle x 1.76)
 Maßstab u/f: Höhe 246 px -> 300 (x1.220, relativ zu Idle 2.48)
 Maßstab j: Höhe 255 px -> 300 (x1.176, relativ zu Idle 2.39)
 Maßstab neu: Höhe 495 px -> 300 (x0.606)
-Atlas 4096x1569, 1906 KB, 110 Frames
+Maßstab ai: Höhe 386 px -> 300 (x0.777)
+Maßstab ap: Höhe 361 px -> 300 (x0.831)
+Maßstab ak: Höhe 392 px -> 300 (x0.765)
+  ! ak_5: berührt den Rand (evtl. abgeschnitten)
+Atlas 4096x1901, 2257 KB, 128 Frames

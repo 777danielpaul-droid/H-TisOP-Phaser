@@ -1,5 +1,5 @@
 import{InputBuffer}from'./input.js';
-import{MELEE,GROUND}from'./config.js';
+import{MELEE,GROUND,STAMINA}from'./config.js';
 // Schwierigkeitsstufen. Alle Werte hier justierbar:
 //  wait   = Pause zwischen Entscheidungen in Frames [min,max]     idle   = Chance, eine Entscheidung "zu verschlafen"
 //  react  = Reaktionszeit in Frames, bevor geblockt werden kann    block  = Blockchance pro Angriff
@@ -7,13 +7,14 @@ import{MELEE,GROUND}from'./config.js';
 //  special/sup/dash = Anteil Specials / Hypers / Dashes            antiair = Chance auf Anti-Air   back = Chance auf Rückzug
 //  aerial = Luft-Angriffschance pro Frame in der Luft              dmg = Schadensfaktor der KI
 //  air    = Luftkampf-Können: Chance auf Launcher→Super Jump→Luft-Combo, Sky-Launcher, Meteor-Spike, Luft-Hyper und Steuerung in der Luft (0 = nur Hüpfen)
+//  rest   = Chance, bei knapper Ausdauer in sicherer Distanz zu verschnaufen (Ausdauer-System, siehe STAMINA in config.js)
 //  corner = Wie konsequent die KI einen Gegner an der Wand/in der Ecke bearbeitet (weniger Abwarten/Rückzug, Druck, Launcher) und selbst aus der Ecke ausbricht
 export const AI_LEVELS=[
- {name:'LEICHT',wait:[75,140],idle:.4,react:24,block:.05,combo:.08,maxChain:1,special:.06,sup:0,dash:.03,jump:.004,antiair:.1,back:.3,aerial:.01,dmg:.7,corner:.12,air:0},
- {name:'NORMAL',wait:[42,85],idle:.2,react:13,block:.28,combo:.35,maxChain:2,special:.16,sup:.08,dash:.1,jump:.01,antiair:.35,back:.15,aerial:.03,dmg:.9,corner:.5,air:.35},
- {name:'HART',wait:[24,50],idle:.06,react:7,block:.48,combo:.55,maxChain:4,special:.24,sup:.25,dash:.2,jump:.02,antiair:.6,back:.06,aerial:.06,dmg:1,corner:.85,air:.7},
+ {name:'LEICHT',wait:[75,140],idle:.4,react:24,block:.05,combo:.08,maxChain:1,special:.06,sup:0,dash:.03,jump:.004,antiair:.1,back:.3,aerial:.01,dmg:.7,corner:.12,air:0,rest:.35},
+ {name:'NORMAL',wait:[42,85],idle:.2,react:13,block:.28,combo:.35,maxChain:2,special:.16,sup:.08,dash:.1,jump:.01,antiair:.35,back:.15,aerial:.03,dmg:.9,corner:.5,air:.35,rest:.65},
+ {name:'HART',wait:[24,50],idle:.06,react:7,block:.48,combo:.55,maxChain:4,special:.24,sup:.25,dash:.2,jump:.02,antiair:.6,back:.06,aerial:.06,dmg:1,corner:.85,air:.7,rest:.9},
  // ALPTRAUM: kaum zu schlagen. Reaktion fast sofort (2 F), blockt ~92 % aller Angriffe, kaum Pausen, lange Combos, Hypers, volle Ecken-Taktik, +40 % Schaden.
- {name:'ALPTRAUM',wait:[8,20],idle:0,react:2,block:.92,combo:.95,maxChain:6,special:.28,sup:.3,dash:.25,jump:.03,antiair:.92,back:.02,aerial:.12,dmg:1.4,corner:1,air:1}];
+ {name:'ALPTRAUM',wait:[8,20],idle:0,react:2,block:.92,combo:.95,maxChain:6,special:.28,sup:.3,dash:.25,jump:.03,antiair:.92,back:.02,aerial:.12,dmg:1.4,corner:1,air:1,rest:1}];
 // KI nutzt dieselbe Eingabe-Schnittstelle wie der Spieler (vereinfachte Special-Eingaben: Taste + Richtung).
 export class AIController extends InputBuffer{
  constructor(level=0){super();this.keep={dx:0,dy:0,n:0};this.cd=0;this.setLevel(level)}
@@ -25,10 +26,16 @@ export class AIController extends InputBuffer{
   if(game.melee&&me.dead>0){this.feed(0,0,[]);return}
   if(game.melee&&this.meleeRecover(me,game))return;   // außerhalb der Plattform: zurückkommen hat Vorrang
   const fwd=opp.x>=me.x?1:-1,dist=Math.abs(opp.x-me.x),frozen=game.hitstop>0||game.superFlash>0;
+  if(me.state==='rest'){const RS=STAMINA.rest,near=dist<190||(opp.state==='attack'&&dist<260)||game.projectiles.some(p=>p.owner===opp&&Math.abs(p.x-me.x)<260);   // Verschnaufen: nach der Mindestdauer bei Gefahr abbrechen (zurückweichen = blocken)
+   this.feed(me.sf>=RS.min&&near?-fwd:0,0,[],frozen);this.cd=0;return}
   if(this.keep.n>0){this.keep.n--;dx=this.keep.dx;dy=this.keep.dy}
-  const go=(btn,x=0,y=0,n=3)=>{if(btn)pr.push(btn);dx=x;dy=y;this.keep={dx:x,dy:y,n}};
+  const go=(btn,x=0,y=0,n=3)=>{btn=this.afford(me,btn);if(btn)pr.push(btn);dx=x;dy=y;this.keep={dx:x,dy:y,n}};
   const walk=(x,y,n)=>{this.keep={dx:x,dy:y,n};dx=x;dy=y};
   if(this.cd>0)this.cd--;
+  // --- Story-Kanten: läuft die KI gegen eine Kante (Wand), springt sie hinauf und in der Luft weiter nach vorn – egal ob der Gegner oben steht oder dahinter (wallHit setzt Fighter.physics) ---
+  if(this.climb>0&&me.state==='air'&&!me.grounded){this.climb--;this.feed(fwd,0,[],frozen);return}
+  if(me.grounded)this.climb=0;
+  if(me.wallHit&&me.grounded&&!me.move&&['idle','walk','crouch','dash'].includes(me.state)){this.climb=26;this.feed(fwd,-1,[],frozen);return}
   // --- Verteidigung: erst nach der Reaktionszeit blocken; sehr schnelle Angriffe kommen durch ---
   const om=opp.state==='attack'?opp.move:null,pj=game.projectiles.find(p=>p.owner===opp&&Math.abs(p.x-me.x)<230);
   if(om&&om!==this.seen){this.seen=om;this.seenAge=0;this.blockRoll=R()<P.block;this.blockN=om.su+om.ac+6}
@@ -61,6 +68,7 @@ export class AIController extends InputBuffer{
    this.wait=Math.round((P.wait[0]+(R()*(P.wait[1]-P.wait[0])|0))*(pin?1-.45*P.corner:1));this.chain=0;const r=R();
    if(R()<P.idle*(pin?1-.85*P.corner:1))walk(0,0,18);                                          // abwarten
    else if(!opp.grounded&&!opp.pop&&dist<170&&me.grounded){if(R()<P.antiair)go('S',fwd,0,4)}
+   else if(me.stamOn&&this.tired(me,opp,dist,fwd,go,walk)){}                                     // Ausdauer knapp: verschnaufen / Abstand suchen
    else if(opp.state==='knockdown'||opp.state==='wakeup'){if(dist>100)walk(fwd,0,16);else go(r<.5?'M':'L')}
    else if(this.corner(me,opp,dist,fwd,go,walk,game)){}                                 // Ecke: Druck machen bzw. ausbrechen
    else if(this.tool(me,dist,fwd,go)){}                                  // figurentypische Moves (char.ai)
@@ -72,6 +80,17 @@ export class AIController extends InputBuffer{
    else{if(R()<P.back&&(fwd>0?me.x-game.arena.l:game.arena.r-me.x)>120)walk(-fwd,0,20);else if(r<.4)go('L');else if(r<.6)go('L',0,1);else if(r<.8)go('M');else go('H',0,1)}}
   // KI in der Luft: Luft-Special gelegentlich
   this.feed(dx,dy,pr,frozen)}
+ // Ausdauer: Die KI gibt nur aus, was sie bezahlen kann (schwer/Special -> mittel/leicht, Dash entfällt) und verschnauft bei knapper Leiste in sicherer Distanz.
+ afford(me,btn){if(!btn||!me.stamOn)return btn;const C=STAMINA.cost;
+  if(btn==='DASH')return me.exh||me.st<C.dash?'':btn;
+  if(btn==='H')return me.exh||me.st<C.H?(me.exh?'L':'M'):btn;
+  if(btn==='S')return me.exh||me.st<C.special.def-2?(me.exh?'L':'M'):btn;
+  if(btn==='M')return me.exh?'L':btn;return btn}
+ tired(me,opp,dist,fwd,go,walk){const S=STAMINA,R=Math.random;if(!(me.exh||me.st<S.low+10))return false;
+  const safe=dist>230||((opp.state==='knockdown'||opp.state==='wakeup')&&dist>130);
+  if(safe&&me.grounded&&R()<this.P.rest){go('REST');return true}
+  if(me.exh&&dist<200&&R()<.5+.4*this.P.rest){walk(-fwd,0,14);return true}   // erschöpft und Gegner nah: Abstand suchen
+  return false}
  // Luft-Finisher / zweite Combo-Stufe: je nach Stufe Sky-Launcher (nur 1×), Meteor-Spike, Hammer, Luft-Hyper
  airFinish(me,opp,go,R){const P=this.P,r=R();
   if(P.air>0&&me.meter>=100&&r<P.sup*.8)return go('SUP');

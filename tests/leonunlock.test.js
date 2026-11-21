@@ -50,7 +50,7 @@ ROSTER.splice(ROSTER.indexOf('leon'),1);
 delete store['hitisop.unlocks'];
 assert(!ROSTER.includes('leon'),'für Test zurückgesetzt');
 
-// 4) Story-Clear: 1 Durchlauf durch Story (letztes Kapitel = 4 abgeschlossen) schaltet Leon frei; Kapitel 3 allein reicht nicht
+// 4) Story-Clear: 1 Durchlauf durch Story (letztes Kapitel = CHAPTERS.length abgeschlossen) schaltet Leon frei; Kapitel 3 und das vorletzte allein reichen nicht
 {
  const{g,a}=mk();
  a.setMode('story');
@@ -58,8 +58,11 @@ assert(!ROSTER.includes('leon'),'für Test zurückgesetzt');
  assert.equal(a.chapter,3);
  g.story.state='done';g.story.doneT=265;a.update();
  assert.equal(a.state,'victory');assert(!ROSTER.includes('leon'),'Kapitel 3 allein schaltet Leon nicht frei');
- a.startStory('tiger',4);
- assert.equal(a.chapter,4);
+ a.startStory('tiger',CHAPTERS.length-1);
+ g.story.state='done';g.story.doneT=265;a.update();
+ assert.equal(a.state,'victory');assert(!ROSTER.includes('leon'),'das vorletzte Kapitel allein schaltet Leon nicht frei');
+ a.startStory('tiger',CHAPTERS.length);
+ assert.equal(a.chapter,CHAPTERS.length);
  const s=g.story;
  s.state='done';
  s.doneT=265;

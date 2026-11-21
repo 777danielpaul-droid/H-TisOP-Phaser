@@ -1,7 +1,7 @@
 import{Arena}from'./barrier.js';
 import{Camera}from'./camera.js';
 import{resolveCombat}from'./combat.js';
-import{CAMERA,EFFECT,MELEE,ROUND,W}from'./config.js';
+import{CAMERA,EFFECT,GROUND,MELEE,METER,ROUND,W}from'./config.js';
 import{Effects}from'./effects.js';
 import{meleeBlast,meleeRespawn,meleeWinnerOnTime}from'./melee.js';
 
@@ -16,7 +16,9 @@ export class Game{
  constructor(p1,p2){this.p1=p1;this.p2=p2;this.fighters=[p1,p2];this.particles=new ParticleSystem();this.fx=new Effects(this.particles);
   this.camera=new Camera();this.arena=new Arena();this.stageIndex=0;this.melee=null;this.meleeOn=false;this.meleeStocks=MELEE.stocks;   // melee = Regeln des laufenden Melee-Matches (oder null)
   this.arcade=null;this.debug=false;this.round=1;this.frame=0;this.flash=0;this.flashColor='#fff';
-  this.pops=[];this.kickX=0;this.kickY=0;this.aberr=0;this.impact=null;this.slow=0;this.timeScale=1;this.celeb=null;this.particles.onBoom=()=>this.sfx('fw_rocket',{vol:.65,rate:.92+Math.random()*.2});this.story=null;this.dummy={x:0,y:0,state:'idle',grounded:true,hp:1};this.startRound()}
+  this.pops=[];this.kickX=0;this.kickY=0;this.aberr=0;this.impact=null;this.slow=0;this.timeScale=1;this.celeb=null;this.particles.onBoom=()=>this.sfx('fw_rocket',{vol:.65,rate:.92+Math.random()*.2});this.story=null;this.dummy={x:0,y:0,state:'idle',grounded:true,hp:1};this.stamPref=false;this.stamForce=null;this.startRound()}
+ // Ausdauer-System an? stamPref = Menü-Einstellung (main.js), stamForce = Online: der Gastgeber bestimmt (null = lokale Einstellung). Aus in Melee und Story.
+ get stamOn(){if(this.melee||this.story)return false;return this.stamForce!==null?!!this.stamForce:!!this.stamPref}
  // Story-Modus: Gegner eines Kämpfers (Spieler -> nächster Mantis, Mantis -> Spieler)
  foe(f){if(!this.story)return f===this.p1?this.p2:this.p1;if(f!==this.p1)return this.p1;const n=this.story.nearest(f);if(n)return n;this.dummy.x=f.x+500;return this.dummy}
  // Sound: game.audio (render/audio.js) ist im Test/headless null -> kein Ton. sfx() für einzelne Sounds, sfxList() für Listen aus core/sfx.js
@@ -51,8 +53,14 @@ export class Game{
   const o=f===this.p1?(this.story&&this.story.nearest(f)||this.p2):this.p1,sz=(f.char&&f.char.size)||1,w=this.cineW*this.cineW*(3-2*this.cineW);
   const fit=W/(Math.abs(o.x-f.x)+K.margin*2);   // nie so dicht, dass der Gegner aus dem Bild fällt
   this.camera.focus(f.x+(o.x-f.x)*K.bias,f.y-K.lift*sz,Math.max(1,Math.min(K.zoom/Math.sqrt(sz),fit)),w)}
- step(){if(this.god&&this.p1.hp>0)this.p1.hp=this.p1.maxHp;
+ // Story-Terrain (Kanten/Ebenen) des laufenden Kapitels oder null; die Kämpfer lesen es als f.terrain
+ get terrain(){return this.story&&this.story.terrain||null}
+ floorAt(x){const T=this.terrain;return T?T.floorAt(x):GROUND}
+ // Hyper-Leiste voll (alle 3 Balken): Impuls beim Erreichen + laufend Energiefunken (rein kosmetisch, ändert keinen Spielzustand)
+ hyperFx(f){const full=f.meter>=METER.max&&!(f.dead>0)&&!(f.hp<=0);if(full){if(!f.hfx){f.hfx=1;this.fx.hyperReady(f)}if(this.frame%4===0)this.fx.hyperMote(f,this.frame)}else if(f.hfx)f.hfx=0}
+ step(){const T=this.terrain;for(const f of this.fighters)f.terrain=T;if(T&&T.platforms.length)T.tick(this.frame,this.fighters);if(this.god&&this.p1.hp>0)this.p1.hp=this.p1.maxHp;
   this.frame++;
+  for(const f of this.fighters)this.hyperFx(f);
   const talk=!!(this.story&&this.story.dealer&&this.story.dealer.active);   // Gespräch mit dem Händler: Spieler steht still, Tasten/Pad-Eingaben gehen nicht in den Puffer (kein Schlag nach dem Gespräch)
   for(const f of this.fighters){if(talk&&f===this.p1){if(f.input.sample)f.input.sample();f.input.feed(0,0,[],false);continue}f.input.tick(f,this.foe(f),this)}
   this.particles.update();this.arena.update();

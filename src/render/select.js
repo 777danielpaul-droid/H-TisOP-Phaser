@@ -117,10 +117,15 @@ export class SelectScreen{
   if((!vid&&ln.t>30&&quiet)||(vid&&ln.qT!=null&&ln.t>=ln.qT+60)||ln.t>(vid?V+260:420)||ln.t>600){const cb=ln.cb;for(const v of[ln.vid,ln.vid2])try{if(v)v.pause()}catch(e){}this.ln=null;this.fw=null;if(cb)cb()}}
  fake(id,t){const ch=CHARACTERS[id],f=this.fakes[id]||(this.fakes[id]={x:0,y:0,facing:1,char:ch,anim:'idle',animU:0,sf:0,mf:0,move:null,state:'idle',trail:[],vx:0,vy:0,menu:true});f.sf=t;f.char=ch;return f}
  // Text in Zeilen umbrechen (Breite in Logik-Pixeln)
+ // Lesefläche: abgedunkelte, halbtransparente Platte (rgba(10, 10, 18, 0.72)) mit dezentem Neon-Rahmen. Liegt hinter Balken, Texten und Hinweisen, damit sie auch vor dem hellen Grid lesbar bleiben.
+ plate(g,x,y,w,h,col='#6fdeeb',r=7){g.save();this.hud.kChamfer(g,x,y,w,h,r);g.fillStyle='rgba(10, 10, 18, 0.72)';g.fill();
+  const al=g.globalAlpha;g.strokeStyle=col;g.lineWidth=3;g.globalAlpha=al*.12;g.stroke();g.lineWidth=1;g.globalAlpha=al*.5;g.stroke();g.restore()}
+ // Platte hinter einer einzelnen Textzeile (Breite aus dem Text gemessen); x bezieht sich auf die Ausrichtung des Textes (left | right | center)
+ tagPlate(g,txt,x,y,size,align='left',col,pad=8,sp=2){const w=this.hud.mw(g,txt,size)+txt.length*sp+pad*2,x0=align==='right'?x-w+pad:align==='center'?x-w/2:x-pad;this.plate(g,x0,y-size-3,w,size+9,col,5)}
  wrap(g,s,size,maxW){const out=[];let line='';for(const w of String(s).split(' ')){const tr=line?line+' '+w:w;if(line&&this.hud.mw(g,tr,size)>maxW){out.push(line);line=w}else line=tr}if(line)out.push(line);return out}
  draw(g,arcade,t,W,H){if(arcade.pvp)return this.drawVs(g,arcade,t,W,H);const hud=this.hud;
   // Main character bay: dark glass console, machined corners and restrained cyan telemetry. Spiegelbild der Subject-Data-Konsole rechts (profile()).
-  const bay=g.createLinearGradient(0,BAY.y,0,BAY.y+BAY.h);bay.addColorStop(0,'rgba(7,19,28,.54)');bay.addColorStop(1,'rgba(2,7,13,.18)');
+  const bay=g.createLinearGradient(0,BAY.y,0,BAY.y+BAY.h);bay.addColorStop(0,'rgba(7,19,28,.54)');bay.addColorStop(1,'rgba(10,10,18,.40)');
   this.consoleFrame(g,BAY,false,bay);g.save();
   {const sc=CHARACTERS[[...ROSTER,'custom'][arcade.cursor]];hud.kVRule(g,BAY.x+BAY.w-8,138,492,(sc&&sc.glow)||'#3fe0ff',.72)}   // Gegenstück zur senkrechten Linie am inneren Rand der Subject-Data-Konsole (profile())
   hud.lab(g,'HOLOGRAPHIC COMBATANT BAY',BAY.x+18,122,9,'#78d8e7','left',2,null,'700');hud.kRule(g,BAY.x+18,BAY.x+18+260,129,'#4faebe','r',.55);
@@ -184,6 +189,7 @@ export class SelectScreen{
     else{const kk=lerp(1.8,1,ad);g.strokeStyle=col;g.lineWidth=3*kk;g.lineCap='round';g.beginPath();g.moveTo(cx-16*kk,base-50*kk);g.lineTo(cx+16*kk,base-50*kk);g.moveTo(cx,base-66*kk);g.lineTo(cx,base-34*kk);g.stroke()}}
    if(part!=='body'){
     const nm=ch?ch.name:'EIGENE FIGUR',nsz=28*k;
+    if(!sel){const nw=nm.length*nsz*.52+26;this.plate(g,cx-nw/2,base+34*k-nsz*.82,nw,nsz*1.08+4,col,6)}   // Lesefläche hinter dem Namen (vor dem hellen Grid)
     hud.fam(F_DISP,()=>hud.fancy(g,nm,cx,base+34*k,nsz,sel?['#ffffff',col]:['#cfc6ee','#a79bd6'],'center',sel?col:null,t,false,false,400,1));
     if(ch&&sel)this.skinDots(g,ch,arcade.skinOf(id),cx,base+52,true);
     if(ch&&ch.custom&&sel){const e=editRect();hud.kBtn(g,e.x,e.y,e.w-6,e.h,'EDIT',{col,on:true,t,size:10})}}
@@ -234,6 +240,7 @@ export class SelectScreen{
   g.restore();
   // Name + Beschreibung
   const tx=PX+16+ps+20;
+  this.plate(g,tx-10,py+13,PX+PW-tx+10,89,col);   // Name + Beschreibung (unter der Kopfzeile SUBJECT DATA)
   hud.fam(F_DISP,()=>hud.fancy(g,ch.name,tx,py+44,40,['#ffffff',col],'left',col,t,false,false,400,2));
   const parts=ch.desc.split(' · ');
   hud.lab(g,parts[0].toUpperCase(),tx,py+70,12,TXT,'left',2,null,'700');
@@ -242,19 +249,21 @@ export class SelectScreen{
   // Werte als Balken
   const bars=[['LEBEN',ch.hp,(ch.hp-700)/(1500-700)],['TEMPO',Math.round(ch.walk*100)+'%',ch.walk/1.4],['SCHADEN',Math.round(ch.dmg*100)+'%',ch.dmg/1.3],['ABWEHR',Math.round(100/(ch.def||1))+'%',(1/(ch.def||1))/1.3]];
   const by=py+ph+16,bx=PX+16,lw=84,bw=PW-16-lw-70;
+  this.plate(g,bx-10,by-15,lw+bw+80,92,col);   // Stats-Balken
   bars.forEach(([lab,val,v],k)=>{const y=by+k*22;v=Math.max(.04,Math.min(1,v));
    hud.lab(g,lab,bx,y+4,11,DIM,'left',2,null,'700');
    hud.kBar(g,bx+lw,y-5,bw,8,v,col,t,5);
    hud.lab(g,String(val),bx+lw+bw+10,y+4,12,'#fff','left',1,null,'700')});
   // Stärken / Schwächen
   let y=by+4*22+10;
+  {const hb=[ch.pros,ch.cons].filter(Boolean).reduce((a,q)=>a+this.wrap(g,q,13,PW-16-30).length*17+6,0);if(hb)this.plate(g,bx-10,y-17,lw+bw+80,hb+9,col)}   // Stärken / Schwächen
   const block=(sign,txt,c)=>{if(!txt)return;const lines=this.wrap(g,txt,13,PW-16-30);hud.lab(g,sign,bx,y,14,c,'left',0,null,'800');lines.forEach((l,k)=>hud.txt(g,l,bx+22,y+k*17,13,c,'left'));y+=lines.length*17+6};
   block('+',ch.pros,'#9fe8ff');block('–',ch.cons,'#c9b8ff');
   // Arcade-Gegner
-  if(arcade.mode==='story'){y=Math.max(y+8,440);const c=CHAPTERS[arcade.chapter-1];   // Story: Kapitelinfo statt Arcade-Gegnerliste
+  if(arcade.mode==='story'){y=Math.max(y+8,440);const c=CHAPTERS[arcade.chapter-1];this.plate(g,bx-10,y-16,lw+bw+80,68,col);   // Story: Kapitelinfo statt Arcade-Gegnerliste
    hud.lab(g,'STORY – KAPITEL '+c.id,bx,y,11,DIM,'left',2,null,'700');hud.txt(g,c.name,bx,y+24,16,'#ffffff','left',c.look.acc);
    hud.txt(g,c.enc.length-1+' Wellen · Boss: '+CHARACTERS[c.enc[c.enc.length-1].boss===1?'mantisAlpha':c.enc[c.enc.length-1].boss].name,bx,y+44,12,'#c9d0ff','left')}
-  else{const lad=Arcade.ladderFor(ch.id);y=Math.max(y+8,440);
+  else{const lad=Arcade.ladderFor(ch.id);y=Math.max(y+8,440);this.plate(g,bx-10,y-16,lw+bw+80,48,col);
    hud.lab(g,'ARCADE – DEINE GEGNER',bx,y,11,DIM,'left',2,null,'700');
    const cw=(PW-16-6*(lad.length-1))/lad.length;
    lad.forEach((gid,k)=>{const gc=CHARACTERS[gid],x=bx+k*(cw+6);
@@ -266,16 +275,17 @@ export class SelectScreen{
   g.save();for(let k=0;k<n;k++){const x=cx+(k-(n-1)/2)*16;const own=ownsSkin(ch.sprites,k);g.globalAlpha=own?1:.28;g.fillStyle=own?SKINS[ch.sprites][k].col:'#6a6f9a';g.beginPath();g.arc(x,y,k===cur?4.5:3.2,0,7);g.fill();g.globalAlpha=1;   // noch nicht freigeschaltete Farben (Booster): blass, grau
    if(k===cur){g.strokeStyle=sel?'#fff':'#ffffffaa';g.lineWidth=1.5;g.beginPath();g.arc(x,y,7,0,7);g.stroke()}}g.restore()}
  foot(g,arcade,t,W,label,hasCustom){const hud=this.hud,d=arcade.difficulty;
-  {const id=[...ROSTER,'custom'][arcade.cursor],ch=CHARACTERS[id];if(ch&&skinCount(ch.sprites)>1)hud.lab(g,'C = FARBE: '+skinName(ch.sprites,arcade.skinOf(id)),W-24,516,10,'#d6c8ff','right',2,null,'700')}
+  this.plate(g,26,480,326,60,'#8f7bff',9);   // Start-Hinweis + Bedienhinweise links
+  {const id=[...ROSTER,'custom'][arcade.cursor],ch=CHARACTERS[id];if(ch&&skinCount(ch.sprites)>1){const ft='C = FARBE: '+skinName(ch.sprites,arcade.skinOf(id));this.tagPlate(g,ft,W-24,516,10,'right','#b98bff');hud.lab(g,ft,W-24,516,10,'#d6c8ff','right',2,null,'700')}}
   if(!this.ln&&Math.sin(t*.14)>-.4)hud.fam(F_DISP,()=>hud.fancy(g,label,34,496,24,['#ffffff','#9fe8ff'],'left','#8f7bff',t,false,false,400,2));
   hud.lab(g,'◀ ▶  KÄMPFER',34,516,11,DIM,'left',2,null,'700');hud.lab(g,'▲ ▼  SCHWIERIGKEIT',34,532,11,DIM,'left',2,null,'700');hud.lab(g,DIFF[d],190,532,11,DCOL[d],'left',2,DCOL[d],'800');
-  if(hasCustom)hud.lab(g,'E = EIGENE FIGUR BEARBEITEN',W-24,532,10,'#7d6fb0','right',2,null,'600');
+  if(hasCustom){const ft='E = EIGENE FIGUR BEARBEITEN';this.tagPlate(g,ft,W-24,532,10,'right','#8f7bff');hud.lab(g,ft,W-24,532,10,'#a899e0','right',2,null,'600')}
   if(arcade.mode==='story'){const c=CHAPTERS[arcade.chapter-1],nx=CHAPTERS[arcade.chapter],lock=nx&&!arcade.chapterOpen(arcade.chapter+1);   // Kapitelwahl (K / Klick): Kapitel 2+ erst nach Abschluss des Vorgängers
-   hud.lab(g,'K = KAPITEL '+arcade.chapter+':  '+c.name,W-24,500,12,'#7dff9a','right',2,'#7dff9a','800');
-   if(lock)hud.lab(g,'KAPITEL '+(arcade.chapter+1)+' GESPERRT – schließe Kapitel '+arcade.chapter+' ab',W-24,480,10,'#7d6fb0','right',2,null,'600')}}
+   {const ft='K = KAPITEL '+arcade.chapter+':  '+c.name;this.tagPlate(g,ft,W-24,500,12,'right','#7dff9a');hud.lab(g,ft,W-24,500,12,'#7dff9a','right',2,'#7dff9a','800')}
+   if(lock){const ft='KAPITEL '+(arcade.chapter+1)+' GESPERRT – schließe Kapitel '+arcade.chapter+' ab';this.tagPlate(g,ft,W-24,480,10,'right','#8f7bff');hud.lab(g,ft,W-24,480,10,'#a899e0','right',2,null,'600')}}}
  modePill(g,A,t){const m=MODE_PILL,hud=this.hud,k=['arcade','story','versus','melee'].indexOf(A.mode),sw=m.w/4;
   ['ARCADE','STORY','2 SPIELER','MELEE'].forEach((n,i)=>{const on=i===k,x=m.x+i*sw+(i?3:0),w=sw-6;hud.kBtn(g,x,m.y,w,m.h,n,{col:i%2?'#b98bff':'#7fe8ff',on,dim:!on,t,size:12})});
-  hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#7d86c8','left')}
+  this.tagPlate(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'left','#6fdeeb',6,0);hud.txt(g,'TAB = Modus wechseln',m.x+6,m.y+m.h+14,10,'#a9b4f0','left')}
  title(g,t,W,sub,col='#9fe8ff'){const hud=this.hud;
   hud.fam(F_TECH,()=>{g.save();g.globalCompositeOperation='lighter';hud.fancy(g,'H!TisOP',W/2-2,64,40,['#7fe8ff','#7fe8ff'],'center',null,t,false,true,900,4);g.restore();
    hud.fancy(g,'H!TisOP',W/2+2,64,40,['#b98bff','#b98bff'],'center',null,t,false,true,900,4);
@@ -284,7 +294,7 @@ export class SelectScreen{
  // ---- 2-Spieler-Modus: Kämpferwahl (zwei Cursor) ----
  drawVs(g,A,t,W,H){const hud=this.hud,v=A.vs,M=A.mode==='melee';
   // Beide Konsolen wie im Arcade-Menü: Bay links, Profil-Konsole rechts als exaktes Spiegelbild (consoleFrame)
-  this.consoleFrame(g,BAY,false,'rgba(5,16,24,.46)');this.consoleFrame(g,PNL,true,'rgba(5,16,24,.74)');g.save();
+  this.consoleFrame(g,BAY,false,'rgba(10, 10, 18, 0.56)');this.consoleFrame(g,PNL,true,'rgba(10, 10, 18, 0.72)');g.save();
   // Titel beide in der Bay (die Profil-Konsole rechts hat in der obersten Zeile „wählt …“ und keinen Platz für einen Titel)
   hud.lab(g,'DUAL COMBAT LINK',BAY.x+18,122,9,'#78d8e7','left',2,null,'700');
   hud.lab(g,'PLAYER SYNC',BAY.x+BAY.w-18,122,9,'#83dce9','right',2,null,'700');g.restore();this.modePill(g,A,t);
@@ -300,10 +310,11 @@ export class SelectScreen{
   hud.kRule(g,PX+8,PX+PW-8,302,'#4e8290','r',.8);g.restore();
   this.vsProfile(g,A,t,1,slots[v.c1],104,P1C,M);this.vsProfile(g,A,t,2,slots[v.c2],304,P2C,M);
   // Fuß: Wartehinweis + Steuerung
-  const one=v.locked[0]!==v.locked[1];if(one&&Math.sin(t*.14)>-.4)hud.fam(F_DISP,()=>hud.fancy(g,`WARTE AUF SPIELER ${v.locked[0]?2:1}`,34,496,22,['#ffffff','#9fe8ff'],'left','#8f7bff',t,false,false,400,2));
-  hud.txt(g,'P1:  A / D wählen · C Farbe · G bestätigen',34,516,11,P1C,'left');
-  hud.txt(g,M&&A.cpu?'CPU (P2):  ◀ / ▶ wählt den Gegner · ENTER bestätigen':'P2:  ◀ / ▶ wählen · L Farbe · ENTER bestätigen',34,532,11,P2C,'left');
-  hud.lab(g,'ESC = ZURÜCK',W-24,516,10,'#7d6fb0','right',2,null,'600')}
+  const one=v.locked[0]!==v.locked[1],l1='P1:  A / D wählen · C Farbe · G bestätigen',l2=M&&A.cpu?'CPU (P2):  ◀ / ▶ wählt den Gegner · ENTER bestätigen':'P2:  ◀ / ▶ wählen · L Farbe · ENTER bestätigen',fw=Math.max(hud.mw(g,l1,11),hud.mw(g,l2,11))+24;
+  if(one)this.plate(g,26,474,Math.max(fw,300),66,'#8f7bff',9);else this.plate(g,26,502,fw,38,'#8f7bff',8);   // Lesefläche hinter Wartehinweis + Steuerung
+  if(one&&Math.sin(t*.14)>-.4)hud.fam(F_DISP,()=>hud.fancy(g,`WARTE AUF SPIELER ${v.locked[0]?2:1}`,34,496,22,['#ffffff','#9fe8ff'],'left','#8f7bff',t,false,false,400,2));
+  hud.txt(g,l1,34,516,11,P1C,'left');hud.txt(g,l2,34,532,11,P2C,'left');
+  this.tagPlate(g,'ESC = ZURÜCK',W-24,516,10,'right','#8f7bff');hud.lab(g,'ESC = ZURÜCK',W-24,516,10,'#a899e0','right',2,null,'600')}
  // Ein Rondell im 2-Spieler-/Melee-Menü (pl = 1 oben, 2 unten): gleiche Logik wie carousel(), kleiner, mit Spielerfarbe, Name-Tag und ✔ bei Bestätigung
  vsRondell(g,A,t,pl,slots){const hud=this.hud,v=A.vs,N=slots.length,cur=pl===1?v.c1:v.c2,lk=v.locked[pl-1],pc=pl===1?P1C:P2C,y0=vsY0(pl),base0=y0+132,sideB=y0+122,
    dt=this._vt&&this._vt[pl]!=null?Math.min(6,Math.max(0,t-this._vt[pl])):9;(this._vt=this._vt||{})[pl]=t;
@@ -347,11 +358,13 @@ export class SelectScreen{
   const parts=ch.desc.split(' · ');hud.lab(g,parts[0].toUpperCase(),tx,y0+74,11,TXT,'left',2,null,'700');if(parts[1])hud.lab(g,parts[1].toUpperCase(),tx,y0+90,11,col,'left',2,null,'700');
   const all=[['LEBEN',ch.hp,(ch.hp-700)/(1500-700)],['TEMPO',Math.round(ch.walk*100)+'%',ch.walk/1.4],['SCHADEN',Math.round(ch.dmg*100)+'%',ch.dmg/1.3],['ABWEHR',Math.round(100/(ch.def||1))+'%',(1/(ch.def||1))/1.3]];
   const bars=M?all.slice(1):all,by=y0+(M?112:106),lw=72,bw=PW-(tx-PX)-lw-56,st=M?18:15;
+  this.plate(g,tx-8,by-13,rw-tx+8,bars.length*st+6,col,6);   // Stats-Balken
   bars.forEach(([lab,val,vv],k)=>{const y=by+k*st;vv=Math.max(.04,Math.min(1,vv));
    hud.lab(g,lab,tx,y+4,10,DIM,'left',2,null,'700');hud.kBar(g,tx+lw,y-4,bw,7,vv,col,t,4);
    hud.lab(g,String(val),tx+lw+bw+8,y+4,11,'#fff','left',1,null,'700')});
   const fit=(txt)=>{let q=String(txt||'');while(q.length>3&&hud.mw(g,q,11)>PW-16-24)q=q.slice(0,-2);return q===String(txt||'')?q:q.trimEnd()+'…'};
   const sy=y0+174;
+  if(ch.pros||ch.cons)this.plate(g,px-8,sy-13,rw-px+8,(ch.pros?18:0)+(ch.cons?15:0)+(ch.pros&&ch.cons?0:0)+6,col,6);   // Stärken / Schwächen
   if(ch.pros){hud.lab(g,'+',px,sy,13,'#9fe8ff','left',0,null,'800');hud.txt(g,fit(ch.pros),px+16,sy,11,'#9fe8ff','left')}
   if(ch.cons){hud.lab(g,'–',px,sy+15,13,'#c9b8ff','left',0,null,'800');hud.txt(g,fit(ch.cons),px+16,sy+15,11,'#c9b8ff','left')}}
  // Melee-Optionen (rechts oben, klickbar): Spieler 2 = Mensch/CPU (B), CPU-Stärke (▲▼ bzw. Klick), Stocks (T)
@@ -363,7 +376,7 @@ export class SelectScreen{
   hud.txt(g,A.cpu?'klicken oder  B · ▲▼ · T':'klicken oder  B · T',W-14,lr.y+lr.h+14,10,'#8f95d8','right')}
  // ---- 2-Spieler-Modus: Stage-Wahl ----
  drawStagePick(g,A,t,W,H){const hud=this.hud,v=A.vs,N=THEMES.length+1,slots=Arcade.slotIds();
-  g.save();hud.kChamfer(g,24,108,912,302,20);g.fillStyle='rgba(5,16,24,.50)';g.fill();g.strokeStyle='rgba(96,210,226,.3)';g.stroke();hud.lab(g,'TACTICAL ENVIRONMENT SELECT  /  STAGE DATA',44,128,9,'#78d8e7','left',2,null,'700');g.restore();
+  g.save();hud.kChamfer(g,24,108,912,302,20);g.fillStyle='rgba(10, 10, 18, 0.72)';g.fill();g.strokeStyle='rgba(96,210,226,.3)';g.stroke();hud.lab(g,'TACTICAL ENVIRONMENT SELECT  /  STAGE DATA',44,128,9,'#78d8e7','left',2,null,'700');g.restore();
   if(this.ln&&this.ln.vs)return this.drawVsLaunch(g,A,t,W,H,slots);
   this.title(g,t,W,A.mode==='melee'?'MELEE – STAGE WÄHLEN':'STAGE WÄHLEN',A.mode==='melee'?'#bfe9ff':undefined);
   for(let i=0;i<N;i++){const r=stageRect(i,N),T=THEMES[i],sel=v.stage===i,pulse=.5+.5*Math.sin(t*.12),cx=r.x+r.w/2,col=T?T.lights[0]:'#9fe8ff';

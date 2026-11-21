@@ -1,5 +1,5 @@
 import{CHARACTERS}from'../core/characters.js';
-import{EFFECT,METER,ROUND,SPAM}from'../core/config.js';
+import{EFFECT,METER,ROUND,SPAM,STAMINA}from'../core/config.js';
 
 
 import{F_DISP,F_TECH,F_UI}from'./fonts.js';
@@ -907,6 +907,85 @@ export class Hud {
     g.restore();
     this.seal(g, cx + m * r * 0.82, cy + r * 0.9, 13, P.kan, 1, m * 0.1);
   }
+  // ---------- Ausdauer-Leiste (unter dem Lebensbalken, für Spieler 2 gespiegelt) ----------
+  // Gold = normal, orange = knapp, rot pulsierend = erschöpft (weiße Marke = ab hier wieder handlungsfähig), mint = Verschnaufen, rote Umrandung = Aktion nicht bezahlbar.
+  stamBar(g, i, f, t) {
+    if (!this.stamShow) return;
+    const S = STAMINA,
+      p = hclamp(f.st / f.stMax, 0, 1),
+      lg = this.stLag || (this.stLag = [1, 1]);
+    lg[i] += (p - lg[i]) * (p < lg[i] ? 0.05 : 0.6); // Geister-Balken: zeigt den gerade verbrauchten Teil
+    const x = HB.x + 2,
+      y = HB.y + HB.h + 9,
+      w = 190,
+      h = 4,
+      sk = 4,
+      exh = f.exh,
+      rest = f.state === "rest",
+      low = f.st < S.low,
+      flash = f.stamFlash > 0,
+      pu = 0.5 + 0.5 * Math.sin(t * (exh ? 0.55 : 0.3)),
+      c1 = exh ? "#ff3b57" : rest ? "#35e8b0" : low ? "#ff9a3d" : "#ffc94d",
+      c2 = exh ? "#ff9aa8" : rest ? "#d6fff0" : low ? "#ffd8a8" : "#fff3c2";
+    g.save();
+    g.lineWidth = 0.9;
+    g.strokeStyle = flash ? "#ff3b57" : exh ? "#ff6b82" : rest ? "#7dffd0" : ICE;
+    g.globalAlpha = flash || exh || rest ? 1 : 0.6;
+    if (flash || exh || rest) {
+      g.shadowColor = flash || exh ? "#ff3b57" : "#35e8b0";
+      g.shadowBlur = 6 + 6 * pu;
+    }
+    para(g, x - 1.5, y - 1.5, w + 3, h + 3, sk);
+    g.stroke();
+    g.restore();
+    g.save();
+    para(g, x, y, w, h, sk);
+    g.fillStyle = "#03041a";
+    g.fill();
+    g.clip();
+    if (lg[i] > p + 0.004) {
+      g.fillStyle = "#ffffff66";
+      g.fillRect(x, y, w * lg[i] + sk, h);
+    }
+    if (p > 0) {
+      const fw = w * p,
+        fg = g.createLinearGradient(x, 0, x + fw + sk, 0);
+      fg.addColorStop(0, c1);
+      fg.addColorStop(1, c2);
+      g.globalAlpha = exh ? 0.55 + 0.45 * pu : 1;
+      g.fillStyle = fg;
+      g.fillRect(x, y, fw + sk, h);
+      const sh = g.createLinearGradient(0, y, 0, y + h);
+      sh.addColorStop(0, "#ffffffa0");
+      sh.addColorStop(1, "#00000000");
+      g.fillStyle = sh;
+      g.fillRect(x, y, fw + sk, h);
+    }
+    g.globalAlpha = 1;
+    g.fillStyle = "#03041a";
+    for (let k = 1; k < 4; k++) g.fillRect(x + (w * k) / 4 + sk * 0.5 - 0.4, y, 0.8, h);
+    if (exh) {
+      g.fillStyle = "#ffffffcc";
+      g.fillRect(x + (w * S.exhaust.until) / f.stMax + sk * 0.5 - 0.5, y, 1, h);
+    }
+    g.restore();
+    g.save();
+    dia(g, x - 8, y + h / 2, 2);
+    g.fillStyle = c1;
+    g.shadowColor = c1;
+    g.shadowBlur = 5;
+    g.fill();
+    g.restore();
+  }
+  stamLabel(g, i, f, t) {
+    if (!this.stamShow) return;
+    const txt = f.stamFlash > 0 ? "KEINE AUSDAUER" : f.exh ? "ERSCHÖPFT" : f.state === "rest" ? "ATMEN" : "";
+    if (!txt) return;
+    const { W } = this,
+      mx = (v) => (i ? W - v : v),
+      col = f.stamFlash > 0 || f.exh ? "#ff7b91" : "#7dffd0";
+    this.lab(g, txt, mx(HB.x + 2 + 190 + 14), HB.y + HB.h + 14, 8, col, i ? "right" : "left", 2, col, "700");
+  }
   // ---------- Spieler-Block ----------
   player(g, i, f, t, noWins = false) {
     const { W } = this,
@@ -927,7 +1006,9 @@ export class Hud {
       g.scale(-1, 1);
     }
     this.hpBar(g, i, p, this.lag[i], t, alarm);
+    this.stamBar(g, i, f, t);
     g.restore();
+    this.stamLabel(g, i, f, t);
     this.portrait(g, i, f, mx(50), 46, 27, t, alarm);
     // Name: feine Serife, weite Laufweite, hauchdünne Linie mit Raute dahinter
     const nx = mx(HB.x + 4),
@@ -1133,6 +1214,29 @@ export class Hud {
       g.translate(W, 0);
       g.scale(-1, 1);
     }
+    if (f.meter >= METER.max) {
+      // Voll aufgeladen: Leuchthof + pulsierender Rahmen um die ganze Leiste
+      const pu = 0.5 + 0.5 * Math.sin(t * 0.2),
+        tw = 3 * SW + 2 * GAP + SK,
+        cx = X0 + tw / 2,
+        cy = SY + SH / 2,
+        hg = g.createRadialGradient(cx, cy, 6, cx, cy, tw * 0.62);
+      g.save();
+      g.globalCompositeOperation = "lighter";
+      hg.addColorStop(0, P.glow);
+      hg.addColorStop(1, "rgba(0,0,0,0)");
+      g.globalAlpha = 0.22 + 0.2 * pu;
+      g.fillStyle = hg;
+      g.fillRect(X0 - 40, SY - 30, tw + 80, SH + 60);
+      g.globalAlpha = 0.55 + 0.4 * pu;
+      g.shadowColor = P.glow;
+      g.shadowBlur = 24 + 16 * pu;
+      g.strokeStyle = P.a;
+      g.lineWidth = 1.3;
+      para(g, X0 - 6, SY - 6, tw + 12, SH + 12, SK);
+      g.stroke();
+      g.restore();
+    }
     for (let k = 0; k < 3; k++) {
       const fill = hclamp((f.meter - k * METER.bar) / METER.bar, 0, 1),
         x = X0 + k * (SW + GAP),
@@ -1209,6 +1313,12 @@ export class Hud {
       }
     }
     g.restore();
+    if (f.meter >= METER.max) {
+      g.save();
+      g.globalAlpha = 0.7 + 0.3 * Math.sin(t * 0.3);
+      this.lab(g, "MAX", mx(X0 + 3 * SW + 2 * GAP + SK), H - 41, 10, "#ffffff", i ? "left" : "right", 5, P.glow, "800");
+      g.restore();
+    }
     const lx = mx(30);
     this.lab(
       g,
@@ -1329,6 +1439,7 @@ export class Hud {
     else if (game.phase === "result" && !game.timedOut)
       this.letterbox(g, 1 - hclamp(game.pf / 14, 0, 1));
     if (!game.melee) {
+      this.stamShow = !!game.stamOn;
       fs.forEach((f, i) => this.player(g, i, f, t));
       this.timer(g, game, t);
     }
@@ -1368,6 +1479,7 @@ export class Hud {
     g.fillStyle = 'rgba(95,220,238,.28)'; g.fillRect(24, H - 7, W - 48, 1);
     for (let x = 32; x < W - 32; x += 48) { g.fillStyle = 'rgba(120,210,225,.18)'; g.fillRect(x, 11, 12, 1); g.fillRect(x, H - 11, 12, 1) }
     g.restore();
+    this.stamShow = false;
     this.player(g, 0, f, t, true);
     this.hyper(g, 0, f, t);
   }

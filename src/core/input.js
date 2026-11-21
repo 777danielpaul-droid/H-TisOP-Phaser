@@ -29,15 +29,15 @@ export class InputBuffer{
   const pat=MOTIONS[name];let i=0;for(const n of seq)if(n===pat[i])i++;return i>=pat.length}
 }
 // Standard-Belegung. Buttons: L/M/H = leicht/mittel/schwer, S = Special, SUP = Super, DASH = Dash
-export const BUTTON_KEYS={KeyJ:'L',KeyK:'M',KeyL:'H',KeyU:'S',KeyI:'SUP',KeyO:'DASH',KeyZ:'L',KeyX:'M',KeyC:'H',KeyV:'S',KeyB:'SUP',KeyN:'DASH'};
+export const BUTTON_KEYS={KeyJ:'L',KeyK:'M',KeyL:'H',KeyU:'S',KeyI:'SUP',KeyO:'DASH',KeyZ:'L',KeyX:'M',KeyC:'H',KeyV:'S',KeyB:'SUP',KeyN:'DASH',KeyP:'REST',ShiftLeft:'REST'};   // REST = Verschnaufen (Ausdauer)
 export const DIR_KEYS={left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],up:['KeyW','ArrowUp','Space'],down:['KeyS','ArrowDown']};
 // 2-Spieler-Modus (eine Tastatur): P1 links (WASD + G H J / T Y / B), P2 rechts (Pfeile + K L ; / I O / P bzw. Ziffernblock 1 2 3 / 4 5 / 0)
-export const VS1_BUTTONS={KeyG:'L',KeyH:'M',KeyJ:'H',KeyT:'S',KeyY:'SUP',KeyB:'DASH'};
+export const VS1_BUTTONS={KeyG:'L',KeyH:'M',KeyJ:'H',KeyT:'S',KeyY:'SUP',KeyB:'DASH',KeyV:'REST'};
 export const VS1_DIRS={left:['KeyA'],right:['KeyD'],up:['KeyW'],down:['KeyS']};
-export const VS2_BUTTONS={KeyK:'L',KeyL:'M',Semicolon:'H',KeyI:'S',KeyO:'SUP',KeyP:'DASH',Numpad1:'L',Numpad2:'M',Numpad3:'H',Numpad4:'S',Numpad5:'SUP',Numpad0:'DASH'};
+export const VS2_BUTTONS={KeyK:'L',KeyL:'M',Semicolon:'H',KeyI:'S',KeyO:'SUP',KeyP:'DASH',Numpad1:'L',Numpad2:'M',Numpad3:'H',Numpad4:'S',Numpad5:'SUP',Numpad0:'DASH',Quote:'REST',NumpadDecimal:'REST'};
 export const VS2_DIRS={left:['ArrowLeft'],right:['ArrowRight'],up:['ArrowUp'],down:['ArrowDown']};
-// Controller (PS4/PS5/Xbox, Namen siehe core/gamepad.js): Stick/Steuerkreuz = Bewegung, ✕(A)=L, ▢(X)=M, △(Y)=H, ○(B)=Special, R1=Hyper, L1/R2=Dash
-const PAD_ACTIONS={cross:'L',square:'M',triangle:'H',circle:'S',r1:'SUP',l1:'DASH',r2:'DASH'};
+// Controller (PS4/PS5/Xbox, Namen siehe core/gamepad.js): Stick/Steuerkreuz = Bewegung, ✕(A)=L, ▢(X)=M, △(Y)=H, ○(B)=Special, R1=Hyper, L1/R2=Dash, L2=Verschnaufen
+const PAD_ACTIONS={cross:'L',square:'M',triangle:'H',circle:'S',r1:'SUP',l1:'DASH',r2:'DASH',l2:'REST'};
 export class KeyboardInput extends InputBuffer{
  constructor(target=(typeof window!=='undefined'?window:null),buttons=BUTTON_KEYS,dirs=DIR_KEYS){
   super();this.keys=new Set();this.pend=[];this.padIndex=-1;this.padPrev=new Set();this.buttons=buttons;this.dirs=dirs;

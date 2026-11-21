@@ -1,5 +1,5 @@
 import{F_DISP,F_TECH}from'./fonts.js';
-import{GFX}from'../core/config.js';
+import{GFX,METER}from'../core/config.js';
 import{sparkIdx,sparkDraw}from'../core/particles.js';
 // Post-Processing + Ambient-Effekte (Canvas 2D, ohne Abhängigkeiten, läuft überall – auch ohne ctx.filter):
 //  - Bloom (Downscale-Kette, Helligkeit quadriert = weiche Schwelle), Vignette (pulsiert bei niedrigem Leben), Filmkorn
@@ -47,6 +47,14 @@ export class PostFX{
   for(let i=0;i<4;i++){const x=W*(.12+.25*i)+Math.sin(t*.35+i*1.7)*70,w=70+i*18,gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,col+'00');gr.addColorStop(.5,col+'1c');gr.addColorStop(1,col+'00');
    g.fillStyle=gr;g.beginPath();g.moveTo(x-6,0);g.lineTo(x+6,0);g.lineTo(x+w+Math.sin(t*.5+i)*50,H);g.lineTo(x-w+Math.sin(t*.5+i)*50,H);g.fill()}g.restore()}
  // Lichtpfütze unter dem Kämpfer (Welt-Raum, innerhalb der Kamera): färbt den Boden in der Figurenfarbe
+ // Hyper-Leiste voll: pulsierender Lichthof um den Körper, Boden-Ring und feine aufsteigende Lichtstrahlen in der Figurenfarbe (nur mit Glow-Einstellung)
+ hyperAura(g,f,ground,t){if(!GFX.glow||!(f.meter>=METER.max)||f.dead>0||f.hp<=0)return;const col=(f.char&&f.char.glow)||'#fff',sz=(f.char&&f.char.size)||1,pu=.5+.5*Math.sin(t*.16+f.x*.01),air=fclamp((ground-f.y)/260,0,1),cy=f.y-95*sz;
+  g.save();g.globalCompositeOperation='lighter';
+  const hg=g.createRadialGradient(f.x,cy,10*sz,f.x,cy,150*sz);hg.addColorStop(0,col);hg.addColorStop(.45,col);hg.addColorStop(1,'rgba(0,0,0,0)');
+  g.globalAlpha=.16+.14*pu;g.fillStyle=hg;g.beginPath();g.ellipse(f.x,cy,105*sz,150*sz,0,0,6.283);g.fill();
+  g.save();g.translate(f.x,ground+2);g.scale(1,.2);g.globalAlpha=(.55+.35*pu)*(1-air*.7);g.strokeStyle=col;g.lineWidth=3.2;g.shadowColor=col;g.shadowBlur=18;g.beginPath();g.arc(0,0,(62+10*pu)*sz,0,6.283);g.stroke();g.globalAlpha*=.6;g.strokeStyle='#fff';g.lineWidth=1.2;g.shadowBlur=0;g.beginPath();g.arc(0,0,(60+10*pu)*sz,0,6.283);g.stroke();g.restore();
+  for(let k=0;k<5;k++){const ph=(t*.018+k*.2+f.x*.003)%1,x=f.x+Math.sin(k*2.4+t*.02)*46*sz,h=(70+40*Math.sin(k*1.7))*sz,y1=ground-ph*190*sz,gr=g.createLinearGradient(x,y1,x,y1-h);gr.addColorStop(0,col);gr.addColorStop(1,'rgba(0,0,0,0)');g.globalAlpha=(1-ph)*.5*(1-air*.6);g.fillStyle=gr;g.fillRect(x-1.2,y1-h,2.4,h)}
+  g.restore()}
  floorGlow(g,f,ground,t,hit=0){if(!GFX.glow)return;const col=(f.char&&f.char.glow)||'#fff',sz=(f.char&&f.char.size)||1,air=fclamp((ground-f.y)/260,0,1),a=(.2+.12*Math.sin(t*3+f.x*.01)+hit*.35)*(1-air*.6),r=(95+hit*30)*sz;
   g.save();g.globalCompositeOperation='lighter';g.translate(f.x,ground+2);g.scale(1,.2);const gr=g.createRadialGradient(0,0,2,0,0,r);gr.addColorStop(0,col+Math.round(fclamp(a,0,1)*255).toString(16).padStart(2,'0'));gr.addColorStop(1,col+'00');
   g.fillStyle=gr;g.beginPath();g.arc(0,0,r,0,6.283);g.fill();g.restore()}

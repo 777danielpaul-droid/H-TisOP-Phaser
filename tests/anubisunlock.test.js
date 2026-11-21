@@ -15,7 +15,7 @@ assert.equal(Arcade.ladderFor('tiger').at(-1),'anubis','weiter Endgegner im Arca
 const cu=CLEAR_UNLOCKS.find(u=>u.id==='anubis');assert(cu&&cu.n===4,'Anubis: 4 Durchläufe');assert.equal(CLEAR_UNLOCKS.find(u=>u.id==='st3g0').n,3,'ST3-G0 bleibt bei 3');
 console.log('  ✓ Anubis: gesperrt, freischaltbar (4 Durchläufe), weiter Arcade-Endgegner');
 // ---- Story: Endboss von Kapitel 4 ----
-assert.equal(CHAPTERS.length,4);assert.equal(CHAPTERS[3].enc.at(-1).boss,'anubisBoss');assert(!CHAPTERS.slice(0,3).some(c=>c.enc.some(e=>e.boss==='anubisBoss')),'Anubis nur in Kapitel 4');
+assert(CHAPTERS.length>=4);assert.equal(CHAPTERS[3].enc.at(-1).boss,'anubisBoss');assert(!CHAPTERS.slice(0,3).some(c=>c.enc.some(e=>e.boss==='anubisBoss')),'Anubis nur in Kapitel 4');
 assert(CHARACTERS.anubisBoss.storyBoss&&/Kapitel 4/.test(CHARACTERS.anubisBoss.desc));
 console.log('  ✓ Story: Anubis ist Endboss von Kapitel 4 (nicht mehr von Kapitel 3)');
 // ---- einmal Arcade durchspielen schaltet Anubis NICHT mehr frei ----
@@ -34,10 +34,11 @@ ROSTER.splice(ROSTER.indexOf('anubis'),1);delete store['hitisop.unlocks'];delete
 assert.equal(getClears(),0);
 for(let i=1;i<=3;i++){const{a}=mk();a.countClear();assert.equal(getClears(),i);assert(!ROSTER.includes('anubis'),'nach '+i+' Durchläufen noch gesperrt')}
 {const{a}=mk();a.countClear();assert.equal(getClears(),4);assert(ROSTER.includes('anubis'),'4. Durchlauf schaltet Anubis frei');assert(['st3g0','anubis'].includes(a.newUnlock));assert(JSON.parse(store['hitisop.unlocks']).includes('anubis'),'gespeichert')}
+{const{a}=mk();a.countClear();assert.equal(a.newUnlock,'bear','der 5. Durchlauf meldet URSUS, nicht erneut Anubis')}
 {const{a}=mk();a.countClear();assert.equal(a.newUnlock,null,'danach keine erneute Meldung')}
 console.log('  ✓ 4 Durchläufe schalten Anubis frei (gespeichert, einmalige Meldung)');
 // ---- Story-Durchlauf (Kapitel 4) zählt als Durchlauf ----
 delete store['hitisop.clears'];{const{g,a}=mk();a.setMode('story');a.startStory('tiger',3);g.story.state='done';g.story.doneT=300;a.update();assert.equal(getClears(),0,'Kapitel 3 ist kein Durchlauf');
- a.startStory('tiger',4);g.story.state='done';g.story.doneT=300;a.update();assert.equal(a.state,'victory');assert.equal(getClears(),1,'Kapitel 4 zählt als Durchlauf');assert(!a.hasNextChapter)}
-console.log('  ✓ Story: erst Kapitel 4 geschafft zählt als Durchlauf');
+ a.startStory('tiger',CHAPTERS.length);g.story.state='done';g.story.doneT=300;a.update();assert.equal(a.state,'victory');assert.equal(getClears(),1,'das letzte Kapitel zählt als Durchlauf');assert(!a.hasNextChapter)}
+console.log('  ✓ Story: erst das letzte Kapitel zählt als Durchlauf');
 console.log('Anubis-Freischalt-Test OK');

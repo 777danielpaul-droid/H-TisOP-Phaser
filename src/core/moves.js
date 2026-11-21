@@ -44,6 +44,8 @@ export const MOVE_LIST=[
  ['Stärke der Specials','Motion + J / K / L','Leicht = schnell & schwach, Heavy = langsam & stark (Wellen/Bälle)'],
  ['Hyper','I (1 Balken)','Je Figur anders'],
  ['Dash / Air-Dash','O  oder  Doppeltipp ←/→','Auch in der Luft (1×)'],
- ['Doppelsprung','W/Space in der Luft','1× pro Luftphase']];
+ ['Doppelsprung','W/Space in der Luft','1× pro Luftphase'],
+ ['Ausdauer','Leiste unter dem Lebensbalken','Angriffe, Dashes, Sprünge und Blocken kosten Ausdauer; leer = erschöpft (langsamer, schwächer). Optionen → Ausdauer schaltet es ab'],
+ ['Verschnaufen','P  /  Shift','Kurz stehen bleiben, Ausdauer füllt sich schnell – kein Block, bei Treffer unterbrochen (+25 % Schaden)']];
 const ORDER_KEYS=['5L','5M','5H','2L','2M','2H','6M','6H','fireball','rising','rush','back','airsp','j8H','j2H','super','airsuper'];
 export function charMoves(char){const mv=buildMoves(char);return ORDER_KEYS.filter(k=>mv[k]).map(k=>[mv[k].label,mv[k].key,mv[k].info||''])}
